@@ -5,7 +5,7 @@ I already have a personal GitHub account attached to my UST email address, and I
 ## The List
 Homelabbing is a big hobby of mine, so many of the following ideas precede this class. I tried to exclude ideas that could just be scripts, or that would only be useful a single time.
 
-I have a machine with AMD Radeon V620 32GB cards in need of open-weight models to run. That, and the subject of my degree program, inspired these app ideas and their utilization of natural language.
+I have a machine with AMD Radeon V620 32GB cards in need of open-weight models to run. That, and the subject of my degree program, inspired these app ideas and their utilization of natural language. The example queries aren't indication that each project will be a chatbot — instead, they paint a picture of what information and value each app provides.
 
 
 ### 1. Natural Language Homelab Management
@@ -56,30 +56,50 @@ Though controversial, I do find SHA-256 miners fascinating. They are power hungr
 
 
 ### 4. Personal Knowledge Base
-This is another good opportunity for vibing both the code and the structure/design. I have many different records across different apps (e.g. daily journals in Diarium, sales in Proton Drive, deliveries in Trello, )
+This is another good opportunity for vibing both the code and the structure/design. I have many different records across different apps (e.g. daily journals in Diarium, sales in Proton Drive, deliveries in Trello, etc.) and no great way to consolidate and map content to each other. I have been interested in Obsidian due to its plaintext backing files and extensibility, but I haven't been able to sit down and customize it to my heart's content yet. It would be nice to have a tool, whether that's an Obsidian plugin or yet another dashboard, that can help me keep track of my records and documents. Emails would be an important source of information, though bloated with newsletters and less-personal messages.
 
-obsidian
+In additional to managing records, it would be great for this project to have a high-level understanding of my digital document organization "style," and be able to group common, loose files together. So in additional to containing knowledge, it also knows where else to find what I'm looking for.
 
-extension
-
-A stretch goal for this project is digital document management.
+#### Example Queries
+- On which day of the week do I ride the farthest on my bike?
+- How often are rainy days rated low?
+- How many shirts have I sold on eBay? What was the average price per shirt before S&H?
+- When did I unsubscribe from Arnold Schwarzenegger's newsletter?
+- In which semester did I take *Data Analytics*?
+- How does class influence the length of my journal entries
+  - In other words, do I write less or more on days that I have class
 
 
 ### 5. AI Tab Grouping for Sidebery
-Firefox now has native AI-powered tab grouping, but I use the Sidebery extension for nested vertical tabs. As such, I can't utilize what Mozilla has already implemented to group _within_ Sidebery. This feature has been requested multiple times, but the developers aren't interested in considering it further.
+Firefox now has native AI-powered tab grouping, but I use the Sidebery extension for nested vertical tabs. As such, I can't utilize what Mozilla has already implemented to group *within* Sidebery. This feature has been requested multiple times, but the developers aren't interested in considering it further.
 
 I want to create a create an app that can interact with Sidebery's API to query tabs, suggest groups, and identify tabs that I forgot to close. for the last one, I'd need training data and/or strongly-defined criteria for which tabs are open for future review, and which ones are probably something I can close (e.g. an article vs. my eBay cart).
 
+The program will also hook into Firefox's browsing history to understand interests, relationships between sites/topics (e.g. sites often opened after specific others), and the manner in which I browse the web.
+
+#### Example Queries
+- How many Wikipedia tabs do I have open?
+- How many nested YouTube tabs are there?
+- Which topics tend to spawn the most child/nested tabs?
+- In the current panel, group 3D model tabs by {website, category, estimated size, download count}
+  - Real life example: I have a panel of 3D-printed model pages, each manually grouped into folders
+- How long to I tend to spend on Amazon between searching an item and finally checking out?
+  - In this case, the initial search + the "checkout" URL would provide a bound on time spent
+
 
 ### 6. Music Library Standardization & Management
-- covers level with files
-- no subfolders
-- Japanese (romaji + original)
+I have a particular style when it comes to tagging music files and organizing them in my library. For example, I like to have a single picture called "cover.jpg" alongside files, compress lyrics files into "lyrics.7z," utilize macrons for long vowels in Japanese song titles, and save files in lowercase. I'd like a tool that can automatically identify existing "rules" for organizing and apply them to the entire library, since there are definitely some folders that are missing inline album art for example. I foresee a web page or some sort of interface that can ingest new files and automatically apply transformations on my behalf.
 
 
+### 7. Aggregated Media Library Statistics
+It wouldn't be very useful, but it'd be neat to visualize all my media consumption in one place. It would crunch numbers and present fun, dynamically-generated stats cards such as:
+- Songs never listened to
+- Movies that were watched within a day of being added to the library
+- Most popular documentary topic
+- Most popular genre on Thursdays
 
-### 7. Aggregated watchlist app
-- letterboxd, taiga
-
-
-### 8. Better Personal Website
+With integration to the other app ideas above, I could even ask questions such as:
+- Which albums do I listen to most on rough days
+  - Implicitly: "On days I rated ⅕ on Diarium, which albums do I reach for first?"
+- Which movies tend to lift my spirits the day after watching them?
+- When was the last time I listened to *The Ocean Blue*?
