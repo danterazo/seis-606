@@ -103,3 +103,5 @@ With integration to the other app ideas above, I could even ask questions such a
   - Implicitly: "On days rated ⅕ on Diarium, which albums do I reach for first?"
 - Which movies tend to lift my spirits the day after watching them?
 - When was the last time I listened to *The Ocean Blue*?
+- How often, on average, does *The Ocean Blue* wait between album releases?
+- ~~Why hasn't *The Ocean Blue* released an album in 7 years and who do I call to get them to make another one~~
