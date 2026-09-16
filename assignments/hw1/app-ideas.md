@@ -100,6 +100,6 @@ It wouldn't be very useful, but it'd be neat to visualize all my media consumpti
 
 With integration to the other app ideas above, I could even ask questions such as:
 - Which albums do I listen to most on rough days
-  - Implicitly: "On days I rated ⅕ on Diarium, which albums do I reach for first?"
+  - Implicitly: "On days rated ⅕ on Diarium, which albums do I reach for first?"
 - Which movies tend to lift my spirits the day after watching them?
 - When was the last time I listened to *The Ocean Blue*?
