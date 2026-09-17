@@ -1,0 +1,3 @@
+[submodule "related-repos/OSN-2026"]
+	path = related-repos/OSN-2026
+	url = git@github.com:justingrammens/OSN-2026.git
