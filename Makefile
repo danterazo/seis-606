@@ -21,6 +21,7 @@ fix:
 pull:
 	git pull
 	git submodule update --init --recursive
+	git submodule foreach --recursive 'git pull --ff-only'
 
 kill:
 	sudo pkill -f python
