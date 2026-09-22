@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 
-.PHONY: deps deps-gpu verify-gpu fix pull kill llama smi
+.PHONY: deps deps-gpu verify-gpu fix pull protect-submodules kill llama smi
 
 # llama.cpp GPU build config
 LLAMA_CUDACXX ?= /usr/local/cuda-13.1/bin/nvcc
@@ -20,8 +20,12 @@ fix:
 
 pull:
 	git pull
-	git submodule update --init --recursive
+	$(MAKE) protect-submodules
 	git submodule foreach --recursive 'git pull --ff-only'
+
+protect-submodules:
+	git submodule update --init --recursive
+	git submodule foreach --recursive 'git remote set-url --push origin DISABLED'
 
 kill:
 	sudo pkill -f python
