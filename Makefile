@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 
-.PHONY: deps deps-gpu verify-gpu fix pull protect-submodules kill llama smi
+.PHONY: deps deps-gpu verify-gpu fix pull protect-submodules kill llama smi identify-pylance-paths
 
 # llama.cpp GPU build config
 LLAMA_CUDACXX ?= /usr/local/cuda-13.1/bin/nvcc
@@ -36,3 +36,30 @@ kill:
 
 smi:
 	watch -n 1 -d nvidia-smi
+
+identify-pylance-paths:
+	@mkdir -p .vscode
+	@tmp="$$(mktemp)"; \
+	{ \
+		echo '$${workspaceFolder}/assignments'; \
+		find assignments -mindepth 1 -maxdepth 1 -type d | sort | sed 's#^#$${workspaceFolder}/#'; \
+	} > "$$tmp"; \
+	count="$$(wc -l < "$$tmp")"; \
+	{ \
+		echo '{'; \
+		echo '  "git.detectSubmodules": false,'; \
+		echo '  "python.analysis.extraPaths": ['; \
+		i=0; \
+		while IFS= read -r p; do \
+			i="$$((i + 1))"; \
+			if [[ "$$i" -lt "$$count" ]]; then \
+				printf '    "%s",\n' "$$p"; \
+			else \
+				printf '    "%s"\n' "$$p"; \
+			fi; \
+		done < "$$tmp"; \
+		echo '  ]'; \
+		echo '}'; \
+	} > .vscode/settings.json; \
+	rm -f "$$tmp"; \
+	echo 'Wrote .vscode/settings.json with assignment import roots.'
