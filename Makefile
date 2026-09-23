@@ -62,4 +62,4 @@ identify-pylance-paths:
 		echo '}'; \
 	} > .vscode/settings.json; \
 	rm -f "$$tmp"; \
-	echo 'Wrote .vscode/settings.json with assignment import roots.'
+	echo -e 'Wrote ${GREEN}.vscode/settings.json${NOCOLOR} with assignment import roots.'
