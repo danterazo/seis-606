@@ -2,7 +2,7 @@
 ## Natural Language Homelab & Inventory Management
 I decided to pick a mix of my first two ideas: the NLP Homelab Management dashboard that can _also_ manage my inventory of parts. This project could probably just be a CLI, but I want to create something visually appealing and easy to maintain / expand. It will serve as a one-stop-shop for my many machines and containers, as well as other relevant projects. Given the amount of tinkering I do with my machines, I consider the inventory feature relevant and not just tacking on a separate app.
 
-I wrote the majority of this text myself, however I utilized AI to rephrase my example queries from [HW1](../hw1/app-ideas.md) as statements.
+I wrote the majority of this text myself, however I utilized AI to rephrase my example queries from [HW1](../hw1/app-ideas.md) as statements. I also used it to migrate bullet points between sections if they were more appropriate in, for example, _Behavior_ instead of _Objectives_.
 
 ## Objectives
 <!-- OBJECTIVE: the failure mode, not the feature description -->
@@ -29,7 +29,7 @@ I wrote the majority of this text myself, however I utilized AI to rephrase my e
 
 ## Constraints
 <!-- CONSTRAINTS: non-negotiables regardless of implementation -->
-- Keep commands atomic, especially configs
+- Keep operations atomic, especially those that modify system state / configs
 - Avoid making assumptions, and double-check existing context and available MCPs before taking any action
 - Prefer existing tools (e.g. ZFS MCP) over implementing new ones from scratch
 - Ensure all actions are reversible or have a clear rollback procedure
@@ -40,11 +40,9 @@ I wrote the majority of this text myself, however I utilized AI to rephrase my e
 - Must work behind a reverse proxy (Caddy)
 - The UI must be responsive
 - The frontend should use Streamlit as the default implementation unless a custom HTML/CSS layer is required for a specific design need; in either case, the interface must stay maintainable and practical rather than over-engineered
-- The UI must be "sick". It must be the kind of design that makes people go "hell yeah" when they see it. Or at the very least, it should be practical
-  - Extremely subjective, but I'll know it when I see it
 - Discord webhook for actions
   - Proxmox supports this natively, but other MCPs and tools might need custom integration
-- The app should prioritize existing MCP implementations such as Proxmox, ZFS, Thunderbird, and Klipper before adding bespoke tooling for the same problem
+- The app should prioritize existing MCP implementations such as Proxmox, ZFS, Thunderbird, and Klipper before creating/suggesting custom tooling for the same problem
 
 ## Verification
 <!-- VERIFICATION: testable criteria, not subjective ones -->
@@ -73,5 +71,5 @@ This one is a banger, but it seems easy to overcomplicate. I want an app that's 
 ![Y2K](mockups/y2k-perplexity.png)
 
 ### Y2K Minimal (Perplexity)
-This looks clean, but I question how useful it'd be. It also has corny slogans that I don't want. I can foresee this being a panel as part of a bigger page. I'd use circles / progress bars for quick visual validation of load, and I wouldn't bother adding CPU count or uptime. "Samskeyti" is my personal domain, and follows my theme of naming things after Sigur Rós songs. It means "thread" or "connection" in Icelandic, which I felt was fitting. However if this ends up being part of a whole, I won't emphasize the domain name here.
+This looks clean, but I question how useful it'd be. It also has corny slogans that I don't want. I can foresee this being a panel as part of a bigger page. I'd use circles / progress bars for quick visual validation of load, and I wouldn't bother adding CPU count or uptime.
 ![Y2K (Minimal)](mockups/panel-perplexity.png)
