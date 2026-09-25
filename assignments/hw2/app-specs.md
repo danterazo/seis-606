@@ -3,19 +3,19 @@
 I decided to pick my first idea: the NLP Homelab Management dashboard. This project could probably just be a CLI, but I want to create something visually appealing and easy to maintain / expand. It will serve as a one-stop-shop for my many machines and containers
 
 ## Objective
-<!-- OBJECTIVE — the failure mode, not the feature description -->
+<!-- OBJECTIVE: the failure mode, not the feature description -->
 
 
 ## Behavior
-<!-- BEHAVIOR — observable outcomes only, no tech details -->
+<!-- BEHAVIOR: observable outcomes only, no tech details -->
 
 
 ## Constraints
-<!-- CONSTRAINTS — non-negotiables regardless of implementation -->
+<!-- CONSTRAINTS: non-negotiables regardless of implementation -->
 
 
 ## Verification
-<!-- VERIFICATION — testable criteria, not subjective ones -->
+<!-- VERIFICATION: testable criteria, not subjective ones -->
 
 ## Functionality
 ### Backend
