@@ -4,6 +4,9 @@ I decided to pick a mix of my first two ideas: the NLP Homelab Management dashbo
 
 I wrote the majority of this text myself, however I utilized AI to rephrase my example queries from [HW1](../hw1/app-ideas.md) into statements. I also used it to migrate bullet points between sections if they were more appropriate in, for example, _Behavior_ instead of _Objectives_.
 
+## MVP
+Dashboard that aggregates system status from all Proxmox nodes. The MVP won't include the inventory system.
+
 ## Objectives
 <!-- OBJECTIVE: the failure mode, not the feature description -->
 - Prevent the classic "I forgot where I put that part" scenario
@@ -17,7 +20,7 @@ I wrote the majority of this text myself, however I utilized AI to rephrase my e
 - Answer questions using available MCPs and context; given "which VMs are emulating ARM CPUs," it should provide a list of relevant VMs
 - The system queries networked MCPs and summarizes each node in a single dashboard, including status, architecture, container health, and connection quality
 - The app can create LXC containers from the appropriate template, restore a container from a chosen backup, and prune unnecessary backups while preserving the most recent ones
-- The dashboard can identify container and VM health issues, including restart loops and repeated failures, and notify me when a safe remediation path is available. If it is non-destructive, apply the change proactively
+- The dashboard can identify container and VM health issues, including restart loops and repeated failures, and notify me when a safe remediation path is available. If the change is part of a user-defined list of "allowed actions," it can be applied automatically
 - The app can compare node and container state against expected configurations, including checking whether a container is pinned to the latest Ubuntu LTS release or whether a system is running an ARM-emulating VM
 - The system tracks inventory items such as tools, hardware, and consumables; it can add new parts, locate existing ones, and update quantities when items are used or purchased
   - NOTE: this requires an accurate and up-to-date inventory of everything and locations, which would be a one-time cost
@@ -58,7 +61,7 @@ I wrote the majority of this text myself, however I utilized AI to rephrase my e
 - The interface must remain functional behind a reverse proxy and continue to display the correct data when nodes or container counts change over time
 
 ## Visual Concepts
-I tried generating mockups using local models in [image-generation.ipynb](image-generation.ipynb), but this proved to be challenging, and text was always illegible. In my infinite wisdom, I spent the most time on this notebook instead of the actual app outline.
+I tried generating mockups using local models in [image-generation.ipynb](image-generation.ipynb), but this proved to be challenging, and text was always illegible. I got better results from Perplexity and whichever image-generation models it calls on the backend.
 
 I'm going for a Y2K aesthetic. Even though though the following examples may differ greatly in style, I imagine the final app will look like a combination of them. If I can't balance functionality with design, then I'd prefer a utilitarian approach that prioritizes density.
 
