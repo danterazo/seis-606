@@ -20,6 +20,7 @@
 
     # first used in hw2
     diffusers = "*"
+    optimum-quanto = "*"
 
 
 [[tool.poetry.source]]
