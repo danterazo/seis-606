@@ -2,6 +2,7 @@
   "git.detectSubmodules": false,
   "python.analysis.extraPaths": [
     "${workspaceFolder}/assignments",
-    "${workspaceFolder}/assignments/hw1"
+    "${workspaceFolder}/assignments/hw1",
+    "${workspaceFolder}/assignments/hw2"
   ]
 }
