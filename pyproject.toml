@@ -16,6 +16,7 @@
     pylance = "*"
     ruff = "*"
     torch = { version = "*", source = "torch-cuda" } # torch w/ GPU acceleration
+    dotenv = "*"
 
     # first used in hw2
     # ...
