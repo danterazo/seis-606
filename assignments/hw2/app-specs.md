@@ -1,28 +1,63 @@
 # SEIS 606 HW2: App Specs
 ## Natural Language Homelab & Inventory Management
-I decided to pick a mix of my first two ideas: the NLP Homelab Management dashboard that can _also_ manage my inventory of parts. This project could probably just be a CLI, but I want to create something visually appealing and easy to maintain / expand. It will serve as a one-stop-shop for my many machines and containers, as well as other relevant projects.
+I decided to pick a mix of my first two ideas: the NLP Homelab Management dashboard that can _also_ manage my inventory of parts. This project could probably just be a CLI, but I want to create something visually appealing and easy to maintain / expand. It will serve as a one-stop-shop for my many machines and containers, as well as other relevant projects. Given the amount of tinkering I do with my machines, I consider the inventory feature relevant and not just tacking on a separate app.
 
-## Objective
+I wrote the majority of this text myself, however I utilized AI to rephrase my example queries from [HW1](../hw1/app-ideas.md) as statements.
+
+## Objectives
 <!-- OBJECTIVE: the failure mode, not the feature description -->
-
+- Prevent the classic "I forgot where I put that part" scenario
+- Current debugging requires cross-referencing many different CLIs and tools, which is time-consuming and error-prone
+- Some errors can go unnoticed for a while if not manually checked
+- The app must reduce operational drift by aggregating my networked nodes, containers, and inventory into one view instead of requiring separate tools for each system
+- The app must minimize the risk of destructive mistakes by requiring confirmation before running dangerous actions and by validating the affected systems before making changes
 
 ## Behavior
 <!-- BEHAVIOR: observable outcomes only, no tech details -->
-
+- Answer questions using available MCPs and context; given "which VMs are emulating ARM CPUs," it should provide a list of relevant VMs
+- The system queries networked MCPs and summarizes each node in a single dashboard, including status, architecture, container health, and connection quality
+- The app can create LXC containers from the appropriate template, restore a container from a chosen backup, and prune unnecessary backups while preserving the most recent ones
+- The dashboard can identify container and VM health issues, including restart loops and repeated failures, and notify me when a safe remediation path is available. If it is non-destructive, apply the change proactively
+- The app can compare node and container state against expected configurations, including checking whether a container is pinned to the latest Ubuntu LTS release or whether a system is running an ARM-emulating VM
+- The system tracks inventory items such as tools, hardware, and consumables; it can add new parts, locate existing ones, and update quantities when items are used or purchased
+  - NOTE: this requires an accurate and up-to-date inventory of everything and locations, which would be a one-time cost
+- Inventory records support common operations such as decrementing or incrementing stock counts, appending items to shopping lists via the TickTick MCP, and searching by category, size, or location
+- The app supports natural-language management tasks such as LXC rollback, backup cleanup, and other Proxmox actions through the relevant MCP interfaces without exposing raw terminal commands to the user
+- Don't perform any dangerous/destructive commands without user input
+- Minimal hallucination; if it is unsure about something, it should not make assumptions. If it could benefit from an MCP that exists on the web but isn't implemented locally, it will suggest I set it up
+- Allow users to attach items to nodes themselves, creating a record of which parts are used where, not just what's available for use
 
 ## Constraints
 <!-- CONSTRAINTS: non-negotiables regardless of implementation -->
-
+- Keep commands atomic, especially configs
+- Avoid making assumptions, and double-check existing context and available MCPs before taking any action
+- Prefer existing tools (e.g. ZFS MCP) over implementing new ones from scratch
+- Ensure all actions are reversible or have a clear rollback procedure
+- Provide cell blocks that can be copied & pasted all at once
+- Display information about existing nodes in a concise and interpretable format
+- Ensure that dynamic elements are programmatically defined, e.g. automatically retrieving IPs instead of hardcoding them
+- Don't log secrets to the UI
+- Must work behind a reverse proxy (Caddy)
+- The UI must be responsive
+- The frontend should use Streamlit as the default implementation unless a custom HTML/CSS layer is required for a specific design need; in either case, the interface must stay maintainable and practical rather than over-engineered
+- The UI must be "sick". It must be the kind of design that makes people go "hell yeah" when they see it. Or at the very least, it should be practical
+  - Extremely subjective, but I'll know it when I see it
+- Discord webhook for actions
+  - Proxmox supports this natively, but other MCPs and tools might need custom integration
+- The app should prioritize existing MCP implementations such as Proxmox, ZFS, Thunderbird, and Klipper before adding bespoke tooling for the same problem
 
 ## Verification
 <!-- VERIFICATION: testable criteria, not subjective ones -->
-
-## Functionality
-### Backend
-The app will query MCPs throughout my network and provide a summary of each node. Additionally, it will allow me to perform management tasks (e.g. LXC rollback) using natural language as a proxy for Proxmox commands. In my research, it seems there are already ZFS, Proxmox, Thunderbird (email alerts), and Klipper (rooted 3D printer, also technically a server now) MCPs, but if I need functionality that doesn't already exist, I'll consider that part of this project.
-
-### Frontend
-I want to use Streamlit, and if my designs are simply too complex, then I'll find an HTML template out there or generate one myself. This is where I feel less confident, as I haven't been a frontend engineer since 2019. Additionally, though they are cool, I find myself very self-conscious about letting AI dictate design elements. I suppose that defeats the purpose of this class, so I'll get over it.
+- Ditto on the "Which VMs are emulating ARM CPUs" question; for verification, confirm that the system correctly lists all relevant VMs and their architectures
+- The system should proactively check the status of awry containers and alert me if intervention is needed. This could be achieved by manually breaking something
+- If a node is offline, check its connection often (i.e. attempt to reconnect) and display its status in the UI
+- Given "delete all but the latest backup for Ubuntu Stonking Stingray" containers should only remove backups for said containers. It must check each container's version with a quick `pct enter <container_id>` instead of assuming
+- The app must correctly summarize each node using data from the configured MCPs, including status, health, architecture, and connection metrics, and render that summary in the frontend without manually hardcoded values
+- The app must be able to perform a natural-language management action such as LXC rollback or backup cleanup through the relevant backend integration and report success or failure without modifying unrelated systems
+- The inventory feature must correctly update counts for items such as computer fans, allen wrenches, screws, and zip ties when the user adds, uses, or purchases them
+- Inventory queries must return the correct item set and quantity totals when searching by type, size, or location; for example, the system should show whether a specific screw or wrench is present before suggesting a purchase
+- The app must distinguish between container-management actions and inventory actions so that a backup, restore, or version pin does not affect unrelated records
+- The interface must remain functional behind a reverse proxy and continue to display the correct data when nodes or container counts change over time
 
 ## Visual Concepts
 I tried generating mockups using local models in [image-generation.ipynb](image-generation.ipynb), but this proved to be challenging, and text was always illegible. In my infinite wisdom, I spent the most time on this notebook instead of the actual app outline.
