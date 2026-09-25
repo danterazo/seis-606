@@ -21,6 +21,7 @@
     # first used in hw2
     diffusers = "*"
     optimum-quanto = "*"
+    bitsandbytes = "*"
 
 
 [[tool.poetry.source]]
