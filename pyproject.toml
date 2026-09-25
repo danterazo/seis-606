@@ -19,7 +19,7 @@
     dotenv = "*"
 
     # first used in hw2
-    # ...
+    diffusers = "*"
 
 
 [[tool.poetry.source]]
