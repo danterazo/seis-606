@@ -16,17 +16,6 @@
     pylance = "*"
     ruff = "*"
     torch = { version = "*", source = "torch-cuda" } # torch w/ GPU acceleration
-    transformers = "*"
-    pandas = "*"
-    numpy = "*"
-    scikit-learn = "*"
-    tqdm = "*"
-    pillow = "*"
-    openpyxl = "*"
-    imbalanced-learn = "*"
-    tabulate = "*"
-    accelerate = "*"
-    huggingface_hub = "*"
 
     # first used in hw2
     # ...
