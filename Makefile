@@ -38,28 +38,4 @@ smi:
 	watch -n 1 -d nvidia-smi
 
 identify-pylance-paths:
-	@mkdir -p .vscode
-	@tmp="$$(mktemp)"; \
-	{ \
-		echo '$${workspaceFolder}/assignments'; \
-		find assignments -mindepth 1 -maxdepth 1 -type d | sort | sed 's#^#$${workspaceFolder}/#'; \
-	} > "$$tmp"; \
-	count="$$(wc -l < "$$tmp")"; \
-	{ \
-		echo '{'; \
-		echo '  "git.detectSubmodules": false,'; \
-		echo '  "python.analysis.extraPaths": ['; \
-		i=0; \
-		while IFS= read -r p; do \
-			i="$$((i + 1))"; \
-			if [[ "$$i" -lt "$$count" ]]; then \
-				printf '    "%s",\n' "$$p"; \
-			else \
-				printf '    "%s"\n' "$$p"; \
-			fi; \
-		done < "$$tmp"; \
-		echo '  ]'; \
-		echo '}'; \
-	} > .vscode/settings.json; \
-	rm -f "$$tmp"; \
-	echo -e 'Wrote ${GREEN}.vscode/settings.json${NOCOLOR} with assignment import roots.'
+	@bash scripts/identify-pylance-paths.sh
