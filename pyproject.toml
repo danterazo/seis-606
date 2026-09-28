@@ -26,6 +26,7 @@
     # first used in hw3
     specify-cli = "*"
     pytest = "*"
+    streamlit = "*"
 
 
 [[tool.poetry.source]]
