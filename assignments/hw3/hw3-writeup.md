@@ -44,6 +44,8 @@ This step took about 15 minutes.
 /speckit-implement
 ```
 
+TODO: time
+
 
 ## Converge
 ```bash
