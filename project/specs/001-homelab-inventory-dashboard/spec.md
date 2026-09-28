@@ -8,6 +8,16 @@
 
 **Input**: User description: Create a visually appealing, responsive homelab and inventory management application. The MVP is a dashboard that aggregates system status from all Proxmox nodes, with mock inventory data available for later inventory workflows.
 
+## Clarifications
+
+### Session 2026-09-27
+
+- Q: Should the MVP use live Proxmox integration as its primary data source, with mock data available only for tests and demo mode? → A: Live Proxmox integration by default; labeled mock data for repeatable tests or demo mode.
+- Q: Should the dashboard refresh status automatically, in addition to offering a manual refresh action? → A: Automatic refresh every 30 seconds plus manual refresh.
+- Q: Should the dashboard connect to Proxmox using a dedicated read-only account or API token? → A: Dedicated read-only Proxmox API token.
+
+The dashboard MUST use live Proxmox status data by default when the configured integration is available. Mock status data MAY be used for repeatable tests or demo mode, but MUST be clearly labeled as mock data. Test setup MAY use dedicated test containers or virtual machines, provided it does not delete, modify, or disrupt existing cluster resources.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - View Homelab Overview (Priority: P1)
@@ -79,6 +89,9 @@ As a homelab operator, I want to know whether displayed information is current a
 - **FR-012**: The system MUST avoid exposing credentials, tokens, or other secrets in the dashboard or user-visible error messages.
 - **FR-013**: The dashboard MUST remain usable when the number of nodes or workloads changes between refreshes.
 - **FR-014**: The dashboard MUST remain usable on supported desktop and mobile viewport sizes and when accessed through a reverse proxy.
+- **FR-015**: The system MUST support verification with dedicated test containers or virtual machines without deleting, modifying, or disrupting existing cluster resources.
+- **FR-016**: The dashboard MUST request updated status automatically every 30 seconds and MUST provide a manual refresh action in addition to automatic refresh.
+- **FR-017**: The system MUST authenticate to Proxmox with a dedicated API token that has only the read permissions required for status retrieval and MUST NOT require or use write permissions.
 
 ### Out of Scope for This Feature
 
@@ -110,6 +123,10 @@ As a homelab operator, I want to know whether displayed information is current a
 
 - The operator is the authorized user for the configured homelab status sources.
 - At least one status source and its access configuration are available for live verification; mock data may be used for repeatable tests.
+- Live Proxmox integration is the default source when available; mock data is reserved for clearly labeled tests or demo mode.
+- Test resources are dedicated and disposable by explicit operator choice, and test setup does not alter existing cluster resources.
+- Automatic status refresh occurs every 30 seconds, while the operator can also request a manual refresh.
+- Proxmox access uses a dedicated read-only API token managed by the deployment environment.
 - Status sources provide node identity, workload identity and type, state, and timestamps or enough information to determine freshness. Missing fields remain unknown.
 - A refresh checks current status but does not perform remediation or any other state-changing action.
 - Inventory management is a later feature and will have its own data model, requirements, and acceptance tests.
