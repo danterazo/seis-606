@@ -1,2 +1,9 @@
 # WSL2
 *:Zone.Identifier
+
+# Compiled
+*.pyc
+*.pyo
+*.pyd
+__pycache__/
+*.so
