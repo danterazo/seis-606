@@ -1,113 +1,116 @@
-# Implementation Plan: [FEATURE]
+# Implementation Plan: Homelab Status Dashboard
 
-**Branch**: `[###-feature-name]` | **Date**: [DATE] | **Spec**: [link]
+**Branch**: `001-homelab-inventory-dashboard` | **Date**: 2026-09-27 | **Spec**: [spec.md](spec.md)
 
-**Input**: Feature specification from `/specs/[###-feature-name]/spec.md`
-
-**Note**: This template is filled in by the `/speckit-plan` command; its definition describes the execution workflow.
+**Input**: Feature specification from `/specs/001-homelab-inventory-dashboard/spec.md`
 
 ## Summary
 
-[Extract from feature spec: primary requirement + technical approach from research]
+Build a read-only Streamlit dashboard that aggregates current Proxmox node and
+workload status through a source adapter. Live Proxmox data, authenticated with
+a dedicated read-only API token, is the default source; deterministic mock data
+is available only for tests and explicitly labeled demo mode. The adapter keeps
+source details out of the UI and preserves unavailable fields rather than
+inferring them. The dashboard refreshes automatically every 30 seconds and also
+supports a manual refresh.
 
 ## Technical Context
 
-<!--
-  ACTION REQUIRED: Replace the content in this section with the technical details
-  for the project. The structure here is presented in advisory capacity to guide
-  the iteration process.
--->
+**Language/Version**: Python 3.14+
 
-**Language/Version**: [e.g., Python 3.11, Swift 5.9, Rust 1.75 or NEEDS CLARIFICATION]
+**Primary Dependencies**: Streamlit for UI, `proxmoxer` for the Proxmox API,
+Pydantic for validated domain models, `pytest` for tests, and `ruff` for linting
+and formatting. A small refresh helper may use Streamlit's supported rerun
+mechanism; no client-side framework is required.
 
-**Primary Dependencies**: [e.g., FastAPI, UIKit, LLVM or NEEDS CLARIFICATION]
+**Storage**: No application database for the MVP. Configuration and secrets come
+from deployment environment variables or Streamlit secrets; session state holds
+the latest observations only.
 
-**Storage**: [if applicable, e.g., PostgreSQL, CoreData, files or N/A]
+**Testing**: `pytest` unit tests for normalization and state classification,
+contract tests for source adapters using fixtures, and Streamlit smoke tests for
+empty, loading, changing, offline, and mock-labeled states.
 
-**Testing**: [e.g., pytest, XCTest, cargo test or NEEDS CLARIFICATION]
+**Target Platform**: Linux server running Streamlit behind Caddy or another
+reverse proxy; supported desktop and mobile browser viewports.
 
-**Target Platform**: [e.g., Linux server, iOS 15+, WASM or NEEDS CLARIFICATION]
+**Project Type**: Read-only Python web application.
 
-**Project Type**: [e.g., library/cli/web-service/mobile-app/compiler/desktop-app or NEEDS CLARIFICATION]
+**Performance Goals**: Render a representative environment of up to 20 nodes and
+200 workloads within the dashboard's normal refresh interaction; complete a
+refresh and expose offline status within 10 seconds after the check completes.
 
-**Performance Goals**: [domain-specific, e.g., 1000 req/s, 10k lines/sec, 60 fps or NEEDS CLARIFICATION]
+**Constraints**: Read-only integration only; no mutation endpoints or controls.
+Never display or log token values. Preserve node identity and last successful
+timestamp during failures. Unknown, pending, timed-out, and unfamiliar source
+states must remain distinguishable. Automatic refresh is every 30 seconds plus a
+manual action. The app must work under a reverse-proxy path.
 
-**Constraints**: [domain-specific, e.g., <200ms p95, <100MB memory, offline-capable or NEEDS CLARIFICATION]
-
-**Scale/Scope**: [domain-specific, e.g., 10k users, 1M LOC, 50 screens or NEEDS CLARIFICATION]
+**Scale/Scope**: One operator-facing dashboard, one live Proxmox source, one
+fixture source, node/workload overview, health findings, ARM VM filtering, and
+freshness/connection visibility. Inventory management and system mutations are
+out of scope.
 
 ## Constitution Check
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-[Gates determined based on constitution file]
+| Principle | Gate | Status |
+|---|---|---|
+| I. Safe and Reversible Operations | Dashboard exposes status reads only; no mutation paths are planned. | PASS |
+| II. MCP-First, Evidence-Based Automation | Status values originate from the configured source adapter or clearly labeled fixtures; missing values remain unknown. | PASS |
+| III. Atomic and Auditable Changes | No state-changing workflow exists in this MVP, so Discord mutation auditing is not applicable. | PASS |
+| IV. Dynamic, Testable User Experience | UI renders adapter results dynamically and tests empty, changing, offline, incomplete, and mobile/reverse-proxy behavior. | PASS |
+| V. Maintainable, Focused Architecture | Streamlit is the default, with small domain, source, and presentation modules. | PASS |
+
+No constitution violations require an exception.
 
 ## Project Structure
 
 ### Documentation (this feature)
 
 ```text
-specs/[###-feature]/
-├── plan.md              # This file (/speckit-plan command output)
-├── research.md          # Phase 0 output (/speckit-plan command)
-├── data-model.md        # Phase 1 output (/speckit-plan command)
-├── quickstart.md        # Phase 1 output (/speckit-plan command)
-├── contracts/           # Phase 1 output (/speckit-plan command)
-└── tasks.md             # Phase 2 output (/speckit-tasks command - NOT created by /speckit-plan)
+specs/001-homelab-inventory-dashboard/
+├── plan.md
+├── research.md
+├── data-model.md
+├── quickstart.md
+├── contracts/
+│   └── status-source.md
+└── tasks.md                 # Created by /speckit-tasks
 ```
 
 ### Source Code (repository root)
-<!--
-  ACTION REQUIRED: Replace the placeholder tree below with the concrete layout
-  for this feature. Delete unused options and expand the chosen structure with
-  real paths (e.g., apps/admin, packages/something). The delivered plan must
-  not include Option labels.
--->
 
 ```text
-# [REMOVE IF UNUSED] Option 1: Single project (DEFAULT)
-src/
-├── models/
-├── services/
-├── cli/
-└── lib/
-
-tests/
-├── contract/
-├── integration/
-└── unit/
-
-# [REMOVE IF UNUSED] Option 2: Web application (when "frontend" + "backend" detected)
-backend/
-├── src/
-│   ├── models/
+.
+├── app.py
+├── homelab_dashboard/
+│   ├── domain.py              # Node, Workload, observations, findings, states
+│   ├── config.py              # environment/secrets configuration and validation
+│   ├── sources/
+│   │   ├── base.py            # source protocol and normalized result
+│   │   ├── proxmox.py         # read-only Proxmox API adapter
+│   │   └── fixtures.py        # deterministic, explicitly mock source
 │   ├── services/
-│   └── api/
+│   │   ├── refresh.py         # refresh orchestration and freshness handling
+│   │   └── health.py          # source-state normalization and findings
+│   └── ui/
+│       ├── dashboard.py       # page composition and refresh controls
+│       └── components.py      # reusable node/workload/status components
 └── tests/
-
-frontend/
-├── src/
-│   ├── components/
-│   ├── pages/
-│   └── services/
-└── tests/
-
-# [REMOVE IF UNUSED] Option 3: Mobile + API (when "iOS/Android" detected)
-api/
-└── [same as backend above]
-
-ios/ or android/
-└── [platform-specific structure: feature modules, UI flows, platform tests]
+    ├── unit/
+    ├── contract/
+    └── integration/
 ```
 
-**Structure Decision**: [Document the selected structure and reference the real
-directories captured above]
+**Structure Decision**: Use a single Streamlit application rooted in the
+Speckit project directory (`project/` in the coursework workspace)
+with domain models independent of the UI and source adapters behind a narrow
+protocol. This keeps live Proxmox, fixtures, and a future MCP-backed source
+interchangeable while keeping the MVP small and testable. The `project/` source
+tree does not exist yet and will be created during implementation.
 
 ## Complexity Tracking
 
-> **Fill ONLY if Constitution Check has violations that must be justified**
-
-| Violation | Why Needed | Simpler Alternative Rejected Because |
-|-----------|------------|-------------------------------------|
-| [e.g., 4th project] | [current need] | [why 3 projects insufficient] |
-| [e.g., Repository pattern] | [specific problem] | [why direct DB access insufficient] |
+No constitution violations or compensating complexity are planned.
