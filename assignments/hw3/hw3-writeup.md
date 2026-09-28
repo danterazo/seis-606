@@ -21,11 +21,11 @@ And then I copied content from HW2 into this new directory. The plan is to keep 
 ```
 
 
-## Clarify (optional)
+## Clarify
 ```bash
 /speckit-clarify
 ```
-
+This step took about 15 minutes.
 
 ## Plan
 ```bash
