@@ -45,7 +45,7 @@ This step took about 15 minutes.
 ```
 
 
-## Converge (optional)
+## Converge
 ```bash
 /speckit-converge
 ```
