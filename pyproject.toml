@@ -22,6 +22,9 @@
     diffusers = "*"
     optimum-quanto = "*"
     bitsandbytes = "*"
+    
+    # first used in hw3
+    specify-cli = "*"
 
 
 [[tool.poetry.source]]
