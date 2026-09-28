@@ -44,13 +44,15 @@ This step took about 15 minutes.
 /speckit-implement
 ```
 
-TODO: time
+This step, run by `MAI-Code-1.1-Flash` via Copilot, took 5 minutes and 13 seconds.
 
 
 ## Converge
 ```bash
 /speckit-converge
 ```
+
+4m10s
 
 
 ## Environment / Tooling Challenges

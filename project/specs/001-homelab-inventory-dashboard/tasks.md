@@ -14,10 +14,10 @@ description: "Actionable implementation tasks for the Homelab Status Dashboard"
 
 **Purpose**: Establish the Python application structure and development tooling.
 
-- [ ] T001 Create the application and test directory structure from `project/app.py`, `project/homelab_dashboard/`, and `project/tests/`
-- [ ] T002 Add Streamlit, proxmoxer, Pydantic, pytest, and ruff dependencies and project commands in `pyproject.toml`
-- [ ] T003 [P] Configure ruff linting and formatting rules in `pyproject.toml`
-- [ ] T004 [P] Add safe environment and Streamlit configuration examples in `project/.streamlit/config.toml.example` and `project/.env.example`
+- [x] T001 Create the application and test directory structure from `project/app.py`, `project/homelab_dashboard/`, and `project/tests/`
+- [x] T002 Add Streamlit, proxmoxer, Pydantic, pytest, and ruff dependencies and project commands in `pyproject.toml`
+- [x] T003 [P] Configure ruff linting and formatting rules in `pyproject.toml`
+- [x] T004 [P] Add safe environment and Streamlit configuration examples in `project/.streamlit/config.toml.example` and `project/.env.example`
 
 ---
 
@@ -27,13 +27,13 @@ description: "Actionable implementation tasks for the Homelab Status Dashboard"
 
 **Checkpoint**: Foundation ready; user story implementation can proceed in priority order.
 
-- [ ] T005 [P] Define validated Node, Workload, StatusObservation, HealthFinding, and RefreshSnapshot models in `project/homelab_dashboard/domain.py`
-- [ ] T006 [P] Define source protocol, normalized result, safe source error, and connection-state types in `project/homelab_dashboard/sources/base.py`
-- [ ] T007 [P] Implement deployment configuration loading and validation for `HOMELAB_STATUS_SOURCE`, Proxmox URL, token ID, token secret, TLS verification, and timeout in `project/homelab_dashboard/config.py`
-- [ ] T008 [P] Implement state classification and evidence-preserving health finding helpers in `project/homelab_dashboard/services/health.py`
-- [ ] T009 Implement refresh orchestration, per-node freshness handling, failed-attempt identity retention, current-node replacement, and one in-flight refresh per session in `project/homelab_dashboard/services/refresh.py`
-- [ ] T010 [P] Add domain and source contract fixtures for healthy, degraded, failed, restarting, offline, pending, timed-out, incomplete, unknown, duplicate-name, ARM, and empty scenarios in `project/tests/fixtures/status_cases.py`
-- [ ] T011 Add shared test configuration and factories for timezone-aware observations and normalized snapshots in `project/tests/conftest.py`
+- [x] T005 [P] Define validated Node, Workload, StatusObservation, HealthFinding, and RefreshSnapshot models in `project/homelab_dashboard/domain.py`
+- [x] T006 [P] Define source protocol, normalized result, safe source error, and connection-state types in `project/homelab_dashboard/sources/base.py`
+- [x] T007 [P] Implement deployment configuration loading and validation for `HOMELAB_STATUS_SOURCE`, Proxmox URL, token ID, token secret, TLS verification, and timeout in `project/homelab_dashboard/config.py`
+- [x] T008 [P] Implement state classification and evidence-preserving health finding helpers in `project/homelab_dashboard/services/health.py`
+- [x] T009 Implement refresh orchestration, per-node freshness handling, failed-attempt identity retention, current-node replacement, and one in-flight refresh per session in `project/homelab_dashboard/services/refresh.py`
+- [x] T010 [P] Add domain and source contract fixtures for healthy, degraded, failed, restarting, offline, pending, timed-out, incomplete, unknown, duplicate-name, ARM, and empty scenarios in `project/tests/fixtures/status_cases.py`
+- [x] T011 Add shared test configuration and factories for timezone-aware observations and normalized snapshots in `project/tests/conftest.py`
 
 ---
 
@@ -45,16 +45,16 @@ description: "Actionable implementation tasks for the Homelab Status Dashboard"
 
 ### Tests for User Story 1
 
-- [ ] T012 [P] [US1] Add unit tests for node and workload normalization, derived counts, duplicate workload names by node, and explicit empty versus loading states in `project/tests/unit/test_domain.py`
-- [ ] T013 [P] [US1] Add fixture-source contract tests for dynamic multi-node snapshots and mock-data labeling in `project/tests/contract/test_fixtures_source.py`
-- [ ] T014 [P] [US1] Add Streamlit smoke tests for multi-node, changing-count, empty, and loading dashboard states in `project/tests/integration/test_dashboard_overview.py`
+- [x] T012 [P] [US1] Add unit tests for node and workload normalization, derived counts, duplicate workload names by node, and explicit empty versus loading states in `project/tests/unit/test_domain.py`
+- [x] T013 [P] [US1] Add fixture-source contract tests for dynamic multi-node snapshots and mock-data labeling in `project/tests/contract/test_fixtures_source.py`
+- [x] T014 [P] [US1] Add Streamlit smoke tests for multi-node, changing-count, empty, and loading dashboard states in `project/tests/integration/test_dashboard_overview.py`
 
 ### Implementation for User Story 1
 
-- [ ] T015 [P] [US1] Implement deterministic, explicitly labeled fixture snapshots and scenario selection in `project/homelab_dashboard/sources/fixtures.py`
-- [ ] T016 [US1] Implement the dashboard page composition with source label, refresh state, node summaries, and empty/loading handling in `project/homelab_dashboard/ui/dashboard.py`
-- [ ] T017 [P] [US1] Implement reusable node, workload-count, health-summary, connection, and freshness components in `project/homelab_dashboard/ui/components.py`
-- [ ] T018 [US1] Wire configuration, source selection, refresh orchestration, and dashboard rendering from `project/app.py`
+- [x] T015 [P] [US1] Implement deterministic, explicitly labeled fixture snapshots and scenario selection in `project/homelab_dashboard/sources/fixtures.py`
+- [x] T016 [US1] Implement the dashboard page composition with source label, refresh state, node summaries, and empty/loading handling in `project/homelab_dashboard/ui/dashboard.py`
+- [x] T017 [P] [US1] Implement reusable node, workload-count, health-summary, connection, and freshness components in `project/homelab_dashboard/ui/components.py`
+- [x] T018 [US1] Wire configuration, source selection, refresh orchestration, and dashboard rendering from `project/app.py`
 
 **Checkpoint**: User Story 1 is independently usable in labeled mock mode and renders current dynamic node data without mutation controls.
 
@@ -144,3 +144,16 @@ description: "Actionable implementation tasks for the Homelab Status Dashboard"
 2. Add workload findings and ARM filtering as a second increment without changing the source boundary.
 3. Add live Proxmox connectivity, freshness/error states, and automatic refresh as the third increment.
 4. Finish with secret-safety, responsive/reverse-proxy checks, and quickstart validation.
+
+## Phase 7: Convergence
+
+- [ ] T038 CRITICAL Remove the fabricated node snapshot and source-label heuristic from `project/app.py`; show "Live Proxmox" only for data returned by the configured live source per Constitution II, FR-001, and FR-003 (contradicts)
+- [ ] T039 CRITICAL Preserve an absent restart count as unknown instead of defaulting it to zero, and keep health decisions evidence-based per Constitution II, FR-010, and US2/AC1 (contradicts)
+- [ ] T040 Implement validated source configuration, a read-only Proxmox adapter using a dedicated read-only API token, and a deterministic fixture source; use live Proxmox when configured and require explicit fixture/demo selection per FR-017 and the plan's source decision (missing)
+- [ ] T041 Render the source-driven node overview and workload inspection in Streamlit, including required node summaries, health findings and reported reasons, duplicate-name identity, ARM VM filtering, and empty/loading states per FR-001-FR-007, US1, and US2 (partial)
+- [ ] T042 Replace unvalidated domain dataclasses with the plan's validated Pydantic models while preserving unknown and unavailable values per the plan's domain-model decision and T005 (partial)
+- [ ] T043 Implement refresh orchestration with manual refresh, 30-second automatic refresh, per-node connection and freshness state, offline identity retention, timeout/incomplete handling, recovery, and replacement of removed nodes per FR-008-FR-011, FR-016, and US3 (missing)
+- [ ] T044 Add tests proving credentials and raw responses cannot reach user-visible errors or output, status calls remain read-only, and live verification uses dedicated test resources without disrupting existing resources per FR-012, FR-015, SC-007, and Constitution II (partial)
+- [ ] T045 Support configurable reverse-proxy base paths and responsive desktop/mobile rendering, and document live/mock startup, token configuration, and operational limitations in `project/README.md` per FR-014 and the deployment plan (missing)
+- [ ] T046 Add acceptance coverage for 20 nodes and 200 workloads rendering within 30 seconds, then run the complete quickstart test and lint/format validation per SC-001, the plan's performance goal, and T036 (missing)
+- [ ] T047 Review the unused `Workload.tags` field and remove it or document a requirement that justifies it (unrequested)
