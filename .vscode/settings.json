@@ -1,8 +1,10 @@
 {
   "git.detectSubmodules": false,
   "python.analysis.extraPaths": [
+    "${workspaceFolder}/project",
     "${workspaceFolder}/assignments",
     "${workspaceFolder}/assignments/hw1",
-    "${workspaceFolder}/assignments/hw2"
+    "${workspaceFolder}/assignments/hw2",
+    "${workspaceFolder}/assignments/hw3"
   ]
 }

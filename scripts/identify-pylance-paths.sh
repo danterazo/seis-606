@@ -12,7 +12,10 @@ trap 'sudo chattr +i "$SETTINGS_FILE"' EXIT
 
 
 : 'FIND ASSIGNMENT PATHS'
-PATHS=('${workspaceFolder}/assignments')
+PATHS=(
+    '${workspaceFolder}/project'
+    '${workspaceFolder}/assignments'
+)
 while IFS= read -r ASSIGNMENT_DIR; do
     PATHS+=("\${workspaceFolder}/${ASSIGNMENT_DIR}")
 done < <(find assignments -mindepth 1 -maxdepth 1 -type d | sort)
@@ -35,7 +38,7 @@ done < <(find assignments -mindepth 1 -maxdepth 1 -type d | sort)
 } > "$SETTINGS_FILE"
 
 
-: : 'RESTORE IMMUTABILITY'
+: 'RESTORE IMMUTABILITY'
 sudo chattr +i "$SETTINGS_FILE"
 trap - EXIT
 echo 'Wrote .vscode/settings.json with assignment roots.'
