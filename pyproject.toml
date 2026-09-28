@@ -25,6 +25,7 @@
     
     # first used in hw3
     specify-cli = "*"
+    pytest = "*"
 
 
 [[tool.poetry.source]]
