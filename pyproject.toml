@@ -14,7 +14,6 @@
     jupyter = "*"
     nbconvert = "*"
     pylance = "*"
-    ruff = "*"
     torch = { version = "*", source = "torch-cuda" } # torch w/ GPU acceleration
     dotenv = "*"
 
@@ -25,8 +24,13 @@
     
     # first used in hw3
     specify-cli = "*"
-    pytest = "*"
-    streamlit = "*"
+
+    # project
+    proxmoxer = ">=2.0.0"
+    pydantic = ">=2.9.0"
+    pytest = ">=8.0.0"
+    ruff = ">=0.6.0"
+    streamlit = ">=1.39.0"
 
 
 [[tool.poetry.source]]
