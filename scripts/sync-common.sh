@@ -18,7 +18,7 @@ echo -e "\n\033[1mSyncing\033[0m \033[1;36m$SRC\033[0m \033[1;33m->\033[0m \033[
 
 # sync directories
 rsync -avh --mkpath .vscode/settings.json "$DST/.vscode/"
-rsync -avh --mkpath scripts/ "$DST/"
+rsync -avh --mkpath scripts "$DST/"
 
 # sync files
 rsync -avh .envrc Makefile .editorconfig "$DST/"
