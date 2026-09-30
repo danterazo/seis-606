@@ -10,6 +10,7 @@ deps:
 	poetry lock
 	poetry update
 	poetry install
+# 	uv tool upgrade --all
 
 verify-gpu:
 	poetry run python -c "import llama_cpp.llama_cpp as lib; print('supports_gpu_offload =', bool(lib.llama_supports_gpu_offload()))"
