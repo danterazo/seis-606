@@ -1,5 +1,5 @@
 # SEIS 606 HW3: Task, Plan, and Implement
-## Reflections & Next Iteration
+## Reflections
 This process was quite interesting, as I had never made use of slash commands in Copilot before, nor had I tried the specify toolkit until now. I was impressed with how seamless and painless the process was.
 
 I'm concerned at the speed at which AI works compared to the speed at which I understand what it's doing. It feels easy to get carried away without fully understanding each step, and I'm guilty of it here. I'm using AI in a novel way compared to how I normally apply it to work and personal projects. Generally, I have a deeper understanding of what's going on every step of the process, but there's an overwhelming amount of TODOs and documentation to review here. The best analogy I can think of is studying for a test — this feels like I'm getting all the answers, but I won't be prepared for any curveballs if the test were to ask about the specifics of this app. I'll build my understanding with time, of course.
@@ -10,6 +10,8 @@ Overall, this took me about an hour to complete. I spent some time overthinking 
 
 Finally, I'd like to note that I use *Espanso* for text shortcuts, and that includes the em-dashes you see above. They're considered a "tell" for AI-generated text, but I've been a fan of them for over a decade now. So to be clear: I wrote all of this text by hand and will continue to use em-dashes like normal with my handy `:--` $\rightarrow$ `—` shortcut. I'll let my commit history prove that my writing (and work in general) is iterative.
 
+### Addendum from Class
+The app might as well not exist. The web page is blank and despite the large amount of tokens Copilot used, it failed to generate anything tangible. I will be more careful about reviewing output in future iterations.
 
 ## Project Setup
 I first created a new directory for project files...
