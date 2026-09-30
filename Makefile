@@ -5,7 +5,7 @@ LLAMA_CUDACXX ?= /usr/local/cuda-13.1/bin/nvcc
 LLAMA_CMAKE_ARGS ?= -DGGML_CUDA=on -DCMAKE_CUDA_ARCHITECTURES=120
 
 deps:
-	@bash scripts/update-depedencies.sh
+	@bash scripts/update-dependencies.sh
 
 # alias
 update: deps
