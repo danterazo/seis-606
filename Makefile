@@ -21,7 +21,7 @@ fix:
 pull:
 	git pull
 	$(MAKE) protect-submodules
-	git submodule foreach --recursive 'git pull --ff-only'
+	git submodule foreach --recursive 'git switch main && git pull --ff-only origin main'
 
 protect-submodules:
 	git submodule update --init --recursive
