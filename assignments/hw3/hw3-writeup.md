@@ -8,6 +8,9 @@ To keep token usage low(er), I let Copilot decide which models to route my reque
 
 Overall, this took me about an hour to complete. I spent some time overthinking how to best install `specify-cli`, managing my development environment, and getting distracted. But the commands worked smoothly and I made sure to monitor them as they went so it didn't feel so "hands off". I noted the commands I ran below — they're in the same order I executed them.
 
+Finally, I'd like to note that I use *Espanso* for text shortcuts, and that includes the em-dashes you see above. They're considered a "tell" for AI-generated text, but I've been a fan of them for over a decade now. So to be clear: I wrote all of this text by hand and will continue to use em-dashes like normal with my handy `:--` $\rightarrow$ `—` shortcut. I'll let my commit history prove that my writing (and work in general) is iterative.
+
+
 ## Project Setup
 I first created a new directory for project files...
 
