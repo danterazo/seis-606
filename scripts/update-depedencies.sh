@@ -1,12 +1,8 @@
 #!/bin/bash
 set -euo pipefail
 
-# resolve and lock root dependencies
-poetry lock
+# resolve, update lock, and install python dependencies
 poetry update
-
-# install root env
-poetry install
 
 # install lab envs (without mutating lockfiles)
 # support both naming conventions: 765 uses "labs", 606 uses "assignments"
@@ -15,7 +11,7 @@ for d in labs assignments; do
   [ -d "$d" ] && LAB_DIRS+=("$d")
 done
 
-# conditional pull(s)
+# conditional select
 if [ "${#LAB_DIRS[@]}" -eq 0 ]; then
   echo -e "\033[1;33mNo \033[1;36mlabs/\033[1;33m or \033[1;36massignments/\033[1;33m directory found; skipping lab envs.\033[0m"
 else
