@@ -2,7 +2,7 @@ SHELL := /bin/bash
 
 # make multi-line blocks behave like scripts
 .ONESHELL:
-.SHELLFLAGS = -e
+.SHELLFLAGS = -ec
 
 # llama.cpp GPU build config
 LLAMA_CUDACXX ?= /usr/local/cuda-13.1/bin/nvcc
@@ -59,12 +59,4 @@ smi:
 	watch -n 1 -d nvidia-smi
 
 sync:
-	@SRC="$$(basename "$$(pwd)")"
-	case "$$SRC" in
-		seis-606-vibe) DST="../seis-765-ops" ;;
-		seis-765-ops)  DST="../seis-606-vibe" ;;
-		*) echo -e "\033[1;31mERROR:\033[0m Sync must be run from \033[1;36mseis-606-vibe\033[0m or \033[1;36mseis-765-ops\033[0m" >&2; exit 1 ;;
-	esac
-	echo -e "Syncing \033[1;36m$$SRC\033[0m -> \033[1;36m$$(basename "$$DST")\033[0m"
-	rsync -avh --mkpath .vscode/settings.json "$$DST/.vscode/"
-	rsync -avh .envrc Makefile "$$DST/"
+	@bash scripts/sync-common.sh
