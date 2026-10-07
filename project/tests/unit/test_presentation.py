@@ -66,8 +66,8 @@ def test_configured_memory_is_independent_of_live_hardware(tmp_path: Path) -> No
     payload = make_payload(nodes=[{"name": name, "address": None} for name in ("kex", "cerulean", "kveikur", "stranger")])
     descriptions = {node["name"]: node["memory_description"] for node in present_payload(payload=payload, image_dir=tmp_path)["nodes"]}
     assert descriptions == {
-        "kex": "DDR4 ECC RDIMM (configured)",
-        "cerulean": "DDR4 SODIMM - 1 x 32 GB (configured)",
-        "kveikur": "DDR4 ECC RDIMM (configured)",
+        "kex": "DDR4 ECC RDIMM - 8 x 32 GB",
+        "cerulean": "DDR4 SODIMM - 1 x 32 GB",
+        "kveikur": "DDR4 ECC RDIMM - 8 x 4 GB",
         "stranger": None,
     }

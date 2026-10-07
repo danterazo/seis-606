@@ -95,6 +95,22 @@ def test_expired_leases_are_filtered_even_when_the_cache_is_fresh() -> None:
     assert len(runner.calls) == 1
 
 
+def test_leases_are_grouped_lan_first_and_sorted_by_numeric_ip() -> None:
+    runner = FakeRunner()
+    addresses: List[str] = ["172.16.10.170", "192.168.20.30", "192.168.10.10", "172.16.0.2", "192.168.10.2"]
+    runner.stdout = "\n".join(f"0 aa:bb:cc:dd:ee:ff {address} device *" for address in addresses)
+    source = OpenWrtLeaseSource(target=SshTarget(host="router"), runner=runner)
+    leases = source.fetch()["leases"]
+    assert [lease["address"] for lease in leases] == ["192.168.10.2", "192.168.10.10", "192.168.20.30", "172.16.0.2", "172.16.10.170"]
+    assert [lease["network_group"] for lease in leases] == ["lan", "lan", "lan", "guest_iot", "guest_iot"]
+
+
+@pytest.mark.parametrize("address", ["192.168.0.1", "192.168.255.254", "172.16.0.1", "10.0.0.1", "192.169.0.1"])
+def test_network_groups_include_all_non_lan_devices_in_the_second_panel(address: str) -> None:
+    lease = parse_leases(text=f"0 aa:bb:cc:dd:ee:ff {address} device *")[0]
+    assert lease.to_payload()["network_group"] == ("lan" if address.startswith("192.168.") else "guest_iot")
+
+
 @pytest.mark.parametrize("error", [FileNotFoundError(), subprocess.TimeoutExpired(cmd="ssh", timeout=8)])
 def test_transport_errors_stay_local_to_the_devices_payload(error: Exception) -> None:
     def runner(command: Sequence[str], *, timeout: float, stdin: Optional[str] = None) -> "subprocess.CompletedProcess[str]":

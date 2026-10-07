@@ -5,11 +5,14 @@ import threading
 import time
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, Final, List, Optional, Tuple
 
 from homelab_dashboard.node_profiles import display_name_for
 from homelab_dashboard.sources.base import StatusSourceError
 from homelab_dashboard.sources.proxmox_ssh import SSH_OPTIONS, CommandRunner, SshTarget, explain_ssh_failure, run_command
+
+
+LAN_NETWORK: Final[ipaddress.IPv4Network] = ipaddress.IPv4Network("192.168.0.0/16")
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -25,8 +28,14 @@ class DhcpLease:
             "mac": self.mac.upper(),
             "hostname": self.hostname,
             "display_name": display_name_for(name=self.hostname) if self.hostname is not None else self.address,
+            "network_group": "lan" if ipaddress.IPv4Address(self.address) in LAN_NETWORK else "guest_iot",
             "expires_at": self.expires_at.isoformat(timespec="seconds") if self.expires_at is not None else None,
         }
+
+
+def lease_sort_key(lease: DhcpLease) -> Tuple[bool, int, str]:
+    address: ipaddress.IPv4Address = ipaddress.IPv4Address(lease.address)
+    return (address not in LAN_NETWORK, int(address), lease.mac)
 
 
 def parse_leases(*, text: str) -> Tuple[DhcpLease, ...]:
@@ -97,5 +106,5 @@ class OpenWrtLeaseSource:
                 "fetched_at": self._fetched_at.isoformat(timespec="seconds") if self._fetched_at is not None else None,
                 "stale": self._error is not None,
                 "error": self._error,
-                "leases": [lease.to_payload() for lease in self._leases if lease.expires_at is None or lease.expires_at > now],
+                "leases": [lease.to_payload() for lease in sorted(self._leases, key=lease_sort_key) if lease.expires_at is None or lease.expires_at > now],
             }

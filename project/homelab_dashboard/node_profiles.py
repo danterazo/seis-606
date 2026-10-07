@@ -4,7 +4,13 @@ from typing import Dict, Final, Optional, Tuple
 
 from homelab_dashboard.models import Hardware, HardwareSource
 
+# hardcode aliases
+HOSTNAME_ALIASES: Final[Dict[str, str]] = {
+    "ringom4-wifi": "ringo-m4",
+    "ringoa20": "ringo-a20",
+}
 
+# hardcode standardizations & display names
 DISPLAY_NAMES: Final[Dict[str, str]] = {
     "kex": "Kex",
     "cerulean": "Cerulean",
@@ -14,10 +20,6 @@ DISPLAY_NAMES: Final[Dict[str, str]] = {
     "suika": "\u3059\u3044\u304b",
     "ichigo": "\u3044\u3061\u3054",
     "saru": "\u3055\u308b",
-}
-HOSTNAME_ALIASES: Final[Dict[str, str]] = {
-    "ringom4-wifi": "ringo-m4",
-    "ringoa20": "ringo-a20",
 }
 
 
@@ -48,7 +50,7 @@ NODE_PROFILES: Final[Dict[str, NodeProfile]] = {
         rank=0,
         address="192.168.20.42",
         expected_cpu="Intel Xeon E5-1650 v4",
-        memory_description="DDR4 ECC RDIMM (configured)",
+        memory_description="DDR4 ECC RDIMM - 8 x 32 GB",
     ),
     "cerulean": NodeProfile(
         display_name=display_name_for(name="cerulean"),
@@ -56,7 +58,7 @@ NODE_PROFILES: Final[Dict[str, NodeProfile]] = {
         color="#0b7fc7",
         rank=1,
         expected_cpu="Intel N150",
-        memory_description="DDR4 SODIMM - 1 x 32 GB (configured)",
+        memory_description="DDR4 SODIMM - 1 x 32 GB",
     ),
     "kveikur": NodeProfile(
         display_name=display_name_for(name="kveikur"),
@@ -65,7 +67,7 @@ NODE_PROFILES: Final[Dict[str, NodeProfile]] = {
         rank=2,
         address="192.168.20.46",
         expected_cpu="AMD Ryzen Threadripper PRO 3945WX",
-        memory_description="DDR4 ECC RDIMM (configured)",
+        memory_description="DDR4 ECC RDIMM - 8 x 4 GB",
     ),
 }
 

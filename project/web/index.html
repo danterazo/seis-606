@@ -34,10 +34,15 @@
           <h2 id="nodes-heading"><span class="title-icon icon-server" aria-hidden="true"></span>Nodes</h2>
           <div class="node-list" id="node-list"></div>
         </aside>
-        <aside class="panel devices-panel" aria-labelledby="devices-heading">
-          <h2 id="devices-heading"><span class="title-icon icon-monitor" aria-hidden="true"></span>Devices</h2>
-          <p class="devices-status" id="devices-status" role="status" aria-live="polite">Loading DHCP leases…</p>
-          <ul class="device-list" id="device-list"></ul>
+        <aside class="panel devices-panel" aria-labelledby="lan-devices-heading">
+          <h2 id="lan-devices-heading"><span class="title-icon icon-monitor" aria-hidden="true"></span>LAN Devices</h2>
+          <p class="devices-status" id="lan-devices-status" role="status" aria-live="polite">Loading DHCP leases…</p>
+          <ul class="device-list" id="lan-device-list"></ul>
+        </aside>
+        <aside class="panel devices-panel" aria-labelledby="guest-iot-devices-heading">
+          <h2 id="guest-iot-devices-heading"><span class="title-icon icon-monitor" aria-hidden="true"></span>Guest / IoT</h2>
+          <p class="devices-status" id="guest-iot-devices-status" role="status" aria-live="polite">Loading DHCP leases…</p>
+          <ul class="device-list" id="guest-iot-device-list"></ul>
         </aside>
       </div>
 
@@ -65,6 +70,16 @@
       </aside>
     </main>
 
-    <footer class="footer"><span id="source-label">—</span><span id="refresh-note">Read-only</span></footer>
+    <footer class="footer">
+      <span id="source-label">—</span><span id="refresh-note">Read-only</span>
+      <div class="dns-corner"><pre class="dns-cow" role="img" aria-label="A cow says: It's always DNS"> _________________
+&lt; It's always DNS &gt;
+ -----------------
+        \   ^__^
+         \  (oo)\_______
+            (__)\       )\/\
+                ||----w |
+                ||     ||</pre></div>
+    </footer>
   </body>
 </html>

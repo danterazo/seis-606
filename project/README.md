@@ -48,13 +48,17 @@ DHCP devices; raw hostnames and IDs stay unchanged. The Japanese entries render 
 hiragana while preserving the `-M4` and `-A20` suffixes. Future aliases do not create
 placeholder nodes; they apply when a node or lease is discovered.
 
-The Devices section below Nodes reads dnsmasq's default `/tmp/dhcp.leases` over SSH
+The LAN Devices and Guest / IoT panels below Nodes read dnsmasq's default `/tmp/dhcp.leases` over SSH
 through `/api/devices`. It shows hostname, IPv4 address, and uppercase MAC addresses,
 without read timestamps or expiry dates. Expiry stays internal for filtering. It polls the
 local cache every 10 seconds; Refresh forces both sources independently. Router errors
 retain unexpired last-known leases with an explicit stale/error indication and do not
 block PVE status. Leases are not proof of current connectivity. IPv6, static-IP device
 discovery, and Wi-Fi association data are not implemented yet.
+
+Leases in `192.168.0.0/16` appear in LAN Devices; all other IPv4 leases appear in
+Guest / IoT. The API returns LAN first, then the remaining devices, sorting each
+group by numeric IP address. This is a display grouping, not a connectivity or VLAN claim.
 
 Before leases can load, verify the router's SSH host-key fingerprint against its
 console or another trusted channel, then trust it in this machine's `known_hosts` and

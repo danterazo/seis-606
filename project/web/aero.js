@@ -10,7 +10,7 @@
  * @typedef {"all" | "running" | "vm" | "container"} GuestFilter
  * @typedef {{ snapshot: Snapshot | null, error: string | null, selectedNode: string | null, filter: GuestFilter, query: string }} ViewState
  * @typedef {{ className?: string, text?: string, attrs?: Readonly<Record<string, string>> }} ElementOptions
- * @typedef {{ address: string, mac: string, hostname: string | null, display_name: string, expires_at: string | null }} DhcpLease
+ * @typedef {{ address: string, mac: string, hostname: string | null, display_name: string, network_group: "lan" | "guest_iot", expires_at: string | null }} DhcpLease
  * @typedef {{ source: string, router: string, fetched_at: string | null, stale: boolean, error: string | null, leases: DhcpLease[] }} DevicesSnapshot
  */
 
@@ -285,7 +285,7 @@ function renderOverview(nodes) {
     const { memory_used_bytes: used, memory_total_bytes: total } = node.resources;
     const memoryText = used !== null && total !== null ? formatMemoryPair({ used, total }) : formatRam(node.resources);
     const hardwareDetails = [
-      ...(node.memory_description ? [el("small", { className: "memory-description", text: node.memory_description, attrs: { title: "Configured memory inventory, not a live module reading" } })] : []),
+      ...(node.memory_description ? [el("small", { className: "memory-description", text: node.memory_description })] : []),
       ...(node.hardware.ecc_supported == null ? [] : [el("small", { className: "ecc-description", text: `ECC: ${node.hardware.ecc_supported ? "Reported by firmware" : "Not reported by firmware"}`, attrs: { title: "SMBIOS memory-array error correction; not proof that ECC is enabled" } })]),
     ];
     return el("button", { className: `tile tile-${node.state}`, attrs: { type: "button", style: colorStyle(node.color), "data-node": node.name, "aria-pressed": String(state.selectedNode === node.name) } }, [
@@ -441,20 +441,22 @@ function renderGuests(nodes) {
 }
 
 function renderDevices() {
-  const status = required("#devices-status");
   const error = devicesError ?? devicesSnapshot?.error;
   const stale = devicesSnapshot?.stale || error != null;
-  status.classList.toggle("is-stale", Boolean(stale));
-  status.textContent = error
-    ? `${error}${devicesSnapshot?.fetched_at ? " Showing last-known leases." : ""}`
-    : devicesSnapshot === null ? "Loading DHCP leases…" : `${devicesSnapshot.source} · ${devicesSnapshot.router}`;
-  const leases = devicesSnapshot?.leases ?? [];
-  const rows = leases.map((lease) => el("li", { className: "device" }, [
-    el("strong", { text: lease.display_name, attrs: { title: lease.hostname ?? "Unnamed device" } }),
-    el("span", { className: "device-address", text: lease.address }),
-    el("small", { text: lease.mac.toUpperCase() }),
-  ]));
-  required("#device-list").replaceChildren(...(rows.length ? rows : [el("li", { className: "empty", text: error ? "Leases unavailable." : devicesSnapshot === null ? "" : "No unexpired DHCPv4 leases." })]));
+  for (const { group, prefix } of [{ group: "lan", prefix: "lan" }, { group: "guest_iot", prefix: "guest-iot" }]) {
+    const status = required(`#${prefix}-devices-status`);
+    status.classList.toggle("is-stale", Boolean(stale));
+    status.textContent = error
+      ? `${error}${devicesSnapshot?.fetched_at ? " Showing last-known leases." : ""}`
+      : devicesSnapshot === null ? "Loading DHCP leases…" : `${devicesSnapshot.source} · ${devicesSnapshot.router}`;
+    const leases = (devicesSnapshot?.leases ?? []).filter((lease) => lease.network_group === group);
+    const rows = leases.map((lease) => el("li", { className: "device" }, [
+      el("strong", { text: lease.display_name, attrs: { title: lease.hostname ?? "Unnamed device" } }),
+      el("span", { className: "device-address", text: lease.address }),
+      el("small", { text: lease.mac.toUpperCase() }),
+    ]));
+    required(`#${prefix}-device-list`).replaceChildren(...(rows.length ? rows : [el("li", { className: "empty", text: error ? "Leases unavailable." : devicesSnapshot === null ? "" : "No unexpired DHCPv4 leases." })]));
+  }
 }
 
 /** @param {{ force?: boolean }} [options] */
