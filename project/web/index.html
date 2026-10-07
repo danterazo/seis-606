@@ -16,7 +16,7 @@
     <header class="topbar">
       <a class="brand" href="/" aria-label="Dante's Cluster home">
         <span class="brand-orb" aria-hidden="true"></span>
-        <span class="brand-text"><strong>Dante's Minnesota Cluster</strong><small>Allt í lagi</small></span>
+        <span class="brand-text"><strong>Dante's Minnesota Cluster</strong><small>All's fair in LAN and war</small></span>
       </a>
       <div class="topbar-actions">
         <span class="updated" id="updated" aria-live="polite">Connecting…</span>
@@ -29,10 +29,17 @@
     <main class="layout">
       <section class="banner" id="banner" role="status" aria-live="polite"></section>
 
-      <aside class="panel nodes-panel" aria-labelledby="nodes-heading">
-        <h2 id="nodes-heading"><span class="title-icon icon-server" aria-hidden="true"></span>Nodes</h2>
-        <div class="node-list" id="node-list"></div>
-      </aside>
+      <div class="inventory-sidebar">
+        <aside class="panel nodes-panel" aria-labelledby="nodes-heading">
+          <h2 id="nodes-heading"><span class="title-icon icon-server" aria-hidden="true"></span>Nodes</h2>
+          <div class="node-list" id="node-list"></div>
+        </aside>
+        <aside class="panel devices-panel" aria-labelledby="devices-heading">
+          <h2 id="devices-heading"><span class="title-icon icon-monitor" aria-hidden="true"></span>Devices</h2>
+          <p class="devices-status" id="devices-status" role="status" aria-live="polite">Loading DHCP leases…</p>
+          <ul class="device-list" id="device-list"></ul>
+        </aside>
+      </div>
 
       <section class="center">
         <div class="panel" aria-labelledby="overview-heading">

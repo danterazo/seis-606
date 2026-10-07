@@ -6,7 +6,7 @@ from functools import partial
 from http import HTTPStatus
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from typing import Any, Dict, Final, Tuple, Union
+from typing import Any, Dict, Final, Optional, Tuple, Union
 from urllib.parse import parse_qs, urlparse
 
 from homelab_dashboard.config import Settings
@@ -16,11 +16,13 @@ from homelab_dashboard.sources.base import RefreshableStatusSource, StatusSource
 from homelab_dashboard.sources.cache import CachedStatusSource
 from homelab_dashboard.sources.hardware_source import HardwareEnrichedSource
 from homelab_dashboard.sources.hardware_ssh import SshHardwareProbe
+from homelab_dashboard.sources.openwrt_ssh import OpenWrtLeaseSource
 from homelab_dashboard.sources.proxmox_ssh import ProxmoxSshSource, SshTarget
 
 WEB_ROOT: Final[Path] = Path(__file__).resolve().parent / "web"
 NODE_IMAGE_DIR: Final[Path] = WEB_ROOT / "images" / "nodes"
 STATUS_PATH: Final[str] = "/api/status"
+DEVICES_PATH: Final[str] = "/api/devices"
 
 RequestSocket = Union[socket.socket, Tuple[bytes, socket.socket]]
 
@@ -33,12 +35,20 @@ class DashboardHandler(SimpleHTTPRequestHandler):
         server: socketserver.BaseServer,
         *,
         source: RefreshableStatusSource,
+        devices: Optional[OpenWrtLeaseSource] = None,
     ) -> None:
         self.source: RefreshableStatusSource = source
+        self.devices: Optional[OpenWrtLeaseSource] = devices
         super().__init__(request, client_address, server, directory=str(WEB_ROOT))
 
     def do_GET(self) -> None:
         url = urlparse(self.path)
+        if url.path == DEVICES_PATH:
+            if self.devices is None:
+                self._send_json(status=HTTPStatus.SERVICE_UNAVAILABLE, payload={"error": "OpenWrt lease source is not configured."})
+            else:
+                self._send_json(status=HTTPStatus.OK, payload=self.devices.fetch(force="refresh" in parse_qs(url.query)))
+            return
         if url.path != STATUS_PATH:
             super().do_GET()
             return
@@ -69,14 +79,15 @@ class DashboardHandler(SimpleHTTPRequestHandler):
             return
 
 
-def create_server(*, settings: Settings, source: RefreshableStatusSource) -> ThreadingHTTPServer:
-    return ThreadingHTTPServer((settings.host, settings.port), partial(DashboardHandler, source=source))
+def create_server(*, settings: Settings, source: RefreshableStatusSource, devices: Optional[OpenWrtLeaseSource] = None) -> ThreadingHTTPServer:
+    return ThreadingHTTPServer((settings.host, settings.port), partial(DashboardHandler, source=source, devices=devices))
 
 
 def main() -> None:
     settings: Settings = Settings.from_env()
     try:
         target: SshTarget = SshTarget(host=settings.ssh_host, user=settings.ssh_user)
+        router_target: SshTarget = SshTarget(host=settings.router_ssh_host, user=settings.router_ssh_user)
     except ValueError as error:
         sys.exit(str(error))
 
@@ -88,7 +99,8 @@ def main() -> None:
         expected_hardware=expected_hardware_for,
         ttl_seconds=settings.hardware_cache_seconds,
     )
-    server: ThreadingHTTPServer = create_server(settings=settings, source=enriched)
+    devices: OpenWrtLeaseSource = OpenWrtLeaseSource(target=router_target, ttl_seconds=settings.router_cache_seconds)
+    server: ThreadingHTTPServer = create_server(settings=settings, source=enriched, devices=devices)
     print(f"Homelab dashboard running at http://{settings.host}:{settings.port} (source: {target.destination})")
     try:
         server.serve_forever()

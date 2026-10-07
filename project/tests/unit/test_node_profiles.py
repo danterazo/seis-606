@@ -3,7 +3,7 @@ from typing import Final
 
 import pytest
 
-from homelab_dashboard.node_profiles import FALLBACK_PALETTE, NODE_PROFILES, node_sort_key, profile_for_node
+from homelab_dashboard.node_profiles import FALLBACK_PALETTE, NODE_PROFILES, display_name_for, node_sort_key, profile_for_node
 
 HEX_COLOR: Final[str] = r"#[0-9a-f]{6}"
 
@@ -41,6 +41,27 @@ def test_kex_and_kveikur_have_fixed_addresses() -> None:
 
 def test_lookup_ignores_case() -> None:
     assert profile_for_node(node_name="KEX") is NODE_PROFILES["kex"]
+
+
+@pytest.mark.parametrize(
+    ("name", "display_name"),
+    [
+        ("ringo-M4", "\u308a\u3093\u3054-M4"),
+        ("RINGO-A20", "\u308a\u3093\u3054-A20"),
+        ("suika", "\u3059\u3044\u304b"),
+        ("ichigo", "\u3044\u3061\u3054"),
+        ("saru", "\u3055\u308b"),
+        ("ringoM4-wifi", "\u308a\u3093\u3054-M4"),
+        ("ringoA20", "\u308a\u3093\u3054-A20"),
+    ],
+)
+def test_shared_name_map_applies_to_future_nodes(name: str, display_name: str) -> None:
+    assert display_name_for(name=name) == display_name
+    assert profile_for_node(node_name=name).display_name == display_name
+
+
+def test_unmapped_device_names_are_preserved() -> None:
+    assert display_name_for(name="My-Device") == "My-Device"
 
 
 def test_kex_sorts_first_then_cerulean_then_kveikur() -> None:

@@ -2,7 +2,7 @@ from pathlib import Path
 from typing import Any, Dict, List
 
 from homelab_dashboard.node_images import find_node_image
-from homelab_dashboard.node_profiles import NodeProfile, node_sort_key, profile_for_node
+from homelab_dashboard.node_profiles import NodeProfile, display_name_for, node_sort_key, profile_for_node
 
 
 def present_payload(*, payload: Dict[str, Any], image_dir: Path) -> Dict[str, Any]:
@@ -15,6 +15,8 @@ def present_payload(*, payload: Dict[str, Any], image_dir: Path) -> Dict[str, An
         node["color"] = profile.color
         node["memory_description"] = profile.memory_description
         node["image"] = find_node_image(node_name=node["name"], image_dir=image_dir)
+        for guest in node.get("guests", []):
+            guest["display_name"] = display_name_for(name=guest["name"])
         if profile.address is not None:
             node["address"] = profile.address
     return {**payload, "nodes": nodes}

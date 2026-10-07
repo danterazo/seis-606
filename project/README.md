@@ -20,6 +20,9 @@ standard library and an OpenSSH client.
 | `HOMELAB_SSH_TIMEOUT`   | `15`                 | Seconds to wait for Proxmox                |
 | `HOMELAB_CACHE_SECONDS` | `10`                 | Minimum seconds between Proxmox queries (one costs ~2 CPU-seconds on a node); the page itself polls every second |
 | `HOMELAB_HARDWARE_CACHE_SECONDS` | `3` | Minimum seconds between CPU/firmware ECC probes of each online node (a tiny read-only Python script sent over the same SSH connection settings; nothing is installed or written on the node) |
+| `HOMELAB_ROUTER_SSH_HOST` | `192.168.10.1` | OpenWrt router for DHCPv4 leases |
+| `HOMELAB_ROUTER_SSH_USER` | `root` | Router SSH account (key authentication only) |
+| `HOMELAB_ROUTER_CACHE_SECONDS` | `60` | Router lease cache TTL, including failures; independent of PVE |
 | `HOMELAB_HOST` / `PORT` | `127.0.0.1` / `8765` | Where the dashboard listens                |
 
 ### First Connection
@@ -34,6 +37,31 @@ ssh-keyscan -H -t ed25519 192.168.20.43 >> ~/.ssh/known_hosts
 
 Connections use `root` by default. To use another account, set `HOMELAB_PVE_SSH_USER`;
 a non-root account needs the `PVEAuditor` role to read cluster resources.
+
+### Device Names and Leases
+
+Edit `DISPLAY_NAMES` in `homelab_dashboard/node_profiles.py` to add display aliases.
+Use `HOSTNAME_ALIASES` alongside it for alternate raw spellings; the router's
+`ringoM4-wifi` and `ringoA20` resolve to `ringo-M4` and `ringo-A20` respectively.
+The case-insensitive map is shared by node cards, topology, guest cards/search, and
+DHCP devices; raw hostnames and IDs stay unchanged. The Japanese entries render as
+hiragana while preserving the `-M4` and `-A20` suffixes. Future aliases do not create
+placeholder nodes; they apply when a node or lease is discovered.
+
+The Devices section below Nodes reads dnsmasq's default `/tmp/dhcp.leases` over SSH
+through `/api/devices`. It shows hostname, IPv4 address, MAC, and expiry. It polls the
+local cache every 10 seconds; Refresh forces both sources independently. Router errors
+retain unexpired last-known leases with an explicit stale/error indication and do not
+block PVE status. Leases are not proof of current connectivity. IPv6, static-IP device
+discovery, and Wi-Fi association data are not implemented yet.
+
+Before leases can load, verify the router's SSH host-key fingerprint against its
+console or another trusted channel, then trust it in this machine's `known_hosts` and
+configure SSH key authentication. For example, inspect a candidate ED25519 fingerprint
+with `ssh-keyscan -t ed25519 192.168.10.1 | ssh-keygen -lf -`; this network scan alone
+does not establish trust. Only after independently confirming it, connect with
+`ssh root@192.168.10.1` to accept the verified key. The application never disables
+host-key checking or handles passwords. No router trust changes have been performed.
 
 ## Layout
 
@@ -108,10 +136,10 @@ validated change proposals, explicit confirmation, transactions, and audit recor
 Treat discovered hostnames/notes as untrusted data, not model instructions. A vector
 database is unnecessary for structured inventory; SQLite search is enough initially.
 
-### OpenWrt discovery (not yet implemented)
+### Further OpenWrt discovery
 
-Start with a read-only collector targeting `root@192.168.10.1` through SSH with key
-authentication, verified host keys, short timeouts, and a 30-60 second independent cache.
+The DHCPv4 collector targets `root@192.168.10.1` through SSH with key authentication,
+verified host keys, an 8-second timeout, and a 60-second independent cache. For richer discovery,
 Use `ubus -v list` to discover the router's actual methods: availability depends on its
 OpenWrt version and installed packages. Prefer structured `ubus` JSON and `ip -j neigh`
 where supported; the default BusyBox `ip` may need an `ip-full` installation for JSON.
@@ -125,7 +153,8 @@ client census, and static-IP devices may have no lease. Show leases and observed
 as distinct states. Router outages should stale only this card, not the PVE dashboard.
 Keep MAC/IP inventories local and credentials off the browser. Replace unrestricted
 root access with a restricted read-only wrapper or scoped RPC permissions before exposing
-the service beyond localhost. No router access or SSH trust changes have been performed.
+the service beyond localhost. The live collector has successfully read DHCPv4 leases;
+no SSH trust changes were performed by the application.
 
 ### Deferred GPU work
 

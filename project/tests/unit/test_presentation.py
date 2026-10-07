@@ -54,6 +54,14 @@ def test_other_payload_fields_are_preserved(tmp_path: Path) -> None:
     assert presented["fetched_at"] == "2026-10-07T00:00:00+00:00"
 
 
+def test_shared_names_apply_to_nodes_and_guests_without_changing_identity(tmp_path: Path) -> None:
+    payload = make_payload(nodes=[{"name": "suika", "address": None, "guests": [{"name": "saru", "vmid": 101}]}])
+    node = present_payload(payload=payload, image_dir=tmp_path)["nodes"][0]
+    assert node["name"] == "suika"
+    assert node["display_name"] == "\u3059\u3044\u304b"
+    assert node["guests"][0] == {"name": "saru", "display_name": "\u3055\u308b", "vmid": 101}
+
+
 def test_configured_memory_is_independent_of_live_hardware(tmp_path: Path) -> None:
     payload = make_payload(nodes=[{"name": name, "address": None} for name in ("kex", "cerulean", "kveikur", "stranger")])
     descriptions = {node["name"]: node["memory_description"] for node in present_payload(payload=payload, image_dir=tmp_path)["nodes"]}

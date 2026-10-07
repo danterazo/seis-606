@@ -85,6 +85,14 @@ button { cursor: pointer; }
 }
 .banner { grid-column: 1 / -1; }
 .nodes-panel, .guests-panel { align-self: start; }
+.inventory-sidebar { display: grid; gap: 18px; align-self: start; min-width: 0; }
+.devices-status { font-size: 12px; color: var(--ink-soft); margin: 0 0 12px; overflow-wrap: anywhere; }
+.devices-status.is-stale { color: #8a5a00; }
+.device-list { display: grid; gap: 8px; max-height: 480px; overflow-y: auto; list-style: none; padding: 0; margin: 0; }
+.device { display: grid; gap: 4px; min-width: 0; padding: 10px; border: 1px solid var(--edge); border-radius: 8px; background: var(--glass); overflow-wrap: anywhere; }
+.device strong { font-size: 14px; }
+.device small { font-size: 11px; color: var(--ink-soft); }
+.device-address { font-size: 12px; }
 .center { display: grid; gap: 18px; align-content: start; min-width: 0; }
 
 .panel {
@@ -155,7 +163,8 @@ button { cursor: pointer; }
 .pill-unknown, .pill-paused { color: #8a5a00; }
 .pill-unknown .orb, .pill-paused .orb { background: radial-gradient(circle at 35% 28%, #fff1c9, var(--amber) 55%, #a86c00); box-shadow: 0 0 6px var(--amber); }
 
-.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; align-items: start; }
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr)); gap: 12px; align-items: start; }
+.tile-column { display: grid; gap: 12px; align-content: start; min-width: 0; }
 .tile { flex-direction: column; align-items: stretch; gap: 10px; padding: 14px 14px 12px; text-align: left; border-bottom: 6px solid var(--node-color, #fff); }
 [aria-pressed="true"].node-row { border-left-color: var(--node-color, #fff); }
 [aria-pressed="true"].tile { border-bottom-color: var(--node-color, #fff); }
@@ -165,11 +174,14 @@ button { cursor: pointer; }
 .tile-title { display: grid; flex: 1; min-width: 0; gap: 1px; }
 .cpu-model { font-size: 11px; letter-spacing: .01em; opacity: .85; }
 .cpu-model.is-expected { font-style: italic; }
-.facts { display: grid; gap: 3px; padding-top: 8px; border-top: 1px solid rgba(15,90,150,.18); font-size: 12px; }
-.fact { display: flex; justify-content: space-between; gap: 10px; }
+.tile-readings { display: grid; grid-template-columns: minmax(104px, .9fr) minmax(0, 1.1fr); gap: 10px; align-items: center; }
+.tile-details { display: grid; gap: 5px; min-width: 0; padding-left: 10px; border-left: 1px solid rgba(15,90,150,.18); }
+.facts { display: grid; gap: 3px; font-size: 11px; }
+.fact { display: flex; justify-content: space-between; gap: 6px; }
 .fact-label { color: var(--ink-soft); font-weight: 600; }
-.fact-value { text-align: right; font-weight: 600; }
-.gauges { display: flex; justify-content: center; gap: 14px; }
+.fact-value { text-align: right; font-weight: 600; min-width: 0; overflow-wrap: anywhere; }
+.ecc-description { font-size: 11px; line-height: 1.35; overflow-wrap: anywhere; }
+.gauges { display: flex; justify-content: center; gap: 4px; flex-wrap: wrap; }
 .gauge { position: relative; display: grid; justify-items: center; width: 64px; }
 .gauge svg { width: 60px; height: 60px; }
 .gauge-track { fill: rgba(255,255,255,.55); stroke: rgba(15,90,150,.18); stroke-width: 7; }
@@ -178,6 +190,9 @@ button { cursor: pointer; }
 .gauge-memory { stroke: var(--green); filter: drop-shadow(0 0 3px rgba(76,194,58,.7)); }
 .gauge-value { position: absolute; top: 19px; font-size: 13px; font-weight: 700; }
 .gauge-label { font-size: 11px; font-weight: 600; color: var(--ink-soft); }
+.tile-readings .gauge { width: 48px; }
+.tile-readings .gauge svg { width: 46px; height: 46px; }
+.tile-readings .gauge-value { top: 14px; font-size: 11px; }
 
 .legend { display: flex; gap: 16px; margin: -6px 0 6px; font-size: 12px; color: var(--ink-soft); }
 .dot { display: inline-block; width: 11px; height: 11px; margin-right: 6px; border-radius: 50%; vertical-align: -1px; }
@@ -250,7 +265,7 @@ button { cursor: pointer; }
 @media (max-width: 760px) {
   .topbar { padding: 10px 14px; flex-wrap: wrap; }
   .layout { grid-template-columns: 1fr; padding: 14px; gap: 14px; }
-  .nodes-panel { order: 1; } .center { order: 2; } .guests-panel { order: 3; }
+  .inventory-sidebar { order: 1; } .center { order: 2; } .guests-panel { order: 3; }
   .banner { border-radius: 18px; flex-wrap: wrap; }
   .footer { flex-direction: column; padding: 4px 16px 18px; }
   .brand-text strong { font-size: 26px; }

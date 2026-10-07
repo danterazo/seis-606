@@ -5,6 +5,27 @@ from typing import Dict, Final, Optional, Tuple
 from homelab_dashboard.models import Hardware, HardwareSource
 
 
+DISPLAY_NAMES: Final[Dict[str, str]] = {
+    "kex": "Kex",
+    "cerulean": "Cerulean",
+    "kveikur": "Kveikur",
+    "ringo-m4": "\u308a\u3093\u3054-M4",
+    "ringo-a20": "\u308a\u3093\u3054-A20",
+    "suika": "\u3059\u3044\u304b",
+    "ichigo": "\u3044\u3061\u3054",
+    "saru": "\u3055\u308b",
+}
+HOSTNAME_ALIASES: Final[Dict[str, str]] = {
+    "ringom4-wifi": "ringo-m4",
+    "ringoa20": "ringo-a20",
+}
+
+
+def display_name_for(*, name: str) -> str:
+    key: str = name.casefold()
+    return DISPLAY_NAMES.get(HOSTNAME_ALIASES.get(key, key), name)
+
+
 @dataclass(frozen=True, slots=True, kw_only=True)
 class NodeProfile:
     display_name: str
@@ -21,7 +42,7 @@ class NodeProfile:
 
 NODE_PROFILES: Final[Dict[str, NodeProfile]] = {
     "kex": NodeProfile(
-        display_name="Kex",
+        display_name=display_name_for(name="kex"),
         initial="K",
         color="#c62839",
         rank=0,
@@ -30,7 +51,7 @@ NODE_PROFILES: Final[Dict[str, NodeProfile]] = {
         memory_description="DDR4 ECC RDIMM (configured)",
     ),
     "cerulean": NodeProfile(
-        display_name="Cerulean",
+        display_name=display_name_for(name="cerulean"),
         initial="C",
         color="#0b7fc7",
         rank=1,
@@ -38,7 +59,7 @@ NODE_PROFILES: Final[Dict[str, NodeProfile]] = {
         memory_description="DDR4 SODIMM - 1 x 32 GB (configured)",
     ),
     "kveikur": NodeProfile(
-        display_name="Kveikur",
+        display_name=display_name_for(name="kveikur"),
         initial="V",
         color="#f28c1b",
         rank=2,
@@ -59,7 +80,7 @@ def profile_for_node(*, node_name: str) -> NodeProfile:
     if known is not None:
         return known
     return NodeProfile(
-        display_name=node_name[:1].upper() + node_name[1:],
+        display_name=display_name_for(name=node_name) if key in DISPLAY_NAMES or key in HOSTNAME_ALIASES else node_name[:1].upper() + node_name[1:],
         initial=node_name[:1].upper(),
         color=FALLBACK_PALETTE[zlib.crc32(key.encode("utf-8")) % len(FALLBACK_PALETTE)],
         rank=len(NODE_PROFILES),
