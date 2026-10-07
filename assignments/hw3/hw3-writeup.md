@@ -10,8 +10,6 @@ Overall, this took me about an hour to complete. I spent some time overthinking 
 
 Finally, I'd like to note that I use *Espanso* for text shortcuts, and that includes the em-dashes you see above. They're considered a "tell" for AI-generated text, but I've been a fan of them for over a decade now. So to be clear: I wrote all of this text by hand and will continue to use em-dashes like normal with my handy `:--` $\rightarrow$ `—` shortcut. I'll let my commit history prove that my writing (and work in general) is iterative.
 
-### Addendum from Class
-The app might as well not exist. The web page is blank and despite the large amount of tokens Copilot used, it failed to generate anything tangible. I will be more careful about reviewing output in future iterations.
 
 ## Project Setup
 I first created a new directory for project files...
