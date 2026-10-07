@@ -13,6 +13,7 @@ from homelab_dashboard.sources.proxmox_ssh import SSH_OPTIONS, CommandRunner, Ss
 
 
 LAN_NETWORK: Final[ipaddress.IPv4Network] = ipaddress.IPv4Network("192.168.0.0/16")
+REMOTE_COMMAND: Final[str] = "cat /tmp/dhcp.leases"
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -31,20 +32,6 @@ class DhcpLease:
             "network_group": "lan" if ipaddress.IPv4Address(self.address) in LAN_NETWORK else "guest_iot",
             "expires_at": self.expires_at.isoformat(timespec="seconds") if self.expires_at is not None else None,
         }
-
-
-def lease_sort_key(lease: DhcpLease) -> Tuple[bool, bool, int, str]:
-    address: ipaddress.IPv4Address = ipaddress.IPv4Address(lease.address)
-    outside_lan: bool = address not in LAN_NETWORK
-    unnamed: bool = lease.hostname is None
-    if lease.hostname is not None:
-        try:
-            ipaddress.ip_address(lease.hostname)
-        except ValueError:
-            pass
-        else:
-            unnamed = True
-    return (outside_lan, outside_lan and unnamed, int(address), lease.mac)
 
 
 def parse_leases(*, text: str) -> Tuple[DhcpLease, ...]:
@@ -68,6 +55,131 @@ def parse_leases(*, text: str) -> Tuple[DhcpLease, ...]:
     return tuple(leases)
 
 
+@dataclass(frozen=True, slots=True, kw_only=True)
+class Ipv6Record:
+    address: str
+    interface: str
+    identity: str
+    mac: Optional[str] = None
+    hostname: Optional[str] = None
+    expires_at: Optional[datetime] = None
+
+
+def _mac_address(value: object) -> Optional[str]:
+    return value.lower() if isinstance(value, str) and re.fullmatch(r"(?:[0-9a-fA-F]{2}:){5}[0-9a-fA-F]{2}", value) else None
+
+
+def _duid_mac(value: object) -> Optional[str]:
+    if not isinstance(value, str):
+        return None
+    try:
+        duid: bytes = bytes.fromhex(value.replace(":", ""))
+    except ValueError:
+        return None
+    if (len(duid) == 14 and duid[:4] == b"\x00\x01\x00\x01") or (len(duid) == 10 and duid[:4] == b"\x00\x03\x00\x01"):
+        return ":".join(f"{part:02x}" for part in duid[-6:])
+    return None
+
+
+def parse_ipv6_records(*, leases: object, neighbors: object, now: datetime) -> Tuple[Ipv6Record, ...]:
+    if not isinstance(leases, dict) or not isinstance(leases.get("device"), dict) or not isinstance(neighbors, list):
+        raise StatusSourceError("OpenWRT returned an unexpected IPv6 discovery response.")
+    records: List[Ipv6Record] = []
+    neighbor_macs: Dict[Tuple[str, str], str] = {}
+    for row in neighbors:
+        if not isinstance(row, dict) or not isinstance(row.get("dev"), str) or not row["dev"].startswith("br-"):
+            continue
+        mac: Optional[str] = _mac_address(row.get("lladdr"))
+        states: object = row.get("state", [])
+        if mac is None or not isinstance(states, list) or any(state in ("FAILED", "INCOMPLETE") for state in states):
+            continue
+        try:
+            address: ipaddress.IPv6Address = ipaddress.IPv6Address(row.get("dst", ""))
+        except (ValueError, TypeError):
+            continue
+        if address.is_multicast or address.is_unspecified:
+            continue
+        neighbor_macs[(row["dev"], str(address))] = mac
+        records.append(Ipv6Record(address=str(address), interface=row["dev"], identity=f"mac:{mac}", mac=mac))
+    for interface, device in leases["device"].items():
+        if not isinstance(interface, str) or not isinstance(device, dict) or not isinstance(device.get("leases"), list):
+            continue
+        for lease in device["leases"]:
+            if not isinstance(lease, dict) or not isinstance(lease.get("ipv6-addr"), list):
+                continue
+            duid_value: object = lease.get("duid")
+            duid_text: Optional[str] = duid_value.casefold() if isinstance(duid_value, str) and duid_value else None
+            hostname_value: object = lease.get("hostname")
+            hostname: Optional[str] = hostname_value if isinstance(hostname_value, str) and hostname_value not in ("", "*") else None
+            for reading in lease["ipv6-addr"]:
+                if not isinstance(reading, dict):
+                    continue
+                lifetime: object = reading.get("valid-lifetime", lease.get("valid"))
+                if type(lifetime) is not int or not 0 < lifetime <= 4294967295:
+                    continue
+                try:
+                    parsed_address: ipaddress.IPv6Address = ipaddress.IPv6Address(reading.get("address", ""))
+                except (ValueError, TypeError):
+                    continue
+                if parsed_address.is_multicast or parsed_address.is_unspecified:
+                    continue
+                lease_mac: Optional[str] = neighbor_macs.get((interface, str(parsed_address))) or _duid_mac(duid_value)
+                identity: str = f"mac:{lease_mac}" if lease_mac is not None else f"duid:{duid_text}" if duid_text is not None else f"address:{parsed_address}"
+                records.append(Ipv6Record(
+                    address=str(parsed_address), interface=interface, identity=identity, mac=lease_mac, hostname=hostname,
+                    expires_at=datetime.fromtimestamp(now.timestamp() + lifetime, UTC),
+                ))
+    return tuple(records)
+
+
+def _device_sort_key(device: Dict[str, Any]) -> Tuple[bool, bool, int, int, str]:
+    hostname: Optional[str] = device["hostname"]
+    unnamed: bool = hostname is None
+    if hostname is not None:
+        try:
+            ipaddress.ip_address(hostname)
+        except ValueError:
+            pass
+        else:
+            unnamed = True
+    address = ipaddress.ip_address(device["address"] or device["ipv6_addresses"][0])
+    outside_lan: bool = device["network_group"] != "lan"
+    return (outside_lan, unnamed, address.version, int(address), device["mac"] or "")
+
+
+def build_device_payloads(*, leases: Tuple[DhcpLease, ...], ipv6: Tuple[Ipv6Record, ...], now: datetime) -> List[Dict[str, Any]]:
+    devices: List[Dict[str, Any]] = [lease.to_payload() for lease in leases if lease.expires_at is None or lease.expires_at > now]
+    by_mac: Dict[str, List[Dict[str, Any]]] = {}
+    for device in devices:
+        device["ipv6_addresses"] = []
+        by_mac.setdefault(device["mac"].lower(), []).append(device)
+    ipv6_only: Dict[Tuple[str, str], Dict[str, Any]] = {}
+    for record in ipv6:
+        if record.expires_at is not None and record.expires_at <= now:
+            continue
+        targets: List[Dict[str, Any]] = by_mac.get(record.mac, []) if record.mac is not None else []
+        if not targets:
+            key: Tuple[str, str] = (record.interface, record.identity)
+            if key not in ipv6_only:
+                ipv6_only[key] = {
+                    "address": None, "mac": record.mac.upper() if record.mac is not None else None,
+                    "hostname": record.hostname, "display_name": display_name_for(name=record.hostname) if record.hostname else record.address,
+                    "network_group": "lan" if record.interface == "br-lan" else "guest_iot",
+                    "expires_at": None, "ipv6_addresses": [],
+                }
+            targets = [ipv6_only[key]]
+        for target in targets:
+            if record.address not in target["ipv6_addresses"]:
+                target["ipv6_addresses"].append(record.address)
+            if target["hostname"] is None and record.hostname is not None:
+                target["hostname"] = record.hostname
+                target["display_name"] = display_name_for(name=record.hostname)
+    devices.extend(ipv6_only.values())
+    for device in devices:
+        device["ipv6_addresses"].sort(key=lambda address: (ipaddress.IPv6Address(address).is_link_local, int(ipaddress.IPv6Address(address))))
+    return sorted(devices, key=_device_sort_key)
+
+
 def _utc_now() -> datetime:
     return datetime.now(UTC)
 
@@ -87,7 +199,7 @@ class OpenWrtLeaseSource:
     _error: Optional[str] = field(default=None, init=False)
 
     def _read(self) -> Tuple[DhcpLease, ...]:
-        command: Tuple[str, ...] = ("ssh", *SSH_OPTIONS, self.target.destination, "cat /tmp/dhcp.leases")
+        command: Tuple[str, ...] = ("ssh", *SSH_OPTIONS, self.target.destination, REMOTE_COMMAND)
         try:
             completed: "subprocess.CompletedProcess[str]" = self.runner(command, timeout=self.timeout_seconds)
         except FileNotFoundError as error:
@@ -110,10 +222,13 @@ class OpenWrtLeaseSource:
                 self._stored_at = self.clock()
             now: datetime = self.now()
             return {
-                "source": "OpenWRT DHCPv4",
+                "source": "OpenWRT",
                 "router": self.target.host,
                 "fetched_at": self._fetched_at.isoformat(timespec="seconds") if self._fetched_at is not None else None,
                 "stale": self._error is not None,
                 "error": self._error,
-                "leases": [lease.to_payload() for lease in sorted(self._leases, key=lease_sort_key) if lease.expires_at is None or lease.expires_at > now],
+                "leases": sorted(
+                    [lease.to_payload() for lease in self._leases if lease.expires_at is None or lease.expires_at > now],
+                    key=_device_sort_key,
+                ),
             }

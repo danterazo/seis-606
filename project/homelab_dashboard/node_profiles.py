@@ -1,3 +1,4 @@
+import ipaddress
 import zlib
 from dataclasses import dataclass
 from typing import Dict, Final, Optional, Tuple
@@ -27,12 +28,12 @@ class NodeProfile:
     # One letter for the guest badge; set by hand because Kex and Kveikur both start with K.
     initial: str
     color: str
-    rank: int
     # When set, shown instead of whatever Proxmox reports (offline nodes report none).
     address: Optional[str] = None
     # Shown, marked as expected, while the node can't be probed (e.g. it is offline).
     expected_cpu: Optional[str] = None
     memory_description: Optional[str] = None
+    memory_ecc: Optional[bool] = None
 
 
 NODE_PROFILES: Final[Dict[str, NodeProfile]] = {
@@ -40,27 +41,27 @@ NODE_PROFILES: Final[Dict[str, NodeProfile]] = {
         display_name=display_name_for(name="Kex"),
         initial="K",
         color="#c62839",
-        rank=0,
         address="192.168.20.42",
         expected_cpu="Intel Xeon E5-1650 v4",
-        memory_description="DDR4 ECC RDIMM - 8 x 32 GB",
+        memory_description="DDR4 RDIMM - 8 x 32 GB",
+        memory_ecc=True,
     ),
     "cerulean": NodeProfile(
         display_name=display_name_for(name="Cerulean"),
         initial="C",
         color="#0b7fc7",
-        rank=1,
         expected_cpu="Intel N150",
         memory_description="DDR4 SODIMM - 1 x 32 GB",
+        memory_ecc=False,
     ),
     "kveikur": NodeProfile(
         display_name=display_name_for(name="Kveikur"),
         initial="V",
         color="#f28c1b",
-        rank=2,
         address="192.168.20.46",
         expected_cpu="AMD Ryzen Threadripper PRO 3945WX",
-        memory_description="DDR4 ECC RDIMM - 8 x 4 GB",
+        memory_description="DDR4 RDIMM - 8 x 4 GB",
+        memory_ecc=True,
     ),
 }
 
@@ -78,12 +79,18 @@ def profile_for_node(*, node_name: str) -> NodeProfile:
         display_name=display_name_for(name=node_name[:1].upper() + node_name[1:]),
         initial=node_name[:1].upper(),
         color=FALLBACK_PALETTE[zlib.crc32(key.encode("utf-8")) % len(FALLBACK_PALETTE)],
-        rank=len(NODE_PROFILES),
     )
 
 
-def node_sort_key(*, node_name: str) -> Tuple[int, str]:
-    return (profile_for_node(node_name=node_name).rank, node_name.casefold())
+def node_sort_key(*, node_name: str, address: Optional[str] = None) -> Tuple[bool, int, int, str]:
+    effective_address: Optional[str] = profile_for_node(node_name=node_name).address or address
+    if effective_address is None:
+        return (True, 0, 0, node_name.casefold())
+    try:
+        parsed_address = ipaddress.ip_address(effective_address)
+    except ValueError:
+        return (True, 0, 0, node_name.casefold())
+    return (False, parsed_address.version, int(parsed_address), node_name.casefold())
 
 
 def expected_hardware_for(*, node_name: str) -> Hardware:

@@ -51,8 +51,8 @@ def test_lookup_ignores_case() -> None:
         ("suika", "\u3059\u3044\u304b"),
         ("ichigo", "\u3044\u3061\u3054"),
         ("saru", "\u3055\u308b"),
-        ("ringoM4-wifi", "\u308a\u3093\u3054-M4"),
-        ("ringoA20", "\u308a\u3093\u3054-A20"),
+        ("ringoM4-wifi", "\u308a\u3093\u3054-m4"),
+        ("ringoA20", "\u308a\u3093\u3054-a20"),
     ],
 )
 def test_shared_name_map_applies_to_future_nodes(name: str, display_name: str) -> None:
@@ -66,16 +66,23 @@ def test_unmapped_device_names_are_preserved() -> None:
     assert display_name_for(name="ringo-A20") == "ringo-A20"
 
 
-def test_kex_sorts_first_then_cerulean_then_kveikur() -> None:
-    names = ["kveikur", "cerulean", "kex"]
+def test_node_order_uses_ip_addresses_including_new_nodes() -> None:
+    addresses = {"kveikur": "192.168.20.46", "cerulean": "192.168.20.43", "kex": "192.168.20.42", "new-node": "192.168.20.41"}
+    assert sorted(addresses, key=lambda name: node_sort_key(node_name=name, address=addresses[name])) == ["new-node", "kex", "cerulean", "kveikur"]
 
-    assert sorted(names, key=lambda name: node_sort_key(node_name=name)) == ["kex", "cerulean", "kveikur"]
 
-
-def test_unknown_nodes_sort_after_known_ones_alphabetically() -> None:
+def test_nodes_without_addresses_sort_last_alphabetically() -> None:
     names = ["zeta", "kveikur", "alpha", "kex"]
 
     assert sorted(names, key=lambda name: node_sort_key(node_name=name)) == ["kex", "kveikur", "alpha", "zeta"]
+
+
+def test_invalid_addresses_sort_after_valid_addresses() -> None:
+    assert node_sort_key(node_name="alpha", address="not-an-ip") > node_sort_key(node_name="zeta", address="192.168.20.100")
+
+
+def test_duplicate_addresses_use_a_stable_name_tiebreaker() -> None:
+    assert node_sort_key(node_name="alpha", address="192.168.20.100") < node_sort_key(node_name="zeta", address="192.168.20.100")
 
 
 def test_unknown_nodes_get_a_stable_capitalized_profile() -> None:

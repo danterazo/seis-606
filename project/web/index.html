@@ -16,7 +16,10 @@
     <header class="topbar">
       <a class="brand" href="/" aria-label="Dante's Cluster home">
         <span class="brand-orb" aria-hidden="true"></span>
-        <span class="brand-text"><strong>Dante's Minnesota Cluster</strong><small>All's fair in LAN and war</small></span>
+        <span class="brand-text">
+          <strong>Dante's Minnesota Cluster</strong>
+          <small>All's fair in LAN and war</small>
+        </span>
       </a>
       <div class="topbar-actions">
         <span class="updated" id="updated" aria-live="polite">Connecting…</span>
@@ -40,7 +43,7 @@
           <ul class="device-list" id="lan-device-list"></ul>
         </aside>
         <aside class="panel devices-panel" aria-labelledby="guest-iot-devices-heading">
-          <h2 id="guest-iot-devices-heading"><span class="title-icon icon-monitor" aria-hidden="true"></span>Guest / IoT</h2>
+          <h2 id="guest-iot-devices-heading"><span class="title-icon icon-monitor" aria-hidden="true"></span>Guest / IoT Networks</h2>
           <p class="devices-status" id="guest-iot-devices-status" role="status" aria-live="polite">Loading DHCP leases…</p>
           <ul class="device-list" id="guest-iot-device-list"></ul>
         </aside>
@@ -61,20 +64,26 @@
         </div>
       </section>
 
-      <aside class="panel guests-panel" aria-labelledby="guests-heading">
-        <h2 id="guests-heading"><span class="title-icon icon-cube" aria-hidden="true"></span><span id="guests-title">Guests</span></h2>
-        <label class="search"><span class="sr-only">Search guests</span><input id="search" type="search" placeholder="Search by name or ID" autocomplete="off" /></label>
-        <div class="chips node-chips" id="node-chips" role="group" aria-label="Filter by node"></div>
-        <div class="chips" id="chips" role="group" aria-label="Filter guests"></div>
-        <ul class="guest-list" id="guest-list"></ul>
-      </aside>
+      <div class="workload-sidebar">
+        <aside class="panel guests-panel" aria-labelledby="guests-heading">
+          <h2 id="guests-heading"><span class="title-icon icon-cube" aria-hidden="true"></span><span id="guests-title">VMs &amp; Containers</span></h2>
+          <label class="search"><span class="sr-only">Search VMs and containers</span><input id="search" type="search" placeholder="Search by name or ID" autocomplete="off" /></label>
+          <div class="chips node-chips" id="node-chips" role="group" aria-label="Filter by node"></div>
+          <div class="chips" id="chips" role="group" aria-label="Filter VMs and containers"></div>
+          <ul class="guest-list" id="guest-list"></ul>
+        </aside>
+        <aside class="panel haiku-panel" aria-labelledby="haiku-heading">
+          <h2 id="haiku-heading">Homelab Haiku</h2>
+          <p class="haiku-poem" id="haiku"><span>I turn off the rack /</span><span>There is nothing left to fix /</span><span>I have found my peace</span></p>
+        </aside>
+      </div>
     </main>
 
     <footer class="footer">
       <span id="source-label">—</span><span id="refresh-note">Guest controls</span>
-      <div class="dns-corner"><pre class="dns-cow" role="img" aria-label="A cow says: It's always DNS"> _________________
-&lt; It's always DNS &gt;
- -----------------
+      <div class="dns-corner"><pre class="dns-cow" role="img" aria-label="A cow says: All's fair in LAN and war">     ___________________________
+    &lt; All's fair in LAN and war &gt;
+     ---------------------------
         \   ^__^
          \  (oo)\_______
             (__)\       )\/\

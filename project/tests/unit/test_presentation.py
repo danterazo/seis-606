@@ -36,6 +36,20 @@ def test_pinned_addresses_override_what_proxmox_reports(tmp_path: Path) -> None:
     assert addresses == {"kex": "192.168.20.42", "cerulean": "192.168.20.43", "kveikur": "192.168.20.46"}
 
 
+def test_new_nodes_sort_by_numeric_ip_not_name_or_profile_order(tmp_path: Path) -> None:
+    payload = make_payload(nodes=[
+        {"name": "alpha", "address": "192.168.20.100"},
+        {"name": "kex", "address": "10.9.9.9"},
+        {"name": "cerulean", "address": "192.168.20.43"},
+        {"name": "zeta", "address": "192.168.20.9"},
+        {"name": "missing", "address": None},
+        {"name": "invalid", "address": "unknown"},
+        {"name": "kveikur", "address": None},
+    ])
+    presented = present_payload(payload=payload, image_dir=tmp_path)
+    assert [node["name"] for node in presented["nodes"]] == ["zeta", "kex", "cerulean", "kveikur", "alpha", "invalid", "missing"]
+
+
 def test_display_fields_are_added_to_every_node(tmp_path: Path) -> None:
     (tmp_path / "kex.png").write_bytes(b"")
     payload = make_payload(nodes=[{"name": "kex", "address": None}, {"name": "cerulean", "address": None}])
@@ -66,8 +80,19 @@ def test_configured_memory_is_independent_of_live_hardware(tmp_path: Path) -> No
     payload = make_payload(nodes=[{"name": name, "address": None} for name in ("kex", "cerulean", "kveikur", "stranger")])
     descriptions = {node["name"]: node["memory_description"] for node in present_payload(payload=payload, image_dir=tmp_path)["nodes"]}
     assert descriptions == {
-        "kex": "DDR4 ECC RDIMM - 8 x 32 GB",
+        "kex": "DDR4 RDIMM - 8 x 32 GB",
         "cerulean": "DDR4 SODIMM - 1 x 32 GB",
-        "kveikur": "DDR4 ECC RDIMM - 8 x 4 GB",
+        "kveikur": "DDR4 RDIMM - 8 x 4 GB",
         "stranger": None,
+    }
+
+
+def test_memory_ecc_inventory_does_not_depend_on_live_firmware(tmp_path: Path) -> None:
+    payload = make_payload(nodes=[
+        {"name": name, "address": None, "hardware": {"ecc_supported": None}}
+        for name in ("kex", "cerulean", "kveikur", "stranger")
+    ])
+    nodes = present_payload(payload=payload, image_dir=tmp_path)["nodes"]
+    assert {node["name"]: node["memory_ecc"] for node in nodes} == {
+        "kex": True, "cerulean": False, "kveikur": True, "stranger": None,
     }

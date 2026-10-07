@@ -68,21 +68,31 @@ This is the only naming map: the router's `ringoM4-wifi` and `ringoA20` are matc
 directly to their hiragana display names, with no intermediate alias resolution.
 The case-insensitive map is shared by node cards, topology, guest cards/search, and
 DHCP devices; raw hostnames and IDs stay unchanged. The Japanese entries render as
-hiragana while preserving the `-M4` and `-A20` suffixes. Future aliases do not create
+hiragana using the exact labels configured in the map. Future aliases do not create
 placeholder nodes; they apply when a node or lease is discovered.
 
-The LAN Devices and Guest / IoT panels below Nodes read dnsmasq's default `/tmp/dhcp.leases` over SSH
-through `/api/devices`. It shows hostname, IPv4 address, and uppercase MAC addresses,
-without read timestamps or expiry dates. Expiry stays internal for filtering. It polls the
+Cluster nodes are ordered numerically by their displayed IP address, with IPv4 before
+IPv6. Pinned profile addresses take precedence over reported addresses. Missing or
+invalid addresses sort last; names break ties alphabetically. The node list, overview,
+topology, and node filters use this ordering rather than a fixed profile rank.
+Online topology links use longer, thicker moving dashes; offline links remain static
+gray dashes. Motion indicates node availability, not measured network traffic.
+
+The LAN Devices and Guest / IoT panels below Nodes read only dnsmasq's default
+`/tmp/dhcp.leases` over SSH through `/api/devices`. Cards show the name directly above
+labeled IPv4 and uppercase MAC rows, with no redundant hostname heading.
+Only devices with IPv4 leases are listed; IPv6-only devices and addresses are omitted.
+The active collector does not query IPv6 leases or neighbors. Standalone IPv6 parsing
+and correlation helpers remain tested for potential future use but are not invoked.
+Read timestamps and expiry dates remain hidden. Expiry stays internal for filtering. It polls the
 local cache every 10 seconds; Refresh forces both sources independently. Router errors
 retain unexpired last-known leases with an explicit stale/error indication and do not
-block PVE status. Leases are not proof of current connectivity. IPv6, static-IP device
-discovery, and Wi-Fi association data are not implemented yet.
+block PVE status. Leases are not proof of current connectivity.
+Static-IPv4-only discovery and Wi-Fi association data are not implemented yet.
 
 Leases in `192.168.0.0/16` appear in LAN Devices; all other IPv4 leases appear in
-Guest / IoT. The API returns LAN first, then the remaining devices, sorting each
-group by numeric IP address. Within Guest / IoT, named devices come before IP-only
-devices, with numeric IP ordering within each subgroup; LAN ordering stays unchanged.
+Guest / IoT. The API returns LAN first, then the remaining devices. In both panels,
+named devices come before IP-only devices, with numeric IP ordering within each subgroup.
 This is a display grouping, not a connectivity or VLAN claim.
 
 Before leases can load, verify the router's SSH host-key fingerprint against its
@@ -126,6 +136,11 @@ With multiple memory arrays, a positive result means at least one reports ECC.
 
 Memory descriptions in `homelab_dashboard/node_profiles.py` are explicitly configured:
 Kex and Kveikur use DDR4 ECC RDIMMs; Cerulean uses one 32 GB DDR4 SODIMM.
+The overview uses compact ECC / Non-ECC badges from the configured memory inventory,
+independently of whether the node is online. Firmware ECC diagnostics remain available
+in hardware data but are not shown as a sentence in the cards. An ECC badge identifies
+the memory inventory; it does not verify active error correction. Unconfigured nodes
+have no ECC badge rather than an assumed negative result.
 Offline nodes retain configured inventory without claiming live readings. CPU fallbacks
 remain italicized with an explanatory tooltip. GPU display and collection are disabled.
 
@@ -165,6 +180,20 @@ answers with the relevant assets, source, and observation time. Add edits later 
 validated change proposals, explicit confirmation, transactions, and audit records.
 Treat discovered hostnames/notes as untrusted data, not model instructions. A vector
 database is unnecessary for structured inventory; SQLite search is enough initially.
+
+### Chatbot window TODO
+
+- [ ] Add a chatbot window for managing home inventory, asking questions about nodes,
+    and describing tasks in natural language for execution on the selected nodes.
+- [ ] Connect through a server-side inference adapter. Start with LM Studio's
+    OpenAI-compatible base URL `http://100.100.20.10:1234/v1`; keep the endpoint and
+    model configurable so the inference server can move to Kveikur later.
+- [ ] Give the chatbot validated inventory and node tools, not unrestricted generated
+    SQL or shell access. Preview target nodes and proposed changes; require explicit
+    confirmation for writes and disruptive actions, and audit each execution/result.
+- [ ] Support streamed replies, conversation history, tool/task progress, cancellation,
+    and clear endpoint-unavailable or execution-failed states. Start with inventory
+    queries and node questions before enabling confirmed task execution.
 
 ### Further OpenWRT discovery
 

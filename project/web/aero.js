@@ -5,7 +5,7 @@
  * @typedef {"running" | "stopped" | "paused" | "unknown"} GuestState
  * @typedef {{ vmid: number, name: string, display_name?: string, node: string, kind: "vm" | "container", state: GuestState, resources: Resources }} Guest
  * @typedef {{ cpu_model: string | null, ecc_supported?: boolean | null, source: "live" | "expected" | "unknown" }} Hardware
- * @typedef {{ name: string, display_name: string, state: "online" | "offline" | "unknown", address: string | null, image: string | null, initial: string, color: string, memory_description?: string | null, resources: Resources, guests: Guest[], hardware: Hardware }} PveNode
+ * @typedef {{ name: string, display_name: string, state: "online" | "offline" | "unknown", address: string | null, image: string | null, initial: string, color: string, memory_description?: string | null, memory_ecc?: boolean | null, resources: Resources, guests: Guest[], hardware: Hardware }} PveNode
  * @typedef {{ source: string, fetched_at: string, nodes: PveNode[] }} Snapshot
  * @typedef {"all" | "running" | "vm" | "container"} GuestFilter
  * @typedef {{ snapshot: Snapshot | null, error: string | null, selectedNode: string | null, filter: GuestFilter, query: string }} ViewState
@@ -25,6 +25,13 @@ const TOPOLOGY_NAME_LIMIT = 22;
 const BYTES_PER_MIB = 1024 ** 2;
 const BYTES_PER_GIB = 1024 ** 3;
 const SVG_NS = "http://www.w3.org/2000/svg";
+
+/** @type {ReadonlyArray<ReadonlyArray<string>>} */
+const HEADER_HAIKUS = [
+  ["I turn off the rack", "There is nothing left to fix", "I have found my peace"],
+  ["I watch the lights blink", "I don't know what they tell me", "They blink anyway"],
+  ["I cannot connect", "It was always DNS", "There goes my evening"],
+];
 
 /** @type {ViewState} */
 const state = { snapshot: null, error: null, selectedNode: null, filter: "all", query: "" };
@@ -127,7 +134,7 @@ function formatMemoryPair({ used, total }) {
 }
 
 /** @param {Resources} resources */
-const formatCores = ({ cpu_cores: cores }) => (cores === null ? "cores unknown" : `${cores} ${cores === 1 ? "core" : "Cores"}`);
+const formatCores = ({ cpu_cores: cores }) => (cores === null ? "cores unknown" : `${cores} ${cores === 1 ? "Core" : "Cores"}`);
 
 /** Allotment, usage, then percentage: "3/8 GB (38%)". @param {Resources} resources */
 function formatRam(resources) {
@@ -289,8 +296,14 @@ function renderOverview(nodes) {
     const { memory_used_bytes: used, memory_total_bytes: total } = node.resources;
     const memoryText = used !== null && total !== null ? formatMemoryPair({ used, total }) : formatRam(node.resources);
     const hardwareDetails = [
-      ...(node.memory_description ? [el("small", { className: "memory-description", text: node.memory_description })] : []),
-      ...(node.hardware.ecc_supported == null ? [] : [el("small", { className: "ecc-description", text: `ECC: ${node.hardware.ecc_supported ? "Reported by firmware" : "Not reported by firmware"}`, attrs: { title: "SMBIOS memory-array error correction; not proof that ECC is enabled" } })]),
+      ...(node.memory_description || node.memory_ecc != null ? [el("div", { className: "memory-inventory" }, [
+        ...(node.memory_description ? [el("small", { className: "memory-description", text: node.memory_description })] : []),
+        ...(node.memory_ecc == null ? [] : [el("span", {
+          className: `memory-ecc ${node.memory_ecc ? "ecc-memory" : "non-ecc-memory"}`,
+          text: node.memory_ecc ? "ECC" : "Non-ECC",
+          attrs: { title: node.memory_ecc ? "ECC memory inventory; active error correction is not verified" : "Non-ECC memory inventory" },
+        })]),
+      ])] : []),
     ];
     return el("button", { className: `tile tile-${node.state}`, attrs: { type: "button", style: colorStyle(node.color), "data-node": node.name, "aria-pressed": String(state.selectedNode === node.name) } }, [
       el("span", { className: "tile-head" }, [
@@ -411,7 +424,7 @@ function visibleGuests(nodes) {
 
 /** @param {PveNode[]} nodes */
 function renderGuests(nodes) {
-  required("#guests-title").textContent = state.selectedNode === null ? "Guests" : `Guests on ${displayNodeName(state.selectedNode)}`;
+  required("#guests-title").textContent = state.selectedNode === null ? "VMs & Containers" : `VMs & Containers on ${displayNodeName(state.selectedNode)}`;
   required("#node-chips").replaceChildren(
     el("button", { className: "chip", text: "All Nodes", attrs: { type: "button", "data-node-filter": "", "aria-pressed": String(state.selectedNode === null) } }),
     ...nodes.map((node) =>
@@ -447,14 +460,14 @@ function renderGuests(nodes) {
         rebootButton,
       ]),
       el("div", { className: "guest-body" }, [
-        el("strong", { className: "guest-name", text: guestLabel(guest) }),
-        el("div", { className: "guest-sub" }, [el("small", { text: `${displayNodeName(guest.node)} · ID ${guest.vmid}` }), statePill(guest.state)]),
+        el("div", { className: "guest-header" }, [el("strong", { className: "guest-name", text: guestLabel(guest) }), statePill(guest.state)]),
+        el("div", { className: "guest-sub" }, [el("small", { text: `${displayNodeName(guest.node)} · ID ${guest.vmid}` })]),
         ...(metrics === null ? [] : [el("div", { className: "guest-metrics" }, [metricRow({ label: "CPU", metric: metrics.cpu, tone: "cpu" }), metricRow({ label: "RAM", metric: metrics.ram, tone: "memory" })])]),
         ...(action ? [el("small", { className: `guest-action-status${action.error ? " is-error" : ""}`, text: action.message, attrs: { role: "status" } })] : []),
       ]),
     ]);
   });
-  const empty = nodes.length === 0 ? "No guests to show." : "No guests match this view.";
+  const empty = nodes.length === 0 ? "No VMs or containers to show." : "No VMs or containers match this view.";
   required("#guest-list").replaceChildren(...(rows.length ? rows : [el("li", { className: "empty", text: empty })]));
 }
 
@@ -495,13 +508,19 @@ function renderDevices() {
     status.textContent = error
       ? `${error}${devicesSnapshot?.fetched_at ? " Showing last-known leases." : ""}`
       : devicesSnapshot === null ? "Loading DHCP leases…" : `${devicesSnapshot.source} · ${devicesSnapshot.router}`;
-    const leases = (devicesSnapshot?.leases ?? []).filter((lease) => lease.network_group === group);
+    const leases = (devicesSnapshot?.leases ?? []).filter((lease) => lease.network_group === group && typeof lease.address === "string");
     const rows = leases.map((lease) => el("li", { className: "device" }, [
-      el("strong", { text: lease.display_name, attrs: { title: lease.hostname ?? "Unnamed device" } }),
-      el("span", { className: "device-address", text: lease.address }),
-      el("small", { text: lease.mac.toUpperCase() }),
+      el("div", { className: "device-title" }, [
+        el("strong", { text: lease.display_name, attrs: { title: lease.hostname ?? "Unnamed device" } }),
+      ]),
+      el("dl", { className: "device-fields" }, [
+        el("dt", { className: "device-field-label", text: "IPv4" }),
+        el("dd", { className: "device-address", text: lease.address ?? "Not reported" }),
+        el("dt", { className: "device-field-label", text: "MAC" }),
+        el("dd", { className: "device-mac", text: lease.mac?.toUpperCase() ?? "Not reported" }),
+      ]),
     ]));
-    required(`#${prefix}-device-list`).replaceChildren(...(rows.length ? rows : [el("li", { className: "empty", text: error ? "Leases unavailable." : devicesSnapshot === null ? "" : "No unexpired DHCPv4 leases." })]));
+    required(`#${prefix}-device-list`).replaceChildren(...(rows.length ? rows : [el("li", { className: "empty", text: error ? "Devices unavailable." : devicesSnapshot === null ? "" : "No devices reported." })]));
   }
 }
 
@@ -617,6 +636,8 @@ required("#refresh-button").addEventListener("click", () => {
   void refreshDevices({ force: true });
 });
 
+const selectedHaiku = HEADER_HAIKUS[Math.floor(Math.random() * HEADER_HAIKUS.length)];
+required("#haiku").replaceChildren(...selectedHaiku.map((line, index) => el("span", { text: index < selectedHaiku.length - 1 ? `${line} /` : line })));
 const refreshSeconds = REFRESH_INTERVAL_MS / 1000;
 required("#refresh-note").textContent = `Guest controls · checks for updates every ${refreshSeconds === 1 ? "second" : `${refreshSeconds} seconds`}`;
 let overviewWidth = 0;
