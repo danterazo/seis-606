@@ -41,7 +41,7 @@ a non-root account needs the `PVEAuditor` role to read cluster resources.
 
 ### Guest Reboots
 
-The round orange arrow below each guest icon submits a reboot after confirmation.
+The round orange arrow beside each guest's status submits a reboot after confirmation.
 It is disabled for stopped guests, unavailable nodes, and pending/recent submissions.
 The server refreshes cluster inventory, checks that the guest still belongs to the
 selected node, then runs exactly `pct reboot <ID>` for an LXC or `qm reboot <ID>` for

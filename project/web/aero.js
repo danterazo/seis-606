@@ -452,15 +452,15 @@ function renderGuests(nodes) {
     }, [el("span", { className: "refresh-icon", text: "↻", attrs: { "aria-hidden": "true" } })]);
     rebootButton.disabled = guest.state !== "running" || nodes.find((node) => node.name === guest.node)?.state !== "online" || Boolean(action?.pending) || (action?.retryAt ?? 0) > Date.now();
     return el("li", { className: "guest", attrs: { style: colorStyle(colorOfNode(guest.node)) } }, [
-      el("div", { className: "guest-tools" }, [
-        el("span", { className: "guest-mark", attrs: { "aria-hidden": "true" } }, [
-          el("span", { className: `guest-icon guest-${guest.kind}`, text: kindLabel(guest.kind) }),
-          el("span", { className: "guest-badge", text: initialOfNode(guest.node) }),
-        ]),
-        rebootButton,
+      el("span", { className: "guest-mark", attrs: { "aria-hidden": "true" } }, [
+        el("span", { className: `guest-icon guest-${guest.kind}`, text: kindLabel(guest.kind) }),
+        el("span", { className: "guest-badge", text: initialOfNode(guest.node) }),
       ]),
       el("div", { className: "guest-body" }, [
-        el("div", { className: "guest-header" }, [el("strong", { className: "guest-name", text: guestLabel(guest) }), statePill(guest.state)]),
+        el("div", { className: "guest-header" }, [
+          el("strong", { className: "guest-name", text: guestLabel(guest), attrs: { title: guestLabel(guest) } }),
+          el("div", { className: "guest-state-actions" }, [rebootButton, statePill(guest.state)]),
+        ]),
         el("div", { className: "guest-sub" }, [el("small", { text: `${displayNodeName(guest.node)} · ID ${guest.vmid}` })]),
         ...(metrics === null ? [] : [el("div", { className: "guest-metrics" }, [metricRow({ label: "CPU", metric: metrics.cpu, tone: "cpu" }), metricRow({ label: "RAM", metric: metrics.ram, tone: "memory" })])]),
         ...(action ? [el("small", { className: `guest-action-status${action.error ? " is-error" : ""}`, text: action.message, attrs: { role: "status" } })] : []),
