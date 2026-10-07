@@ -9,14 +9,14 @@ from homelab_dashboard.sources.openwrt_ssh import OpenWrtLeaseSource, parse_leas
 from homelab_dashboard.sources.proxmox_ssh import SshTarget
 
 NOW: datetime = datetime(2026, 10, 7, tzinfo=UTC)
-LEASES: str = "2000000000 AA:BB:CC:DD:EE:FF 192.168.10.23 ringo-M4 *\n0 11:22:33:44:55:66 192.168.10.24 * *\n"
+LEASES: str = "2000000000 AA:BB:CC:DD:EE:FF 192.168.10.23 ringom4-wifi *\n0 11:22:33:44:55:66 192.168.10.24 * *\n"
 
 
 def test_dnsmasq_leases_preserve_identity_and_use_shared_names() -> None:
     named, unnamed = parse_leases(text=LEASES)
     assert named.mac == "aa:bb:cc:dd:ee:ff"
     assert named.to_payload()["mac"] == "AA:BB:CC:DD:EE:FF"
-    assert named.hostname == "ringo-M4"
+    assert named.hostname == "ringom4-wifi"
     assert named.to_payload()["display_name"] == "\u308a\u3093\u3054-M4"
     assert named.expires_at == datetime.fromtimestamp(2000000000, UTC)
     assert unnamed.expires_at is None
@@ -109,6 +109,26 @@ def test_leases_are_grouped_lan_first_and_sorted_by_numeric_ip() -> None:
 def test_network_groups_include_all_non_lan_devices_in_the_second_panel(address: str) -> None:
     lease = parse_leases(text=f"0 aa:bb:cc:dd:ee:ff {address} device *")[0]
     assert lease.to_payload()["network_group"] == ("lan" if address.startswith("192.168.") else "guest_iot")
+
+
+def test_guest_iot_names_precede_ip_only_devices_without_changing_lan_order() -> None:
+    runner = FakeRunner()
+    runner.stdout = "\n".join([
+        "0 aa:bb:cc:dd:ee:01 172.16.0.2 * *",
+        "0 aa:bb:cc:dd:ee:02 172.16.0.3 172.16.0.3 *",
+        "0 aa:bb:cc:dd:ee:03 172.16.10.170 creality-k1c-wifi *",
+        "0 aa:bb:cc:dd:ee:04 172.16.0.238 ecoflow *",
+        "0 aa:bb:cc:dd:ee:05 192.168.10.10 lan-node *",
+        "0 aa:bb:cc:dd:ee:06 192.168.10.2 * *",
+        "0 aa:bb:cc:dd:ee:07 172.16.0.112 KP125M *",
+    ])
+    source = OpenWrtLeaseSource(target=SshTarget(host="router"), runner=runner)
+    addresses = [lease["address"] for lease in source.fetch()["leases"]]
+    assert addresses == [
+        "192.168.10.2", "192.168.10.10",
+        "172.16.0.112", "172.16.0.238", "172.16.10.170",
+        "172.16.0.2", "172.16.0.3",
+    ]
 
 
 @pytest.mark.parametrize("error", [FileNotFoundError(), subprocess.TimeoutExpired(cmd="ssh", timeout=8)])

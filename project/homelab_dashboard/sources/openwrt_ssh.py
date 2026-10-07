@@ -33,9 +33,18 @@ class DhcpLease:
         }
 
 
-def lease_sort_key(lease: DhcpLease) -> Tuple[bool, int, str]:
+def lease_sort_key(lease: DhcpLease) -> Tuple[bool, bool, int, str]:
     address: ipaddress.IPv4Address = ipaddress.IPv4Address(lease.address)
-    return (address not in LAN_NETWORK, int(address), lease.mac)
+    outside_lan: bool = address not in LAN_NETWORK
+    unnamed: bool = lease.hostname is None
+    if lease.hostname is not None:
+        try:
+            ipaddress.ip_address(lease.hostname)
+        except ValueError:
+            pass
+        else:
+            unnamed = True
+    return (outside_lan, outside_lan and unnamed, int(address), lease.mac)
 
 
 def parse_leases(*, text: str) -> Tuple[DhcpLease, ...]:

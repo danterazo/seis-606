@@ -1,3 +1,4 @@
+import ipaddress
 import json
 import socket
 import socketserver
@@ -12,6 +13,7 @@ from urllib.parse import parse_qs, urlparse
 from homelab_dashboard.config import Settings
 from homelab_dashboard.presentation import present_payload
 from homelab_dashboard.node_profiles import expected_hardware_for
+from homelab_dashboard.services.guests import GuestRebooter
 from homelab_dashboard.sources.base import RefreshableStatusSource, StatusSource, StatusSourceError
 from homelab_dashboard.sources.cache import CachedStatusSource
 from homelab_dashboard.sources.hardware_source import HardwareEnrichedSource
@@ -23,6 +25,7 @@ WEB_ROOT: Final[Path] = Path(__file__).resolve().parent / "web"
 NODE_IMAGE_DIR: Final[Path] = WEB_ROOT / "images" / "nodes"
 STATUS_PATH: Final[str] = "/api/status"
 DEVICES_PATH: Final[str] = "/api/devices"
+REBOOT_PATH: Final[str] = "/api/guests/reboot"
 
 RequestSocket = Union[socket.socket, Tuple[bytes, socket.socket]]
 
@@ -36,9 +39,11 @@ class DashboardHandler(SimpleHTTPRequestHandler):
         *,
         source: RefreshableStatusSource,
         devices: Optional[OpenWrtLeaseSource] = None,
+        rebooter: Optional[GuestRebooter] = None,
     ) -> None:
         self.source: RefreshableStatusSource = source
         self.devices: Optional[OpenWrtLeaseSource] = devices
+        self.rebooter: Optional[GuestRebooter] = rebooter
         super().__init__(request, client_address, server, directory=str(WEB_ROOT))
 
     def do_GET(self) -> None:
@@ -57,6 +62,45 @@ class DashboardHandler(SimpleHTTPRequestHandler):
             self._send_json(status=HTTPStatus.OK, payload=self._status_payload(force_refresh=force_refresh))
         except StatusSourceError as error:
             self._send_json(status=HTTPStatus.SERVICE_UNAVAILABLE, payload={"error": str(error)})
+
+    def do_POST(self) -> None:
+        if urlparse(self.path).path != REBOOT_PATH:
+            self._send_json(status=HTTPStatus.NOT_FOUND, payload={"error": "Unknown action."})
+            return
+        host: str = self.headers.get("Host", "")
+        origin = urlparse(self.headers.get("Origin", ""))
+        if (
+            not ipaddress.ip_address(self.client_address[0]).is_loopback
+            or urlparse(f"//{host}").hostname not in ("localhost", "127.0.0.1", "::1")
+            or origin.scheme not in ("http", "https")
+            or origin.netloc != host
+            or self.headers.get("X-Homelab-Action") != "reboot"
+        ):
+            self._send_json(status=HTTPStatus.FORBIDDEN, payload={"error": "Guest controls require a same-origin localhost request."})
+            return
+        if self.headers.get("Content-Type", "").split(";", 1)[0].strip() != "application/json":
+            self._send_json(status=HTTPStatus.UNSUPPORTED_MEDIA_TYPE, payload={"error": "A JSON request is required."})
+            return
+        if self.rebooter is None:
+            self._send_json(status=HTTPStatus.SERVICE_UNAVAILABLE, payload={"error": "Guest controls are not configured."})
+            return
+        try:
+            length: int = int(self.headers.get("Content-Length", "0"))
+            if not 0 < length <= 1024:
+                raise ValueError("Guest action requests must be between 1 and 1024 bytes.")
+            self.connection.settimeout(5.0)
+            document: object = json.loads(self.rfile.read(length))
+            if not isinstance(document, dict) or set(document) != {"vmid", "node"}:
+                raise ValueError("A guest ID and node name are required; no other fields are accepted.")
+            self.rebooter.reboot(vmid=document["vmid"], node_name=document["node"])
+        except (ValueError, UnicodeDecodeError) as error:
+            self._send_json(status=HTTPStatus.BAD_REQUEST, payload={"error": str(error)})
+        except TimeoutError:
+            self._send_json(status=HTTPStatus.REQUEST_TIMEOUT, payload={"error": "Reading the guest action request timed out."})
+        except StatusSourceError as error:
+            self._send_json(status=HTTPStatus.SERVICE_UNAVAILABLE, payload={"error": str(error)})
+        else:
+            self._send_json(status=HTTPStatus.OK, payload={"message": "Reboot command submitted."})
 
     def _status_payload(self, *, force_refresh: bool) -> Dict[str, Any]:
         snapshot = self.source.fetch_fresh() if force_refresh else self.source.fetch()
@@ -79,8 +123,11 @@ class DashboardHandler(SimpleHTTPRequestHandler):
             return
 
 
-def create_server(*, settings: Settings, source: RefreshableStatusSource, devices: Optional[OpenWrtLeaseSource] = None) -> ThreadingHTTPServer:
-    return ThreadingHTTPServer((settings.host, settings.port), partial(DashboardHandler, source=source, devices=devices))
+def create_server(
+    *, settings: Settings, source: RefreshableStatusSource, devices: Optional[OpenWrtLeaseSource] = None,
+    rebooter: Optional[GuestRebooter] = None,
+) -> ThreadingHTTPServer:
+    return ThreadingHTTPServer((settings.host, settings.port), partial(DashboardHandler, source=source, devices=devices, rebooter=rebooter))
 
 
 def main() -> None:
@@ -100,7 +147,8 @@ def main() -> None:
         ttl_seconds=settings.hardware_cache_seconds,
     )
     devices: OpenWrtLeaseSource = OpenWrtLeaseSource(target=router_target, ttl_seconds=settings.router_cache_seconds)
-    server: ThreadingHTTPServer = create_server(settings=settings, source=enriched, devices=devices)
+    rebooter: GuestRebooter = GuestRebooter(source=enriched, user=settings.ssh_user)
+    server: ThreadingHTTPServer = create_server(settings=settings, source=enriched, devices=devices, rebooter=rebooter)
     print(f"Homelab dashboard running at http://{settings.host}:{settings.port} (source: {target.destination})")
     try:
         server.serve_forever()

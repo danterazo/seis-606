@@ -1,6 +1,7 @@
 # Homelab Dashboard
 
-A read-only status page for a Proxmox VE cluster, styled after Frutiger Aero / Y2K desktops.
+A status dashboard with explicit guest reboot controls for a Proxmox VE cluster,
+styled after Frutiger Aero / Y2K desktops.
 Resource readings come from Proxmox; display profiles, pinned addresses, fallback CPU
 models, and memory inventory are configured separately and are not live discoveries.
 
@@ -38,11 +39,33 @@ ssh-keyscan -H -t ed25519 192.168.20.43 >> ~/.ssh/known_hosts
 Connections use `root` by default. To use another account, set `HOMELAB_PVE_SSH_USER`;
 a non-root account needs the `PVEAuditor` role to read cluster resources.
 
+### Guest Reboots
+
+The round orange arrow below each guest icon submits a reboot after confirmation.
+It is disabled for stopped guests, unavailable nodes, and pending/recent submissions.
+The server refreshes cluster inventory, checks that the guest still belongs to the
+selected node, then runs exactly `pct reboot <ID>` for an LXC or `qm reboot <ID>` for
+a VM over verified SSH to that node's reported address. IDs, kind, and destination
+are not arbitrary commands supplied by the browser.
+
+`POST /api/guests/reboot` accepts only a JSON guest ID and node name. Writes require
+a loopback client, localhost Host, matching Origin, and the dashboard's action header;
+cross-origin forms and remote clients are rejected. This is a local tool, not an
+authenticated multi-user management service. Do not expose it publicly. SSH runs as
+`HOMELAB_PVE_SSH_USER`; `PVEAuditor` alone does not grant shell reboot permissions.
+Use root or a deliberately restricted command wrapper/account that can reboot guests.
+
+Only one reboot submission runs at a time, and attempts for a guest have a 30-second
+cooldown. A timeout does not prove the reboot failed: check the guest before retrying.
+Success means the command was submitted, not that the OS has finished rebooting.
+Polling and node/router discovery remain read-only. Automated tests use fake SSH;
+browser action tests intercept requests and do not reboot real guests.
+
 ### Device Names and Leases
 
-Edit `DISPLAY_NAMES` in `homelab_dashboard/node_profiles.py` to add display aliases.
-Use `HOSTNAME_ALIASES` alongside it for alternate raw spellings; the router's
-`ringoM4-wifi` and `ringoA20` resolve to `ringo-M4` and `ringo-A20` respectively.
+Edit `DISPLAY_NAMES` in `homelab_dashboard/node_profiles.py` to configure display names.
+This is the only naming map: the router's `ringoM4-wifi` and `ringoA20` are matched
+directly to their hiragana display names, with no intermediate alias resolution.
 The case-insensitive map is shared by node cards, topology, guest cards/search, and
 DHCP devices; raw hostnames and IDs stay unchanged. The Japanese entries render as
 hiragana while preserving the `-M4` and `-A20` suffixes. Future aliases do not create
@@ -58,7 +81,9 @@ discovery, and Wi-Fi association data are not implemented yet.
 
 Leases in `192.168.0.0/16` appear in LAN Devices; all other IPv4 leases appear in
 Guest / IoT. The API returns LAN first, then the remaining devices, sorting each
-group by numeric IP address. This is a display grouping, not a connectivity or VLAN claim.
+group by numeric IP address. Within Guest / IoT, named devices come before IP-only
+devices, with numeric IP ordering within each subgroup; LAN ordering stays unchanged.
+This is a display grouping, not a connectivity or VLAN claim.
 
 Before leases can load, verify the router's SSH host-key fingerprint against its
 console or another trusted channel, then trust it in this machine's `known_hosts` and
@@ -111,7 +136,7 @@ remain italicized with an explanatory tooltip. GPU display and collection are di
 Prioritize storage/pool usage and health, last successful backup and failed backup jobs,
 cluster quorum, recent failed tasks, and small CPU/RAM history charts. Then consider
 guest tags/notes, uptime, network/disk throughput, and version/update status. Link to PVE
-for consoles, migrations, snapshots, backup configuration, and power controls rather
+for consoles, migrations, snapshots, backup configuration, and other power controls rather
 than rebuilding those management workflows. Use scoped PVE API tokens with PVEAuditor
 where practical; host hardware inspection still needs a separate restricted probe.
 

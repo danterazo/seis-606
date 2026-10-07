@@ -46,8 +46,8 @@ def test_lookup_ignores_case() -> None:
 @pytest.mark.parametrize(
     ("name", "display_name"),
     [
-        ("ringo-M4", "\u308a\u3093\u3054-M4"),
-        ("RINGO-A20", "\u308a\u3093\u3054-A20"),
+        ("OVEDUR-10G", "\u00f3ve\u00f0ur-10g"),
+        ("CREALITY-K1C-WIFI", "var\u00f0eldur"),
         ("suika", "\u3059\u3044\u304b"),
         ("ichigo", "\u3044\u3061\u3054"),
         ("saru", "\u3055\u308b"),
@@ -62,6 +62,8 @@ def test_shared_name_map_applies_to_future_nodes(name: str, display_name: str) -
 
 def test_unmapped_device_names_are_preserved() -> None:
     assert display_name_for(name="My-Device") == "My-Device"
+    assert display_name_for(name="ringo-M4") == "ringo-M4"
+    assert display_name_for(name="ringo-A20") == "ringo-A20"
 
 
 def test_kex_sorts_first_then_cerulean_then_kveikur() -> None:

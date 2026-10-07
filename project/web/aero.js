@@ -12,10 +12,12 @@
  * @typedef {{ className?: string, text?: string, attrs?: Readonly<Record<string, string>> }} ElementOptions
  * @typedef {{ address: string, mac: string, hostname: string | null, display_name: string, network_group: "lan" | "guest_iot", expires_at: string | null }} DhcpLease
  * @typedef {{ source: string, router: string, fetched_at: string | null, stale: boolean, error: string | null, leases: DhcpLease[] }} DevicesSnapshot
+ * @typedef {{ pending: boolean, message: string, error: boolean, retryAt: number }} GuestActionState
  */
 
 const STATUS_URL = "/api/status";
 const DEVICES_URL = "/api/devices";
+const REBOOT_URL = "/api/guests/reboot";
 const DEVICES_INTERVAL_MS = 10_000;
 const REFRESH_INTERVAL_MS = 1_000;
 const MAX_TOPOLOGY_GUESTS = 12;
@@ -31,6 +33,8 @@ let devicesSnapshot = null;
 /** @type {string | null} */
 let devicesError = null;
 let devicesRefreshInFlight = false;
+/** @type {Map<number, GuestActionState>} */
+const guestActions = new Map();
 
 /** @type {ReadonlyArray<{ id: GuestFilter, label: string }>} */
 const FILTERS = [
@@ -424,20 +428,62 @@ function renderGuests(nodes) {
   const guests = visibleGuests(nodes);
   const rows = guests.map((guest) => {
     const metrics = guestMetrics(guest);
+    const action = guestActions.get(guest.vmid);
+    const rebootButton = el("button", {
+      className: `guest-reboot${action?.pending ? " is-loading" : ""}`,
+      attrs: {
+        type: "button", "data-reboot-vmid": String(guest.vmid), "data-reboot-node": guest.node,
+        title: `Reboot ${guestLabel(guest)} (ID ${guest.vmid}) on ${displayNodeName(guest.node)}`,
+        "aria-label": `Reboot ${guestLabel(guest)} (ID ${guest.vmid})`,
+      },
+    }, [el("span", { className: "refresh-icon", text: "↻", attrs: { "aria-hidden": "true" } })]);
+    rebootButton.disabled = guest.state !== "running" || nodes.find((node) => node.name === guest.node)?.state !== "online" || Boolean(action?.pending) || (action?.retryAt ?? 0) > Date.now();
     return el("li", { className: "guest", attrs: { style: colorStyle(colorOfNode(guest.node)) } }, [
-      el("span", { className: "guest-mark", attrs: { "aria-hidden": "true" } }, [
-        el("span", { className: `guest-icon guest-${guest.kind}`, text: kindLabel(guest.kind) }),
-        el("span", { className: "guest-badge", text: initialOfNode(guest.node) }),
+      el("div", { className: "guest-tools" }, [
+        el("span", { className: "guest-mark", attrs: { "aria-hidden": "true" } }, [
+          el("span", { className: `guest-icon guest-${guest.kind}`, text: kindLabel(guest.kind) }),
+          el("span", { className: "guest-badge", text: initialOfNode(guest.node) }),
+        ]),
+        rebootButton,
       ]),
       el("div", { className: "guest-body" }, [
         el("strong", { className: "guest-name", text: guestLabel(guest) }),
         el("div", { className: "guest-sub" }, [el("small", { text: `${displayNodeName(guest.node)} · ID ${guest.vmid}` }), statePill(guest.state)]),
         ...(metrics === null ? [] : [el("div", { className: "guest-metrics" }, [metricRow({ label: "CPU", metric: metrics.cpu, tone: "cpu" }), metricRow({ label: "RAM", metric: metrics.ram, tone: "memory" })])]),
+        ...(action ? [el("small", { className: `guest-action-status${action.error ? " is-error" : ""}`, text: action.message, attrs: { role: "status" } })] : []),
       ]),
     ]);
   });
   const empty = nodes.length === 0 ? "No guests to show." : "No guests match this view.";
   required("#guest-list").replaceChildren(...(rows.length ? rows : [el("li", { className: "empty", text: empty })]));
+}
+
+/** @param {number} vmid @param {string} nodeName */
+async function rebootGuest(vmid, nodeName) {
+  const existing = guestActions.get(vmid);
+  if (existing?.pending || (existing?.retryAt ?? 0) > Date.now()) return;
+  const node = state.snapshot?.nodes.find((candidate) => candidate.name === nodeName);
+  const guest = node?.guests.find((candidate) => candidate.vmid === vmid);
+  if (!guest || node?.state !== "online" || guest.state !== "running") return;
+  if (!window.confirm(`Reboot ${guestLabel(guest)} (ID ${vmid}) on ${nodeLabel(node)}?\nThis interrupts services running in this ${kindLabel(guest.kind)}.`)) return;
+  guestActions.set(vmid, { pending: true, message: "Submitting reboot…", error: false, retryAt: 0 });
+  renderGuests(state.snapshot?.nodes ?? []);
+  try {
+    const response = await fetch(REBOOT_URL, {
+      method: "POST", headers: { "Content-Type": "application/json", "X-Homelab-Action": "reboot" },
+      body: JSON.stringify({ vmid, node: nodeName }),
+    });
+    /** @type {unknown} */
+    const payload = await response.json();
+    if (!response.ok) throw new Error(errorMessage(payload));
+    guestActions.set(vmid, { pending: false, message: "Reboot command submitted.", error: false, retryAt: Date.now() + 30_000 });
+    void refresh({ force: true });
+  } catch (error) {
+    guestActions.set(vmid, { pending: false, message: error instanceof Error ? error.message : "Reboot failed.", error: true, retryAt: Date.now() + 30_000 });
+  } finally {
+    renderGuests(state.snapshot?.nodes ?? []);
+    window.setTimeout(() => renderGuests(state.snapshot?.nodes ?? []), 30_000);
+  }
 }
 
 function renderDevices() {
@@ -539,6 +585,11 @@ function toggleNode(name) {
 
 document.addEventListener("click", (event) => {
   if (!(event.target instanceof Element)) return;
+  const rebootTarget = event.target.closest("[data-reboot-vmid]");
+  if (rebootTarget instanceof HTMLButtonElement && !rebootTarget.disabled) {
+    void rebootGuest(Number(rebootTarget.getAttribute("data-reboot-vmid")), rebootTarget.getAttribute("data-reboot-node") ?? "");
+    return;
+  }
   const nodeChip = event.target.closest("[data-node-filter]");
   if (nodeChip instanceof Element) {
     state.selectedNode = nodeChip.getAttribute("data-node-filter") || null;
@@ -567,7 +618,7 @@ required("#refresh-button").addEventListener("click", () => {
 });
 
 const refreshSeconds = REFRESH_INTERVAL_MS / 1000;
-required("#refresh-note").textContent = `Read-only · checks for updates every ${refreshSeconds === 1 ? "second" : `${refreshSeconds} seconds`}`;
+required("#refresh-note").textContent = `Guest controls · checks for updates every ${refreshSeconds === 1 ? "second" : `${refreshSeconds} seconds`}`;
 let overviewWidth = 0;
 new ResizeObserver(([entry]) => {
   if (entry.contentRect.width === overviewWidth) return;
