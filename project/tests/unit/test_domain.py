@@ -1,8 +1,10 @@
+from typing import List
+
 from homelab_dashboard.domain import Node, Workload, workload_counts_for
 
 
-def test_workload_counts_are_derived_from_returned_workloads():
-    node = Node(
+def test_workload_counts_are_derived_from_returned_workloads() -> None:
+    node: Node = Node(
         node_id="node-a",
         name="Node A",
         reported_state="running",
@@ -13,16 +15,26 @@ def test_workload_counts_are_derived_from_returned_workloads():
         ],
     )
 
-    counts = workload_counts_for(node)
+    counts = workload_counts_for(node=node)
 
     assert counts == {"virtual_machine": 2, "container": 1}
     assert node.workload_counts == counts
 
 
-def test_duplicate_names_are_kept_distinct_by_node():
-    nodes = [
-        Node(node_id="node-a", name="Node A", reported_state="running", workloads=[Workload(node_id="node-a", workload_id="vm-a", name="api", kind="virtual_machine", reported_state="running")]),
-        Node(node_id="node-b", name="Node B", reported_state="running", workloads=[Workload(node_id="node-b", workload_id="vm-b", name="api", kind="virtual_machine", reported_state="running")]),
+def test_duplicate_names_are_kept_distinct_by_node() -> None:
+    nodes: List[Node] = [
+        Node(
+            node_id="node-a",
+            name="Node A",
+            reported_state="running",
+            workloads=[Workload(node_id="node-a", workload_id="vm-a", name="api", kind="virtual_machine", reported_state="running")],
+        ),
+        Node(
+            node_id="node-b",
+            name="Node B",
+            reported_state="running",
+            workloads=[Workload(node_id="node-b", workload_id="vm-b", name="api", kind="virtual_machine", reported_state="running")],
+        ),
     ]
 
     names = {workload.name for node in nodes for workload in node.workloads}

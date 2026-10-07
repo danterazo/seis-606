@@ -1,10 +1,10 @@
 // @ts-check
 
 /**
- * @typedef {{ cpu_ratio: number | null, memory_used_bytes: number | null, memory_total_bytes: number | null }} Resources
+ * @typedef {{ cpu_ratio: number | null, cpu_cores: number | null, memory_used_bytes: number | null, memory_total_bytes: number | null }} Resources
  * @typedef {"running" | "stopped" | "paused" | "unknown"} GuestState
  * @typedef {{ vmid: number, name: string, node: string, kind: "vm" | "container", state: GuestState, resources: Resources }} Guest
- * @typedef {{ name: string, state: "online" | "offline" | "unknown", address: string | null, resources: Resources, guests: Guest[] }} PveNode
+ * @typedef {{ name: string, state: "online" | "offline" | "unknown", address: string | null, image: string | null, resources: Resources, guests: Guest[] }} PveNode
  * @typedef {{ source: string, fetched_at: string, nodes: PveNode[] }} Snapshot
  * @typedef {"all" | "running" | "vm" | "container"} GuestFilter
  * @typedef {{ snapshot: Snapshot | null, error: string | null, selectedNode: string | null, filter: GuestFilter, query: string }} ViewState
@@ -13,7 +13,10 @@
 
 const STATUS_URL = "/api/status";
 const REFRESH_INTERVAL_MS = 30_000;
-const MAX_TOPOLOGY_GUESTS = 6;
+const MAX_TOPOLOGY_GUESTS = 12;
+const TOPOLOGY_NAME_LIMIT = 22;
+const BYTES_PER_MIB = 1024 ** 2;
+const BYTES_PER_GIB = 1024 ** 3;
 const SVG_NS = "http://www.w3.org/2000/svg";
 
 /** @type {ViewState} */
@@ -85,6 +88,52 @@ const formatPercent = (value) => (value === null ? "—" : `${Math.round(value)}
 /** @param {string} text @param {number} limit */
 const truncate = (text, limit) => (text.length > limit ? `${text.slice(0, limit - 1)}…` : text);
 
+/** @param {number} value @param {number} digits */
+const trimNumber = (value, digits) => value.toFixed(digits).replace(/\.0+$/, "");
+
+/** Memory under 1 GB reads better in MB; both halves of a pair share one unit. */
+/** @param {number} total @returns {{ size: number, label: string, digits: number }} */
+const memoryUnit = (total) => (total < BYTES_PER_GIB ? { size: BYTES_PER_MIB, label: "MB", digits: 0 } : { size: BYTES_PER_GIB, label: "GB", digits: 1 });
+
+/** @param {number} bytes */
+function formatBytes(bytes) {
+  const unit = memoryUnit(bytes);
+  return `${trimNumber(bytes / unit.size, unit.digits)} ${unit.label}`;
+}
+
+/** @param {{ used: number, total: number }} args */
+function formatMemoryPair({ used, total }) {
+  const unit = memoryUnit(total);
+  return `${trimNumber(used / unit.size, unit.digits)}/${trimNumber(total / unit.size, unit.digits)} ${unit.label}`;
+}
+
+/** @param {Resources} resources */
+const formatCores = ({ cpu_cores: cores }) => (cores === null ? "cores unknown" : `${cores} ${cores === 1 ? "core" : "cores"}`);
+
+/** Allotment, usage, then percentage: "3/8 GB (38%)". @param {Resources} resources */
+function formatRam(resources) {
+  const { memory_used_bytes: used, memory_total_bytes: total } = resources;
+  if (total === null) return "unknown";
+  if (used === null) return `${formatBytes(total)} total`;
+  return `${formatMemoryPair({ used, total })} (${formatPercent(memoryPercent(resources))})`;
+}
+
+/** @param {Guest} guest @returns {[string, string]} */
+function guestUsageLines(guest) {
+  const { resources } = guest;
+  if (guest.state !== "running") {
+    const allotment = resources.memory_total_bytes === null ? "RAM allotment unknown" : `${formatBytes(resources.memory_total_bytes)} RAM allotted`;
+    return [formatCores(resources), `Not running · ${allotment}`];
+  }
+  return [`${formatCores(resources)} · CPU ${formatPercent(cpuPercent(resources))}`, `RAM ${formatRam(resources)}`];
+}
+
+/** @param {Guest} guest */
+function guestTooltip(guest) {
+  const [compute, ram] = guestUsageLines(guest);
+  return `${guest.name} (ID ${guest.vmid}) – ${guest.state}\n${compute}\n${ram}`;
+}
+
 /** @param {PveNode} node @param {Guest["kind"]} kind */
 const countKind = (node, kind) => node.guests.filter((guest) => guest.kind === kind).length;
 
@@ -151,11 +200,17 @@ function renderBanner() {
   banner.replaceChildren(el("i", { className: "banner-icon", attrs: { "aria-hidden": "true" } }), el("strong", { text: content.title }), el("span", { text: content.detail }));
 }
 
+/** @param {PveNode} node */
+function nodeAvatar(node) {
+  if (node.image === null) return el("span", { className: "server-glyph", attrs: { "aria-hidden": "true" } });
+  return el("img", { className: "node-avatar", attrs: { src: node.image, alt: "", width: "48", height: "48", loading: "lazy" } });
+}
+
 /** @param {PveNode[]} nodes */
 function renderNodeList(nodes) {
   const items = nodes.map((node) => {
-    const button = el("button", { className: "node-row", attrs: { type: "button", "data-node": node.name, "aria-pressed": String(state.selectedNode === node.name) } }, [
-      el("span", { className: "server-glyph", attrs: { "aria-hidden": "true" } }),
+    const button = el("button", { className: `node-row row-${node.state}`, attrs: { type: "button", "data-node": node.name, "aria-pressed": String(state.selectedNode === node.name) } }, [
+      nodeAvatar(node),
       el("span", { className: "node-meta" }, [el("strong", { text: node.name }), statePill(node.state), el("small", { text: node.address ?? "Address unknown" })]),
     ]);
     return button;
@@ -178,10 +233,10 @@ function renderOverview(nodes) {
 }
 
 /**
- * @param {{ x: number, y: number, text: string, className: string }} args
+ * @param {{ x: number, y: number, text: string, className: string, anchor?: "start" | "middle" }} args
  */
-function svgText({ x, y, text, className }) {
-  return svg("text", { x, y, class: className, "text-anchor": "middle" }, [text]);
+function svgText({ x, y, text, className, anchor = "middle" }) {
+  return svg("text", { x, y, class: className, "text-anchor": anchor }, [text]);
 }
 
 /** @param {PveNode[]} nodes */
@@ -191,14 +246,14 @@ function renderTopology(nodes) {
     host.replaceChildren(el("p", { className: "empty", text: "No nodes to draw." }));
     return;
   }
-  const column = 210;
-  const tile = { width: 58, height: 48, gap: 8, perRow: 3 };
+  const column = 244;
+  const pill = { width: 214, height: 30, gap: 7, badge: 42 };
   const width = Math.max(520, nodes.length * column);
   const hub = { x: width / 2, y: 42 };
   const nodeY = 150;
   const guestTop = 238;
-  const tallest = Math.max(...nodes.map((node) => Math.ceil(Math.min(node.guests.length, MAX_TOPOLOGY_GUESTS) / tile.perRow)));
-  const height = guestTop + Math.max(1, tallest) * (tile.height + tile.gap) + 30;
+  const tallest = Math.max(...nodes.map((node) => Math.min(node.guests.length, MAX_TOPOLOGY_GUESTS)));
+  const height = guestTop + Math.max(1, tallest) * (pill.height + pill.gap) + 34;
 
   /** @type {SVGElement[]} */
   const drawing = [];
@@ -222,22 +277,24 @@ function renderTopology(nodes) {
     );
 
     const shown = node.guests.slice(0, MAX_TOPOLOGY_GUESTS);
-    const rowWidth = Math.min(shown.length, tile.perRow) * (tile.width + tile.gap) - tile.gap;
     shown.forEach((guest, guestIndex) => {
-      const gx = x - rowWidth / 2 + (guestIndex % tile.perRow) * (tile.width + tile.gap);
-      const gy = guestTop + Math.floor(guestIndex / tile.perRow) * (tile.height + tile.gap);
+      const gx = x - pill.width / 2;
+      const gy = guestTop + guestIndex * (pill.height + pill.gap);
       const kind = guest.kind === "vm" ? "vm" : "ct";
+      const dim = offline || guest.state !== "running";
       drawing.push(
-        svg("g", { class: `topo-guest topo-${kind}${offline || guest.state !== "running" ? " is-dim" : ""}` }, [
-          svg("title", {}, [`${guest.name} (${guest.vmid}) – ${guest.state}`]),
-          svg("rect", { x: gx, y: gy, width: tile.width, height: tile.height, rx: 9 }),
-          svgText({ x: gx + tile.width / 2, y: gy + 19, text: kind === "vm" ? "VM" : "CT", className: "topo-guest-kind" }),
-          svgText({ x: gx + tile.width / 2, y: gy + 34, text: truncate(guest.name, 9), className: "topo-guest-name" }),
+        svg("g", { class: `topo-guest topo-${kind}${dim ? " is-dim" : ""}` }, [
+          svg("title", {}, [guestTooltip(guest)]),
+          svg("rect", { class: "topo-pill", x: gx, y: gy, width: pill.width, height: pill.height, rx: 15 }),
+          svg("rect", { class: "topo-badge", x: gx, y: gy, width: pill.badge, height: pill.height, rx: 15 }),
+          svgText({ x: gx + pill.badge / 2, y: gy + 19.5, text: kind === "vm" ? "VM" : "CT", className: "topo-guest-kind" }),
+          svgText({ x: gx + pill.badge + 8, y: gy + 19.5, text: truncate(guest.name, TOPOLOGY_NAME_LIMIT), className: "topo-guest-name", anchor: "start" }),
+          svg("circle", { class: "topo-led", cx: gx + pill.width - 14, cy: gy + pill.height / 2, r: 4 }),
         ]),
       );
     });
     if (node.guests.length > shown.length) {
-      drawing.push(svgText({ x, y: guestTop + Math.ceil(shown.length / tile.perRow) * (tile.height + tile.gap) + 8, text: `+${node.guests.length - shown.length} more`, className: "topo-sub" }));
+      drawing.push(svgText({ x, y: guestTop + shown.length * (pill.height + pill.gap) + 10, text: `+${node.guests.length - shown.length} more`, className: "topo-sub" }));
     }
   });
 
@@ -251,6 +308,7 @@ function renderUsage(nodes) {
       el("strong", { text: node.name }),
       bar({ label: "CPU", value: cpuPercent(node.resources), tone: "cpu" }),
       bar({ label: "RAM", value: memoryPercent(node.resources), tone: "memory" }),
+      el("small", { className: "usage-detail", text: `${formatCores(node.resources)} · RAM ${formatRam(node.resources)}` }),
     ]),
   );
   required("#usage").replaceChildren(...(rows.length ? rows : [el("p", { className: "empty", text: "No usage data." })]));
@@ -280,10 +338,15 @@ function renderGuests(nodes) {
 
   const guests = visibleGuests(nodes);
   const rows = guests.map((guest) => {
-    const usage = guest.state === "running" ? `CPU ${formatPercent(cpuPercent(guest.resources))} · RAM ${formatPercent(memoryPercent(guest.resources))}` : "Not running";
+    const [compute, ram] = guestUsageLines(guest);
     return el("li", { className: "guest" }, [
       el("span", { className: `guest-icon guest-${guest.kind}`, text: guest.kind === "vm" ? "VM" : "CT", attrs: { "aria-hidden": "true" } }),
-      el("span", { className: "guest-meta" }, [el("strong", { text: guest.name }), el("small", { text: `${guest.node} · ID ${guest.vmid}` }), el("small", { text: usage })]),
+      el("span", { className: "guest-meta" }, [
+        el("strong", { text: guest.name }),
+        el("small", { text: `${guest.node} · ID ${guest.vmid}` }),
+        el("small", { text: compute }),
+        el("small", { text: ram }),
+      ]),
       statePill(guest.state),
     ]);
   });

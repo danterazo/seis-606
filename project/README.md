@@ -14,7 +14,8 @@ standard library and an OpenSSH client.
 
 | Variable | Default | Purpose |
 | --- | --- | --- |
-| `HOMELAB_PVE_SSH_TARGET` | `192.168.20.43` | Host, SSH alias, or `user@host` of any cluster node |
+| `HOMELAB_PVE_SSH_HOST` | `192.168.20.43` | Host, IP, or SSH alias of any cluster node |
+| `HOMELAB_PVE_SSH_USER` | `root` | Account used for every connection |
 | `HOMELAB_SSH_TIMEOUT` | `15` | Seconds to wait for Proxmox |
 | `HOMELAB_HOST` / `PORT` | `127.0.0.1` / `8765` | Where the dashboard listens |
 
@@ -37,8 +38,8 @@ ssh-keyscan -t ed25519 192.168.20.43 | ssh-keygen -lf -  # on this machine
 ssh-keyscan -H -t ed25519 192.168.20.43 >> ~/.ssh/known_hosts
 ```
 
-If the node needs a different account, set `HOMELAB_PVE_SSH_TARGET=user@192.168.20.43`.
-A non-root account needs the `PVEAuditor` role to read cluster resources.
+Connections use `root` by default. To use another account, set `HOMELAB_PVE_SSH_USER`;
+a non-root account needs the `PVEAuditor` role to read cluster resources.
 
 ## Layout
 
@@ -59,5 +60,6 @@ project/
 ## Test
 
 ```bash
-python3 -m pytest project/tests/unit/test_pve_source.py
+python3 -m pytest project/tests
+python3 -m mypy --strict project/server.py project/homelab_dashboard
 ```

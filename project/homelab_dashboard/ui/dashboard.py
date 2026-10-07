@@ -1,12 +1,10 @@
-from __future__ import annotations
-
-from typing import Any
+from typing import Any, Dict, List, Mapping, Sequence
 
 
-def build_dashboard_snapshot(*, source_label: str, nodes: list[dict[str, Any]]) -> dict[str, Any]:
-    normalized_nodes = []
+def build_dashboard_snapshot(*, source_label: str, nodes: Sequence[Mapping[str, Any]]) -> Dict[str, Any]:
+    normalized_nodes: List[Dict[str, Any]] = []
     for node in nodes:
-        workloads = node.get("workloads") or []
+        workloads: List[Any] = list(node.get("workloads") or [])
         normalized_nodes.append(
             {
                 "node_id": node.get("node_id"),

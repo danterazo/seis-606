@@ -1,12 +1,10 @@
-from __future__ import annotations
-
-from typing import Any
+from typing import Any, Dict
 
 import pytest
 
 
 @pytest.fixture
-def sample_node_payload() -> dict[str, Any]:
+def sample_node_payload() -> Dict[str, Any]:
     return {
         "node_id": "node-a",
         "name": "Node A",

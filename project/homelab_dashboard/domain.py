@@ -1,41 +1,39 @@
-from __future__ import annotations
-
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, Dict, List, Mapping, Union
 
 
-@dataclass
+@dataclass(kw_only=True)
 class Workload:
     node_id: str
     workload_id: str
     name: str
     kind: str
     reported_state: str
-    architecture: str | None = None
+    architecture: Union[str, None] = None
     restart_count: int = 0
-    reason: str | None = None
-    health: str | None = None
-    last_seen: str | None = None
-    tags: list[str] = field(default_factory=list)
+    reason: Union[str, None] = None
+    health: Union[str, None] = None
+    last_seen: Union[str, None] = None
+    tags: List[str] = field(default_factory=list)
 
 
-@dataclass
+@dataclass(kw_only=True)
 class Node:
     node_id: str
     name: str
     reported_state: str
-    workloads: list[Workload] = field(default_factory=list)
-    architecture: str | None = None
+    workloads: List[Workload] = field(default_factory=list)
+    architecture: Union[str, None] = None
     connection_state: str = "unknown"
-    last_successful_update: str | None = None
-    source_label: str | None = None
-    workload_counts: dict[str, int] = field(default_factory=dict)
+    last_successful_update: Union[str, None] = None
+    source_label: Union[str, None] = None
+    workload_counts: Dict[str, int] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
-        self.workload_counts = workload_counts_for(self)
+        self.workload_counts = workload_counts_for(node=self)
 
 
-def normalize_workload(value: dict[str, Any] | Workload) -> Workload:
+def normalize_workload(*, value: Union[Mapping[str, Any], Workload]) -> Workload:
     if isinstance(value, Workload):
         return value
 
@@ -54,11 +52,11 @@ def normalize_workload(value: dict[str, Any] | Workload) -> Workload:
     )
 
 
-def normalize_node(value: dict[str, Any] | Node) -> Node:
+def normalize_node(*, value: Union[Mapping[str, Any], Node]) -> Node:
     if isinstance(value, Node):
         return value
 
-    workloads = [normalize_workload(item) for item in value.get("workloads") or []]
+    workloads: List[Workload] = [normalize_workload(value=item) for item in value.get("workloads") or []]
     return Node(
         node_id=str(value.get("node_id") or value.get("id") or "unknown"),
         name=str(value.get("name") or "unknown"),
@@ -71,15 +69,12 @@ def normalize_node(value: dict[str, Any] | Node) -> Node:
     )
 
 
-def workload_counts_for(node: Node | dict[str, Any]) -> dict[str, int]:
-    if isinstance(node, dict):
-        node_obj = normalize_node(node)
-    else:
-        node_obj = node
+def workload_counts_for(*, node: Union[Node, Mapping[str, Any]]) -> Dict[str, int]:
+    node_obj: Node = node if isinstance(node, Node) else normalize_node(value=node)
 
-    counts: dict[str, int] = {}
+    counts: Dict[str, int] = {}
     for workload in node_obj.workloads:
-        kind = workload.kind or "unknown"
+        kind: str = workload.kind or "unknown"
         counts[kind] = counts.get(kind, 0) + 1
 
     if isinstance(node, Node):

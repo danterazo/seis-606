@@ -1,8 +1,6 @@
-from __future__ import annotations
+from typing import Any, Dict, Final, Union
 
-from typing import Any
-
-_HEALTH_MAP = {
+_HEALTH_MAP: Final[Dict[str, str]] = {
     "running": "healthy",
     "online": "healthy",
     "ok": "healthy",
@@ -20,12 +18,18 @@ _HEALTH_MAP = {
     "unavailable": "unknown",
 }
 
+_MESSAGES: Final[Dict[str, str]] = {
+    "failed": "{name} ({workload_id}) failed",
+    "degraded": "{name} ({workload_id}) is degraded",
+    "healthy": "{name} ({workload_id}) is healthy",
+    "offline": "{name} ({workload_id}) is offline",
+}
 
-def classify_health_state(state: str | None) -> str:
+
+def classify_health_state(*, state: Union[str, None]) -> str:
     if state is None:
         return "unknown"
-    normalized = str(state).strip().lower()
-    return _HEALTH_MAP.get(normalized, "unknown")
+    return _HEALTH_MAP.get(str(state).strip().lower(), "unknown")
 
 
 def workload_health_finding(
@@ -33,21 +37,13 @@ def workload_health_finding(
     workload_id: str,
     name: str,
     reported_state: str,
-    reason: str | None = None,
+    reason: Union[str, None] = None,
     restart_count: int = 0,
-    architecture: str | None = None,
-    node_id: str | None = None,
-) -> dict[str, Any]:
-    category = classify_health_state(reported_state)
-    message = f"{name} ({workload_id}) is {reported_state}"
-    if category == "failed":
-        message = f"{name} ({workload_id}) failed"
-    elif category == "degraded":
-        message = f"{name} ({workload_id}) is degraded"
-    elif category == "healthy":
-        message = f"{name} ({workload_id}) is healthy"
-    elif category == "offline":
-        message = f"{name} ({workload_id}) is offline"
+    architecture: Union[str, None] = None,
+    node_id: Union[str, None] = None,
+) -> Dict[str, Any]:
+    category: str = classify_health_state(state=reported_state)
+    template: str = _MESSAGES.get(category, "{name} ({workload_id}) is " + reported_state)
 
     return {
         "workload_id": workload_id,
@@ -58,5 +54,5 @@ def workload_health_finding(
         "reported_reason": reason,
         "restart_count": restart_count,
         "architecture": architecture,
-        "message": message,
+        "message": template.format(name=name, workload_id=workload_id),
     }

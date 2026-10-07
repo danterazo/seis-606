@@ -1,7 +1,7 @@
 from dataclasses import asdict, dataclass
 from datetime import datetime
 from enum import StrEnum
-from typing import Any
+from typing import Any, Dict, Tuple, Union
 
 
 class NodeState(StrEnum):
@@ -26,9 +26,10 @@ class GuestState(StrEnum):
 class Resources:
     """Readings Proxmox did not report stay None rather than becoming zero."""
 
-    cpu_ratio: float | None = None
-    memory_used_bytes: int | None = None
-    memory_total_bytes: int | None = None
+    cpu_ratio: Union[float, None] = None
+    cpu_cores: Union[int, None] = None
+    memory_used_bytes: Union[int, None] = None
+    memory_total_bytes: Union[int, None] = None
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -45,18 +46,18 @@ class Guest:
 class Node:
     name: str
     state: NodeState
-    address: str | None
+    address: Union[str, None]
     resources: Resources
-    guests: tuple[Guest, ...]
+    guests: Tuple[Guest, ...]
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class ClusterSnapshot:
     source: str
     fetched_at: datetime
-    nodes: tuple[Node, ...]
+    nodes: Tuple[Node, ...]
 
-    def to_payload(self) -> dict[str, Any]:
-        payload = asdict(self)
+    def to_payload(self) -> Dict[str, Any]:
+        payload: Dict[str, Any] = asdict(self)
         payload["fetched_at"] = self.fetched_at.isoformat(timespec="seconds")
         return payload
