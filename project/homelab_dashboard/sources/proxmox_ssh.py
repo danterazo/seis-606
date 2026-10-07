@@ -1,159 +1,106 @@
-from __future__ import annotations
-
 import json
-import math
-import os
 import re
 import subprocess
-from collections import Counter
-from collections.abc import Callable
-from datetime import datetime, timezone
-from typing import Any
+from collections.abc import Callable, Sequence
+from dataclasses import dataclass
+from datetime import UTC, datetime
+from typing import Final, Protocol
+
+from homelab_dashboard.models import ClusterSnapshot
+from homelab_dashboard.sources.base import StatusSourceError
+from homelab_dashboard.sources.pve_parser import JsonObject, parse_snapshot
+
+SOURCE_LABEL: Final = "Proxmox VE over SSH"
+
+# Public-key only, never prompts, and never relaxes host-key verification.
+SSH_OPTIONS: Final = (
+    "-oBatchMode=yes",
+    "-oConnectTimeout=6",
+    "-oConnectionAttempts=1",
+    "-oPreferredAuthentications=publickey",
+    "-oPasswordAuthentication=no",
+    "-oKbdInteractiveAuthentication=no",
+    "-oStrictHostKeyChecking=yes",
+)
+
+# Both documents arrive over one connection; their order matters to the decoder.
+API_PATHS: Final = ("/cluster/resources", "/cluster/status")
+REMOTE_COMMAND: Final = " && ".join(f"pvesh get {path} --output-format json" for path in API_PATHS)
+
+_FAILURE_MESSAGES: Final = (
+    ("host key verification failed", "{target}'s SSH host key is not in this user's known_hosts file."),
+    ("permission denied", "SSH key authentication to {target} was refused."),
+    ("could not resolve", "{target} could not be resolved."),
+    ("connection refused", "{target} refused the SSH connection."),
+    ("timed out", "Connecting to {target} timed out."),
+    ("no route to host", "There is no route to {target}."),
+)
 
 
-def _run_pvesh(
-    target: str,
-    resource_type: str,
-    *,
-    runner: Callable[..., subprocess.CompletedProcess[str]] | None = None,
-) -> list[dict[str, Any]]:
-    if not re.fullmatch(r"[A-Za-z0-9_.@-]+", target) or target.startswith("-"):
-        raise RuntimeError("Invalid SSH target. Use a host or alias from this WSL user's SSH configuration.")
-
-    command = [
-        "ssh",
-        "-oBatchMode=yes",
-        "-oConnectTimeout=6",
-        "-oConnectionAttempts=1",
-        "-oPreferredAuthentications=publickey",
-        "-oPasswordAuthentication=no",
-        "-oKbdInteractiveAuthentication=no",
-        "-oStrictHostKeyChecking=yes",
-        target,
-        "pvesh",
-        "get",
-        "/cluster/resources",
-        "--type",
-        resource_type,
-        "--output-format",
-        "json",
-    ]
-    execute = runner or subprocess.run
-    try:
-        result = execute(command, capture_output=True, text=True, timeout=12, check=False)
-    except FileNotFoundError as error:
-        raise RuntimeError("The OpenSSH client is not available in this WSL environment.") from error
-    except subprocess.TimeoutExpired as error:
-        raise RuntimeError(f"SSH to {target} timed out while reading PVE status.") from error
-
-    if result.returncode:
-        detail = result.stderr.strip().splitlines()[-1] if result.stderr.strip() else ""
-        if "permission denied" in detail.lower():
-            message = f"SSH public-key authentication failed for {target}; check the existing WSL SSH identity and account access."
-        elif "host key verification failed" in detail.lower():
-            message = f"The SSH host key for {target} is not trusted by this WSL user's known_hosts file."
-        else:
-            message = f"PVE {resource_type} status query failed on {target}."
-            if detail:
-                message = f"{message} {detail[:200]}"
-        raise RuntimeError(message)
-
-    try:
-        payload = json.loads(result.stdout)
-    except json.JSONDecodeError as error:
-        raise RuntimeError(f"PVE returned invalid {resource_type} status JSON.") from error
-    if not isinstance(payload, list) or any(not isinstance(item, dict) for item in payload):
-        raise RuntimeError(f"PVE returned an unexpected {resource_type} status response.")
-    return payload
+class CommandRunner(Protocol):
+    def __call__(self, command: Sequence[str], *, timeout: float) -> subprocess.CompletedProcess[str]: ...
 
 
-def _percent(value: Any) -> float | None:
-    try:
-        number = float(value)
-    except (TypeError, ValueError):
-        return None
-    if not math.isfinite(number):
-        return None
-    if 0 <= number <= 1:
-        number *= 100
-    return round(max(0, min(100, number)), 1)
+def run_command(command: Sequence[str], *, timeout: float) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(command, capture_output=True, text=True, timeout=timeout, check=False)
 
 
-def _memory_percent(used: Any, maximum: Any) -> float | None:
-    try:
-        used_value = float(used)
-        maximum_value = float(maximum)
-    except (TypeError, ValueError):
-        return None
-    if not math.isfinite(used_value) or not math.isfinite(maximum_value) or maximum_value <= 0:
-        return None
-    return round(max(0, min(100, used_value / maximum_value * 100)), 1)
+def _utc_now() -> datetime:
+    return datetime.now(UTC)
 
 
-def build_ssh_report(
-    *,
-    target: str | None = None,
-    address: str | None = None,
-    primary_name: str = "cerulean",
-    runner: Callable[..., subprocess.CompletedProcess[str]] | None = None,
-) -> dict[str, Any]:
-    ssh_target = target or os.getenv("HOMELAB_PVE_SSH_TARGET", "192.168.20.43")
-    management_address = address or os.getenv("HOMELAB_PVE_ADDRESS", "192.168.20.43")
-    node_rows = _run_pvesh(ssh_target, "node", runner=runner)
-    guest_rows = _run_pvesh(ssh_target, "vm", runner=runner)
+@dataclass(frozen=True, slots=True, kw_only=True)
+class SshTarget:
+    destination: str
 
-    guest_counts: dict[str, Counter[str]] = {}
-    for guest in guest_rows:
-        node_id = str(guest.get("node") or "")
-        guest_type = str(guest.get("type") or "").lower()
-        if guest_type in {"qemu", "vm"}:
-            guest_counts.setdefault(node_id, Counter())["VM"] += 1
-        elif guest_type == "lxc":
-            guest_counts.setdefault(node_id, Counter())["LXC"] += 1
+    def __post_init__(self) -> None:
+        if not re.fullmatch(r"[A-Za-z0-9_][A-Za-z0-9_.@-]*", self.destination):
+            raise ValueError("SSH target must be a host, alias, or user@host from the SSH configuration.")
 
-    nodes = []
-    for row in node_rows:
-        node_id = str(row.get("node") or row.get("id") or "").removeprefix("node/")
-        if not node_id:
-            continue
-        status = str(row.get("status") or "unknown").lower()
-        if status == "online":
-            reported_state = "up"
-        elif status in {"offline", "down"}:
-            reported_state = "down"
-        else:
-            reported_state = "unknown"
-        counts = guest_counts.get(node_id, Counter())
-        nodes.append(
-            {
-                "node_id": node_id,
-                "name": node_id,
-                "address": management_address if node_id.casefold() == primary_name.casefold() else None,
-                "role": "PVE HOST",
-                "reported_state": reported_state,
-                "architecture": None,
-                "cpu_percent": _percent(row.get("cpu")),
-                "memory_percent": _memory_percent(row.get("mem"), row.get("maxmem")),
-                "workloads": {"VM": counts["VM"], "LXC": counts["LXC"]},
-            }
-        )
 
-    primary = next((node for node in nodes if node["name"].casefold() == primary_name.casefold()), None)
-    if primary is None:
-        raise RuntimeError(f"PVE did not report the configured primary node '{primary_name}'.")
+def _decode_arrays(*, text: str, count: int) -> list[list[JsonObject]]:
+    decoder = json.JSONDecoder()
+    arrays: list[list[JsonObject]] = []
+    index = 0
+    for _ in range(count):
+        while index < len(text) and text[index].isspace():
+            index += 1
+        try:
+            value, index = decoder.raw_decode(text, index)
+        except json.JSONDecodeError as error:
+            raise StatusSourceError("Proxmox returned malformed status data.") from error
+        if not isinstance(value, list) or not all(isinstance(item, dict) for item in value):
+            raise StatusSourceError("Proxmox returned an unexpected status response.")
+        arrays.append(value)
+    return arrays
 
-    online_count = sum(node["reported_state"] == "up" for node in nodes)
-    down_count = sum(node["reported_state"] == "down" for node in nodes if node is not primary)
-    other_count = sum(node is not primary for node in nodes)
-    return {
-        "source_label": "LIVE PVE / SSH",
-        "is_live": True,
-        "last_updated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
-        "target": ssh_target,
-        "primary_node": primary,
-        "nodes": nodes,
-        "known_up_count": online_count,
-        "down_count": down_count,
-        "other_nodes_state": f"{down_count} DOWN" if down_count else ("NONE" if other_count == 0 else "UNKNOWN"),
-        "other_node_identities_known": True,
-    }
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class ProxmoxSshSource:
+    target: SshTarget
+    timeout_seconds: float = 15.0
+    runner: CommandRunner = run_command
+    clock: Callable[[], datetime] = _utc_now
+
+    def fetch(self) -> ClusterSnapshot:
+        command = ("ssh", *SSH_OPTIONS, self.target.destination, REMOTE_COMMAND)
+        try:
+            completed = self.runner(command, timeout=self.timeout_seconds)
+        except FileNotFoundError as error:
+            raise StatusSourceError("The OpenSSH client is not installed in this environment.") from error
+        except subprocess.TimeoutExpired as error:
+            raise StatusSourceError(f"Reading status from {self.target.destination} timed out.") from error
+
+        if completed.returncode != 0:
+            raise StatusSourceError(self._explain_failure(stderr=completed.stderr))
+
+        resources, cluster_status = _decode_arrays(text=completed.stdout, count=len(API_PATHS))
+        return parse_snapshot(source=SOURCE_LABEL, fetched_at=self.clock(), resources=resources, cluster_status=cluster_status)
+
+    def _explain_failure(self, *, stderr: str) -> str:
+        lowered = stderr.lower()
+        for needle, template in _FAILURE_MESSAGES:
+            if needle in lowered:
+                return template.format(target=self.target.destination)
+        detail = stderr.strip().splitlines()[-1][:160] if stderr.strip() else "no error output"
+        return f"Querying Proxmox on {self.target.destination} failed ({detail})."

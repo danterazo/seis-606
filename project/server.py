@@ -1,43 +1,39 @@
-from __future__ import annotations
-
 import json
-import os
+import sys
+from functools import partial
+from http import HTTPStatus
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+from typing import Any
 from urllib.parse import urlparse
 
-from homelab_dashboard.sources.operator_report import build_operator_report
-from homelab_dashboard.sources.proxmox_ssh import build_ssh_report
+from homelab_dashboard.config import Settings
+from homelab_dashboard.sources.base import StatusSource, StatusSourceError
+from homelab_dashboard.sources.proxmox_ssh import ProxmoxSshSource, SshTarget
 
 WEB_ROOT = Path(__file__).resolve().parent / "web"
+STATUS_PATH = "/api/status"
 
 
 class DashboardHandler(SimpleHTTPRequestHandler):
-    def __init__(self, *args: object, **kwargs: object) -> None:
+    def __init__(self, *args: Any, source: StatusSource, **kwargs: Any) -> None:
+        self.source = source
         super().__init__(*args, directory=str(WEB_ROOT), **kwargs)
 
     def do_GET(self) -> None:
-        if urlparse(self.path).path == "/api/status":
-            source = os.getenv("HOMELAB_STATUS_SOURCE", "ssh").lower()
-            if source in {"ssh", "proxmox"}:
-                try:
-                    self._send_json(200, build_ssh_report())
-                except RuntimeError as error:
-                    self._send_json(503, {"error": str(error)})
-                return
-            if source in {"manual", "report"}:
-                self._send_json(200, build_operator_report())
-                return
-            if source not in {"ssh", "proxmox", "manual", "report"}:
-                self._send_json(503, {"error": "Unknown status source. Use ssh or manual."})
-                return
-        super().do_GET()
+        if urlparse(self.path).path != STATUS_PATH:
+            super().do_GET()
+            return
+        try:
+            self._send_json(status=HTTPStatus.OK, payload=self.source.fetch().to_payload())
+        except StatusSourceError as error:
+            self._send_json(status=HTTPStatus.SERVICE_UNAVAILABLE, payload={"error": str(error)})
 
     def end_headers(self) -> None:
         self.send_header("Cache-Control", "no-store")
         super().end_headers()
 
-    def _send_json(self, status: int, payload: dict[str, object]) -> None:
+    def _send_json(self, *, status: HTTPStatus, payload: dict[str, Any]) -> None:
         body = json.dumps(payload).encode("utf-8")
         self.send_response(status)
         self.send_header("Content-Type", "application/json; charset=utf-8")
@@ -46,11 +42,20 @@ class DashboardHandler(SimpleHTTPRequestHandler):
         self.wfile.write(body)
 
 
+def create_server(*, settings: Settings, source: StatusSource) -> ThreadingHTTPServer:
+    return ThreadingHTTPServer((settings.host, settings.port), partial(DashboardHandler, source=source))
+
+
 def main() -> None:
-    host = os.getenv("HOMELAB_HOST", "127.0.0.1")
-    port = int(os.getenv("PORT", "8765"))
-    server = ThreadingHTTPServer((host, port), DashboardHandler)
-    print(f"Homelab dashboard running at http://{host}:{port}")
+    settings = Settings.from_env()
+    try:
+        target = SshTarget(destination=settings.ssh_target)
+    except ValueError as error:
+        sys.exit(str(error))
+
+    source = ProxmoxSshSource(target=target, timeout_seconds=settings.ssh_timeout_seconds)
+    server = create_server(settings=settings, source=source)
+    print(f"Homelab dashboard running at http://{settings.host}:{settings.port} (source: {target.destination})")
     try:
         server.serve_forever()
     except KeyboardInterrupt:

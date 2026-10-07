@@ -1,0 +1,362 @@
+// @ts-check
+
+/**
+ * @typedef {{ cpu_ratio: number | null, memory_used_bytes: number | null, memory_total_bytes: number | null }} Resources
+ * @typedef {"running" | "stopped" | "paused" | "unknown"} GuestState
+ * @typedef {{ vmid: number, name: string, node: string, kind: "vm" | "container", state: GuestState, resources: Resources }} Guest
+ * @typedef {{ name: string, state: "online" | "offline" | "unknown", address: string | null, resources: Resources, guests: Guest[] }} PveNode
+ * @typedef {{ source: string, fetched_at: string, nodes: PveNode[] }} Snapshot
+ * @typedef {"all" | "running" | "vm" | "container"} GuestFilter
+ * @typedef {{ snapshot: Snapshot | null, error: string | null, selectedNode: string | null, filter: GuestFilter, query: string }} ViewState
+ * @typedef {{ className?: string, text?: string, attrs?: Readonly<Record<string, string>> }} ElementOptions
+ */
+
+const STATUS_URL = "/api/status";
+const REFRESH_INTERVAL_MS = 30_000;
+const MAX_TOPOLOGY_GUESTS = 6;
+const SVG_NS = "http://www.w3.org/2000/svg";
+
+/** @type {ViewState} */
+const state = { snapshot: null, error: null, selectedNode: null, filter: "all", query: "" };
+
+/** @type {ReadonlyArray<{ id: GuestFilter, label: string }>} */
+const FILTERS = [
+  { id: "all", label: "All" },
+  { id: "running", label: "Running" },
+  { id: "vm", label: "VMs" },
+  { id: "container", label: "Containers" },
+];
+
+/**
+ * @param {string} selector
+ * @returns {HTMLElement}
+ */
+function required(selector) {
+  const element = document.querySelector(selector);
+  if (!(element instanceof HTMLElement)) throw new Error(`Missing element ${selector}`);
+  return element;
+}
+
+/**
+ * @template {keyof HTMLElementTagNameMap} K
+ * @param {K} tag
+ * @param {ElementOptions} [options]
+ * @param {ReadonlyArray<Node | string>} [children]
+ * @returns {HTMLElementTagNameMap[K]}
+ */
+function el(tag, options = {}, children = []) {
+  const element = document.createElement(tag);
+  if (options.className) element.className = options.className;
+  if (options.text !== undefined) element.textContent = options.text;
+  for (const [name, value] of Object.entries(options.attrs ?? {})) element.setAttribute(name, value);
+  element.append(...children);
+  return element;
+}
+
+/**
+ * @param {string} tag
+ * @param {Readonly<Record<string, string | number>>} [attrs]
+ * @param {ReadonlyArray<Node | string>} [children]
+ * @returns {SVGElement}
+ */
+function svg(tag, attrs = {}, children = []) {
+  const element = document.createElementNS(SVG_NS, tag);
+  for (const [name, value] of Object.entries(attrs)) element.setAttribute(name, String(value));
+  element.append(...children);
+  return element;
+}
+
+/** @param {number} value */
+const clamp = (value) => Math.min(100, Math.max(0, value));
+
+/** @param {Resources} resources @returns {number | null} */
+function cpuPercent(resources) {
+  return resources.cpu_ratio === null ? null : clamp(resources.cpu_ratio * 100);
+}
+
+/** @param {Resources} resources @returns {number | null} */
+function memoryPercent({ memory_used_bytes: used, memory_total_bytes: total }) {
+  return used === null || total === null || total <= 0 ? null : clamp((used / total) * 100);
+}
+
+/** @param {number | null} value */
+const formatPercent = (value) => (value === null ? "—" : `${Math.round(value)}%`);
+
+/** @param {string} text @param {number} limit */
+const truncate = (text, limit) => (text.length > limit ? `${text.slice(0, limit - 1)}…` : text);
+
+/** @param {PveNode} node @param {Guest["kind"]} kind */
+const countKind = (node, kind) => node.guests.filter((guest) => guest.kind === kind).length;
+
+/** @param {number} count @param {string} noun */
+const plural = (count, noun) => `${count} ${noun}${count === 1 ? "" : "s"}`;
+
+/** @param {PveNode} node */
+const guestSummary = (node) => `${plural(countKind(node, "vm"), "VM")} · ${plural(countKind(node, "container"), "LXC")}`;
+
+/** @param {string} state */
+const stateLabel = (state) => state.charAt(0).toUpperCase() + state.slice(1);
+
+/** @param {string} state @param {string} label */
+function statePill(state, label = stateLabel(state)) {
+  return el("span", { className: `pill pill-${state}` }, [el("i", { className: "orb", attrs: { "aria-hidden": "true" } }), label]);
+}
+
+/** @param {{ label: string, value: number | null, tone: "cpu" | "memory" }} args */
+function gauge({ label, value, tone }) {
+  const radius = 22;
+  const circumference = 2 * Math.PI * radius;
+  const arc = svg("circle", {
+    class: `gauge-arc gauge-${tone}`,
+    cx: 28,
+    cy: 28,
+    r: radius,
+    "stroke-dasharray": `${(circumference * (value ?? 0)) / 100} ${circumference}`,
+    transform: "rotate(-90 28 28)",
+  });
+  const ring = svg("svg", { viewBox: "0 0 56 56", "aria-hidden": "true" }, [svg("circle", { class: "gauge-track", cx: 28, cy: 28, r: radius }), arc]);
+  return el("div", { className: "gauge" }, [ring, el("span", { className: "gauge-value", text: formatPercent(value) }), el("span", { className: "gauge-label", text: label })]);
+}
+
+/** @param {{ label: string, value: number | null, tone: "cpu" | "memory" }} args */
+function bar({ label, value, tone }) {
+  const fill = el("span", { className: `bar-fill bar-${tone}` });
+  fill.style.width = `${value ?? 0}%`;
+  return el("div", { className: "bar-row" }, [
+    el("span", { className: "bar-label", text: label }),
+    el("span", { className: "bar-track" }, [fill]),
+    el("span", { className: "bar-value", text: formatPercent(value) }),
+  ]);
+}
+
+function renderBanner() {
+  const banner = required("#banner");
+  const { snapshot, error } = state;
+  /** @type {{ tone: string, title: string, detail: string }} */
+  let content;
+  if (error !== null) {
+    content = { tone: "alert", title: "Can't reach Proxmox", detail: error };
+  } else if (snapshot === null) {
+    content = { tone: "pending", title: "Connecting…", detail: "Asking Proxmox for the current status." };
+  } else if (snapshot.nodes.length === 0) {
+    content = { tone: "pending", title: "No nodes reported", detail: "Proxmox returned an empty cluster." };
+  } else {
+    const down = snapshot.nodes.filter((node) => node.state !== "online").length;
+    content =
+      down === 0
+        ? { tone: "ok", title: "All systems operational", detail: `${plural(snapshot.nodes.length, "node")} online` }
+        : { tone: "warn", title: `${down} of ${plural(snapshot.nodes.length, "node")} unavailable`, detail: "Check the node list for details." };
+  }
+  banner.className = `banner banner-${content.tone}`;
+  banner.replaceChildren(el("i", { className: "banner-icon", attrs: { "aria-hidden": "true" } }), el("strong", { text: content.title }), el("span", { text: content.detail }));
+}
+
+/** @param {PveNode[]} nodes */
+function renderNodeList(nodes) {
+  const items = nodes.map((node) => {
+    const button = el("button", { className: "node-row", attrs: { type: "button", "data-node": node.name, "aria-pressed": String(state.selectedNode === node.name) } }, [
+      el("span", { className: "server-glyph", attrs: { "aria-hidden": "true" } }),
+      el("span", { className: "node-meta" }, [el("strong", { text: node.name }), statePill(node.state), el("small", { text: node.address ?? "Address unknown" })]),
+    ]);
+    return button;
+  });
+  required("#node-list").replaceChildren(...(items.length ? items : [el("p", { className: "empty", text: "No nodes to show." })]));
+}
+
+/** @param {PveNode[]} nodes */
+function renderOverview(nodes) {
+  const tiles = nodes.map((node) =>
+    el("button", { className: `tile tile-${node.state}`, attrs: { type: "button", "data-node": node.name, "aria-pressed": String(state.selectedNode === node.name) } }, [
+      el("span", { className: "server-glyph large", attrs: { "aria-hidden": "true" } }),
+      el("strong", { text: node.name }),
+      statePill(node.state),
+      el("small", { text: guestSummary(node) }),
+      el("div", { className: "gauges" }, [gauge({ label: "CPU", value: cpuPercent(node.resources), tone: "cpu" }), gauge({ label: "RAM", value: memoryPercent(node.resources), tone: "memory" })]),
+    ]),
+  );
+  required("#overview").replaceChildren(...(tiles.length ? tiles : [el("p", { className: "empty", text: "Nothing to show yet." })]));
+}
+
+/**
+ * @param {{ x: number, y: number, text: string, className: string }} args
+ */
+function svgText({ x, y, text, className }) {
+  return svg("text", { x, y, class: className, "text-anchor": "middle" }, [text]);
+}
+
+/** @param {PveNode[]} nodes */
+function renderTopology(nodes) {
+  const host = required("#topology");
+  if (nodes.length === 0) {
+    host.replaceChildren(el("p", { className: "empty", text: "No nodes to draw." }));
+    return;
+  }
+  const column = 210;
+  const tile = { width: 58, height: 48, gap: 8, perRow: 3 };
+  const width = Math.max(520, nodes.length * column);
+  const hub = { x: width / 2, y: 42 };
+  const nodeY = 150;
+  const guestTop = 238;
+  const tallest = Math.max(...nodes.map((node) => Math.ceil(Math.min(node.guests.length, MAX_TOPOLOGY_GUESTS) / tile.perRow)));
+  const height = guestTop + Math.max(1, tallest) * (tile.height + tile.gap) + 30;
+
+  /** @type {SVGElement[]} */
+  const drawing = [];
+  drawing.push(svg("circle", { class: "topo-hub", cx: hub.x, cy: hub.y, r: 22 }), svgText({ x: hub.x, y: hub.y - 28, text: "Cluster", className: "topo-label" }));
+
+  nodes.forEach((node, index) => {
+    const x = (width / nodes.length) * (index + 0.5);
+    const offline = node.state !== "online";
+    const mid = (hub.y + nodeY) / 2;
+    drawing.push(svg("path", { class: `topo-link${offline ? " is-down" : ""}`, d: `M ${hub.x} ${hub.y + 22} C ${hub.x} ${mid}, ${x} ${mid}, ${x} ${nodeY - 28}` }));
+
+    drawing.push(
+      svg("g", { class: `topo-node${offline ? " is-down" : ""}${state.selectedNode === node.name ? " is-selected" : ""}`, "data-node": node.name }, [
+        svg("rect", { class: "topo-node-body", x: x - 38, y: nodeY - 28, width: 76, height: 56, rx: 10 }),
+        svg("rect", { class: "topo-node-slot", x: x - 28, y: nodeY - 18, width: 56, height: 9, rx: 4 }),
+        svg("rect", { class: "topo-node-slot", x: x - 28, y: nodeY - 4, width: 56, height: 9, rx: 4 }),
+        svg("circle", { class: "topo-node-led", cx: x + 22, cy: nodeY + 17, r: 3.5 }),
+      ]),
+      svgText({ x, y: nodeY + 46, text: node.name, className: "topo-label" }),
+      svgText({ x, y: nodeY + 62, text: node.address ?? "address unknown", className: "topo-sub" }),
+    );
+
+    const shown = node.guests.slice(0, MAX_TOPOLOGY_GUESTS);
+    const rowWidth = Math.min(shown.length, tile.perRow) * (tile.width + tile.gap) - tile.gap;
+    shown.forEach((guest, guestIndex) => {
+      const gx = x - rowWidth / 2 + (guestIndex % tile.perRow) * (tile.width + tile.gap);
+      const gy = guestTop + Math.floor(guestIndex / tile.perRow) * (tile.height + tile.gap);
+      const kind = guest.kind === "vm" ? "vm" : "ct";
+      drawing.push(
+        svg("g", { class: `topo-guest topo-${kind}${offline || guest.state !== "running" ? " is-dim" : ""}` }, [
+          svg("title", {}, [`${guest.name} (${guest.vmid}) – ${guest.state}`]),
+          svg("rect", { x: gx, y: gy, width: tile.width, height: tile.height, rx: 9 }),
+          svgText({ x: gx + tile.width / 2, y: gy + 19, text: kind === "vm" ? "VM" : "CT", className: "topo-guest-kind" }),
+          svgText({ x: gx + tile.width / 2, y: gy + 34, text: truncate(guest.name, 9), className: "topo-guest-name" }),
+        ]),
+      );
+    });
+    if (node.guests.length > shown.length) {
+      drawing.push(svgText({ x, y: guestTop + Math.ceil(shown.length / tile.perRow) * (tile.height + tile.gap) + 8, text: `+${node.guests.length - shown.length} more`, className: "topo-sub" }));
+    }
+  });
+
+  host.replaceChildren(svg("svg", { viewBox: `0 0 ${width} ${height}`, role: "img", "aria-label": "Cluster topology" }, drawing));
+}
+
+/** @param {PveNode[]} nodes */
+function renderUsage(nodes) {
+  const rows = nodes.map((node) =>
+    el("div", { className: "usage-node" }, [
+      el("strong", { text: node.name }),
+      bar({ label: "CPU", value: cpuPercent(node.resources), tone: "cpu" }),
+      bar({ label: "RAM", value: memoryPercent(node.resources), tone: "memory" }),
+    ]),
+  );
+  required("#usage").replaceChildren(...(rows.length ? rows : [el("p", { className: "empty", text: "No usage data." })]));
+}
+
+/** @param {Guest} guest @param {GuestFilter} filter */
+function matchesFilter(guest, filter) {
+  return filter === "all" || (filter === "running" ? guest.state === "running" : guest.kind === filter);
+}
+
+/** @param {PveNode[]} nodes @returns {Guest[]} */
+function visibleGuests(nodes) {
+  const query = state.query.trim().toLowerCase();
+  return nodes
+    .filter((node) => state.selectedNode === null || node.name === state.selectedNode)
+    .flatMap((node) => node.guests)
+    .filter((guest) => matchesFilter(guest, state.filter))
+    .filter((guest) => query === "" || `${guest.name} ${guest.vmid} ${guest.node}`.toLowerCase().includes(query));
+}
+
+/** @param {PveNode[]} nodes */
+function renderGuests(nodes) {
+  required("#guests-title").textContent = state.selectedNode === null ? "Guests" : `Guests on ${state.selectedNode}`;
+  required("#chips").replaceChildren(
+    ...FILTERS.map(({ id, label }) => el("button", { className: "chip", text: label, attrs: { type: "button", "data-filter": id, "aria-pressed": String(state.filter === id) } })),
+  );
+
+  const guests = visibleGuests(nodes);
+  const rows = guests.map((guest) => {
+    const usage = guest.state === "running" ? `CPU ${formatPercent(cpuPercent(guest.resources))} · RAM ${formatPercent(memoryPercent(guest.resources))}` : "Not running";
+    return el("li", { className: "guest" }, [
+      el("span", { className: `guest-icon guest-${guest.kind}`, text: guest.kind === "vm" ? "VM" : "CT", attrs: { "aria-hidden": "true" } }),
+      el("span", { className: "guest-meta" }, [el("strong", { text: guest.name }), el("small", { text: `${guest.node} · ID ${guest.vmid}` }), el("small", { text: usage })]),
+      statePill(guest.state),
+    ]);
+  });
+  const empty = nodes.length === 0 ? "No guests to show." : "No guests match this view.";
+  required("#guest-list").replaceChildren(...(rows.length ? rows : [el("li", { className: "empty", text: empty })]));
+}
+
+function render() {
+  const nodes = state.snapshot?.nodes ?? [];
+  renderBanner();
+  renderNodeList(nodes);
+  renderOverview(nodes);
+  renderTopology(nodes);
+  renderUsage(nodes);
+  renderGuests(nodes);
+  required("#source-label").textContent = state.snapshot?.source ?? "No data source connected";
+  required("#updated").textContent = state.snapshot ? `Updated ${new Date(state.snapshot.fetched_at).toLocaleTimeString()}` : state.error ? "Update failed" : "Connecting…";
+}
+
+/** @param {unknown} payload */
+function errorMessage(payload) {
+  return typeof payload === "object" && payload !== null && "error" in payload && typeof payload.error === "string" ? payload.error : "Status is unavailable.";
+}
+
+async function refresh() {
+  const button = required("#refresh-button");
+  button.setAttribute("disabled", "");
+  button.classList.add("is-loading");
+  try {
+    const response = await fetch(STATUS_URL, { cache: "no-store" });
+    /** @type {unknown} */
+    const payload = await response.json();
+    if (!response.ok) throw new Error(errorMessage(payload));
+    const snapshot = /** @type {Snapshot} */ (payload);
+    state.snapshot = snapshot;
+    state.error = null;
+    if (state.selectedNode !== null && !snapshot.nodes.some((node) => node.name === state.selectedNode)) state.selectedNode = null;
+  } catch (error) {
+    state.snapshot = null;
+    state.error = error instanceof Error ? error.message : "Status is unavailable.";
+  } finally {
+    button.removeAttribute("disabled");
+    button.classList.remove("is-loading");
+    render();
+  }
+}
+
+/** @param {string} name */
+function toggleNode(name) {
+  state.selectedNode = state.selectedNode === name ? null : name;
+  render();
+}
+
+document.addEventListener("click", (event) => {
+  if (!(event.target instanceof Element)) return;
+  const nodeTarget = event.target.closest("[data-node]");
+  if (nodeTarget instanceof Element && nodeTarget.getAttribute("data-node")) {
+    toggleNode(nodeTarget.getAttribute("data-node") ?? "");
+    return;
+  }
+  const chip = event.target.closest("[data-filter]");
+  if (chip instanceof Element) {
+    state.filter = /** @type {GuestFilter} */ (chip.getAttribute("data-filter"));
+    render();
+  }
+});
+
+required("#search").addEventListener("input", (event) => {
+  state.query = event.target instanceof HTMLInputElement ? event.target.value : "";
+  renderGuests(state.snapshot?.nodes ?? []);
+});
+required("#refresh-button").addEventListener("click", () => void refresh());
+
+render();
+void refresh();
+window.setInterval(() => void refresh(), REFRESH_INTERVAL_MS);
