@@ -253,9 +253,9 @@ button { cursor: pointer; }
 .chip[aria-pressed="true"] { color: #fff; border-color: #0a6bb5; text-shadow: 0 1px 1px rgba(0,50,100,.6); background: linear-gradient(180deg, #7fd4ff, #2aa8f0 50%, #0f86d6 52%, #36b6f5); }
 .guest-list { display: grid; gap: 8px; max-height: 640px; margin: 0; padding: 0 2px 4px 0; overflow-y: auto; list-style: none; }
 .guest { display: grid; grid-template-columns: 32px minmax(0, 1fr); align-items: start; column-gap: 8px; padding: 8px 10px; border: 1px solid rgba(255,255,255,.9); border-radius: 12px; background: linear-gradient(180deg, rgba(255,255,255,.85), rgba(215,241,255,.6)); box-shadow: inset 0 1px 0 #fff; }
-.guest-body { display: grid; gap: 4px; min-width: 0; }
-.guest-header { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 8px; }
-.guest-state-actions { display: flex; align-items: center; gap: 6px; }
+.guest-body { display: grid; gap: 2px; min-width: 0; }
+.guest-header { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 8px; margin-bottom: -2px; }
+.guest-state-actions { display: flex; align-items: center; gap: 12px; }
 .guest-header .pill { white-space: nowrap; font-size: 11px; }
 .guest-name { min-width: 0; font-size: 13px; line-height: 1.25; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .guest-sub { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
