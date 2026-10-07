@@ -6,35 +6,33 @@
 
 ## Summary
 
-Build a read-only Streamlit dashboard that aggregates current Proxmox node and
-workload status through a source adapter. Live Proxmox data, authenticated with
-a dedicated read-only API token, is the default source; deterministic mock data
-is available only for tests and explicitly labeled demo mode. The adapter keeps
-source details out of the UI and preserves unavailable fields rather than
-inferring them. The dashboard refreshes automatically every 30 seconds and also
-supports a manual refresh.
+Build a read-only browser dashboard that gets current PVE cluster resources
+through this WSL instance's OpenSSH configuration and identity. The default
+source runs noninteractive, public-key-only, read-only `pvesh` commands and
+retains strict host-key verification. A clearly labeled operator report is an
+explicit fallback, never an automatic substitute for a failed live query.
 
 ## Technical Context
 
 **Language/Version**: Python 3.14+
 
-**Primary Dependencies**: Streamlit for UI, `proxmoxer` for the Proxmox API,
-Pydantic for validated domain models, `pytest` for tests, and `ruff` for linting
-and formatting. A small refresh helper may use Streamlit's supported rerun
-mechanism; no client-side framework is required.
+**Primary Dependencies**: Python's standard-library HTTP server and subprocess
+OpenSSH client, Pydantic for validated domain models, `pytest` for tests, and
+`ruff` for linting and formatting. The browser UI is vanilla HTML, CSS, and
+JavaScript.
 
-**Storage**: No application database for the MVP. Configuration and secrets come
-from deployment environment variables or Streamlit secrets; session state holds
-the latest observations only.
+**Storage**: No application database. OpenSSH configuration, keys, agent, and
+known-host entries remain owned by the WSL user; the app stores no credentials
+or observation state.
 
-**Testing**: `pytest` unit tests for normalization and state classification,
-contract tests for source adapters using fixtures, and Streamlit smoke tests for
-empty, loading, changing, offline, and mock-labeled states.
+**Testing**: `pytest` unit tests for SSH command safety and PVE resource
+normalization, plus browser checks for live status, SSH failures, and manual
+report labeling.
 
-**Target Platform**: Linux server running Streamlit behind Caddy or another
-reverse proxy; supported desktop and mobile browser viewports.
+**Target Platform**: Linux server running the Python HTTP server behind Caddy or
+another reverse proxy; supported desktop and mobile browser viewports.
 
-**Project Type**: Read-only Python web application.
+**Project Type**: Read-only Python-served browser application.
 
 **Performance Goals**: Render a representative environment of up to 20 nodes and
 200 workloads within the dashboard's normal refresh interaction; complete a
@@ -61,7 +59,7 @@ out of scope.
 | II. MCP-First, Evidence-Based Automation | Status values originate from the configured source adapter or clearly labeled fixtures; missing values remain unknown. | PASS |
 | III. Atomic and Auditable Changes | No state-changing workflow exists in this MVP, so Discord mutation auditing is not applicable. | PASS |
 | IV. Dynamic, Testable User Experience | UI renders adapter results dynamically and tests empty, changing, offline, incomplete, and mobile/reverse-proxy behavior. | PASS |
-| V. Maintainable, Focused Architecture | Streamlit is the default, with small domain, source, and presentation modules. | PASS |
+| V. Maintainable, Focused Architecture | Custom HTML/CSS/JavaScript UI with small Python source and server modules. | PASS |
 
 No constitution violations require an exception.
 
@@ -80,36 +78,32 @@ specs/001-homelab-inventory-dashboard/
 └── tasks.md                 # Created by /speckit-tasks
 ```
 
-### Source Code (repository root)
+### Source Code (`project/`)
 
 ```text
-.
-├── app.py
+project/
+├── app.py                     # application entry point
+├── server.py                  # static UI and read-only JSON endpoint
+├── web/
+│   ├── index.html
+│   ├── console.css
+│   └── console.js
 ├── homelab_dashboard/
-│   ├── domain.py              # Node, Workload, observations, findings, states
-│   ├── config.py              # environment/secrets configuration and validation
+│   ├── domain.py
 │   ├── sources/
-│   │   ├── base.py            # source protocol and normalized result
-│   │   ├── proxmox.py         # read-only Proxmox API adapter
-│   │   └── fixtures.py        # deterministic, explicitly mock source
-│   ├── services/
-│   │   ├── refresh.py         # refresh orchestration and freshness handling
-│   │   └── health.py          # source-state normalization and findings
-│   └── ui/
-│       ├── dashboard.py       # page composition and refresh controls
-│       └── components.py      # reusable node/workload/status components
+│   │   ├── proxmox_ssh.py     # read-only pvesh over existing SSH setup
+│   │   └── operator_report.py # explicitly labeled manual fallback
+│   └── services/
 └── tests/
     ├── unit/
-    ├── contract/
     └── integration/
 ```
 
-**Structure Decision**: Use a single Streamlit application rooted in the
-Speckit project directory (`project/` in the coursework workspace)
-with domain models independent of the UI and source adapters behind a narrow
-protocol. This keeps live Proxmox, fixtures, and a future MCP-backed source
-interchangeable while keeping the MVP small and testable. The `project/` source
-tree does not exist yet and will be created during implementation.
+**Structure Decision**: Keep the browser UI in `project/web/`, the local server
+in `project/server.py`, and source adapters under
+`project/homelab_dashboard/sources/`. The UI remains independent of source
+credentials and receives normalized JSON, keeping fixtures and a future live
+Proxmox adapter interchangeable.
 
 ## Complexity Tracking
 

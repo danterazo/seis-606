@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#080f15" />
+    <title>Cerulean / PVE Status</title>
+    <link rel="stylesheet" href="/console.css?v=3" />
+    <script src="/console.js?v=2" defer></script>
+  </head>
+  <body class="console-body">
+    <div class="console-shell">
+      <header class="console-header">
+        <a class="console-brand" href="#status" aria-label="Homelab systems status">
+          <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
+          <span><strong>HOME SYSTEMS</strong><small>NODE CONTROL / 01</small></span>
+        </a>
+        <div class="header-divider" aria-hidden="true"></div>
+        <p class="header-route">PVE <span>/</span> HOST STATUS</p>
+        <div class="header-source"><span class="source-light"></span><span id="source-label">PVE / SSH</span><button id="refresh-status" class="refresh-control" type="button" title="Refresh PVE status" aria-label="Refresh PVE status">↻</button></div>
+      </header>
+
+      <main class="console-main" id="status">
+        <section class="report-error" id="report-error" role="alert" hidden>
+          <p class="console-kicker">SOURCE UNAVAILABLE</p>
+          <h1>Status report unavailable</h1>
+          <p id="report-error-message">The selected source did not return a status report.</p>
+        </section>
+        <section class="host-hero" aria-labelledby="host-name">
+          <div class="hero-copy">
+            <p class="console-kicker"><span>SYS 01</span> / CURRENT PVE HOST</p>
+            <h1 class="hero-title" id="host-name">CERULEAN</h1>
+            <p class="hero-role">PROXMOX VE <span>//</span> MANAGEMENT NODE</p>
+            <div class="address-line">
+              <span class="address-label">MGMT ADDRESS</span>
+              <code id="host-address">192.168.20.43</code>
+              <button class="copy-button" id="copy-address" type="button" title="Copy management address" aria-label="Copy management address"><span aria-hidden="true">▣</span></button>
+            </div>
+          </div>
+          <div class="hero-visual" aria-label="Cerulean is up">
+            <div class="visual-index">PVE / 001</div>
+            <div class="rack-illustration" aria-hidden="true">
+              <div class="rack-rail rail-left"></div><div class="rack-rail rail-right"></div>
+              <div class="rack-unit"><i></i><i></i><i></i><span></span></div>
+              <div class="rack-unit"><i></i><i></i><i></i><span></span></div>
+              <div class="rack-unit"><i></i><i></i><i></i><span></span></div>
+              <div class="rack-base"></div>
+              <span class="rack-orbit orbit-one"></span><span class="rack-orbit orbit-two"></span>
+            </div>
+            <div class="state-readout"><span class="state-light"></span><strong id="host-state">—</strong><small id="hero-state-note">CHECKING PVE</small></div>
+          </div>
+          <div class="hero-caption"><span id="report-source-note">READ-ONLY PVE STATUS</span><span id="last-updated">CONNECTING</span></div>
+        </section>
+
+        <section class="telemetry-row" aria-label="Known system facts">
+          <div class="telemetry-cell"><span>KNOWN UP</span><strong id="known-up">01</strong><small>PVE host</small></div>
+          <div class="telemetry-cell"><span>OTHER PVE NODES</span><strong id="other-state">DOWN</strong><small id="other-detail">Count and names not supplied</small></div>
+          <div class="telemetry-cell"><span>CPU / MEMORY</span><strong id="resource-summary">—</strong><small id="resource-detail">Awaiting PVE status</small></div>
+          <div class="telemetry-cell"><span>GUEST INVENTORY</span><strong id="guest-summary">—</strong><small id="guest-detail">Awaiting PVE status</small></div>
+        </section>
+
+        <div class="readout-grid">
+          <section class="readout-section" aria-labelledby="readout-title">
+            <div class="section-heading"><p class="console-kicker">01 <span>/</span> HOST RECORD</p><span class="section-mark">READ ONLY</span></div>
+            <h2 id="readout-title">Known node data</h2>
+            <dl class="host-data">
+              <div><dt>Hostname</dt><dd id="record-name">Cerulean</dd></div>
+              <div><dt>Management address</dt><dd id="record-address">192.168.20.43</dd></div>
+              <div><dt>Reachability</dt><dd class="up-value"><span class="mini-light"></span><span id="record-state">Up</span></dd></div>
+              <div><dt>Architecture</dt><dd id="record-architecture" class="unknown-value">Not supplied</dd></div>
+              <div><dt>CPU / memory usage</dt><dd id="record-resources" class="unknown-value">Not supplied</dd></div>
+              <div><dt>VMs / containers</dt><dd id="record-guests" class="unknown-value">Not supplied</dd></div>
+            </dl>
+          </section>
+
+          <aside class="report-section" aria-labelledby="report-title">
+            <p class="console-kicker">02 <span>/</span> OPERATOR NOTE</p>
+            <h2 id="report-title">Current picture</h2>
+            <p class="report-lead" id="report-lead">Connecting to PVE status.</p>
+            <div class="report-rule"></div>
+            <p class="report-detail" id="report-detail">The dashboard uses the WSL OpenSSH configuration and existing key agent. It does not request or store credentials.</p>
+            <div class="report-source"><span class="source-light"></span><span id="report-source-label">SSH / READ ONLY</span></div>
+          </aside>
+        </div>
+        <footer class="console-footer"><span>HOME SYSTEMS <b>/</b> PVE STATUS</span><span>NO COMMANDS SENT <b>·</b> NO SECRETS STORED</span></footer>
+      </main>
+    </div>
+    <div class="console-toast" id="toast" role="status" aria-live="polite"></div>
+  </body>
+</html>

@@ -1,37 +1,41 @@
 # Quickstart Validation Guide
 
-This guide is the implementation target for the MVP. The application source is
-created under `project/` during implementation.
+The app is a custom HTML/CSS/JavaScript status page served by Python's
+standard-library HTTP server. By default it reads PVE node and VM/LXC status
+using this WSL instance's existing OpenSSH setup and read-only `pvesh` queries.
 
 ## Prerequisites
 
 - Python 3.14+
-- Poetry
+- OpenSSH client
 - A browser
-- For live checks: an authorized Proxmox endpoint and a dedicated read-only API
-  token with only status-read permissions
-- For reverse-proxy checks: Caddy or an equivalent local proxy
 
 ## Install and run
 
 From the repository root:
 
 ```bash
-poetry install
-poetry run streamlit run project/app.py
+python3 project/app.py
 ```
 
-The default configuration must select live Proxmox when its required deployment
-configuration is present. Never put the token secret in source control or in a
-command copied into shell history.
+Open `http://127.0.0.1:8765`. SSH uses public-key authentication in `BatchMode`;
+it does not ask for a password or disable host-key checking. If you have a
+configured host alias, set `HOMELAB_PVE_SSH_TARGET` to that alias. For the
+manual fallback, run `HOMELAB_STATUS_SOURCE=manual python3 project/app.py`.
+If Cerulean expects another account, use an alias or
+`user@192.168.20.43`; SSH still uses existing WSL identities.
 
-For deterministic demo mode, explicitly select fixtures:
+On first connection, compare the fingerprint from
+`ssh-keyscan -t ed25519 192.168.20.43 | ssh-keygen -lf -` with the fingerprint
+shown on Cerulean's local console by
+`ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub`. Only after they match, add
+the verified host key with:
 
 ```bash
-HOMELAB_STATUS_SOURCE=mock poetry run streamlit run project/app.py
+ssh-keyscan -H -t ed25519 192.168.20.43 >> ~/.ssh/known_hosts
 ```
 
-The page must visibly label this mode as `Mock data`.
+Never use `StrictHostKeyChecking=no` or accept an unverified key.
 
 ## Automated checks
 
@@ -41,30 +45,17 @@ poetry run ruff check project
 poetry run ruff format --check project
 ```
 
-Expected result: all unit and contract tests pass, fixture scenarios cover every
-required state category, and no lint or formatting errors are reported.
-
 ## Acceptance scenarios
 
-1. Start mock mode with multiple nodes and workloads. Confirm every node appears,
-   counts are derived from returned data, duplicate workload names stay grouped by
-   node, and the source label says `Mock data`.
-2. Refresh after changing the fixture workload count. Confirm the new count
-   appears without editing application configuration.
-3. View healthy, degraded, failed, restarting, offline, pending, timeout,
-   incomplete, and unfamiliar-state fixtures. Confirm no unfamiliar or missing
-   value is displayed as healthy.
-4. Use the ARM VM filter. Confirm every matching VM includes node, identity, and
-   reported architecture, and non-matching VMs are absent.
-5. Use an empty fixture. Confirm an explicit empty state appears and no fabricated
-   node is shown. Use a loading fixture to confirm loading is distinct from empty.
-6. Trigger a node failure after a successful observation. Confirm node identity
-   and last successful update remain visible, current values are unavailable, and
-   the error contains no token or authorization data.
-7. Confirm automatic refresh occurs after 30 seconds and the manual control uses
-   the same refresh path.
-8. Run the app through a configured reverse-proxy path, reload the browser, and
-   confirm the dashboard renders and refreshes without root-path assumptions.
-9. For live verification, inspect only status endpoints using the dedicated
-   read-only token. Confirm no test setup deletes, modifies, or restarts existing
-   resources.
+1. Load the page and confirm `LIVE PVE / SSH`, node status, CPU/memory, and VM/
+   container counts reflect the PVE response.
+2. Confirm offline nodes are shown from the live cluster response.
+3. Refresh manually and wait 30 seconds to verify automatic polling.
+4. Break SSH access in a test environment and confirm the page shows an explicit
+   error instead of falling back to the manual report.
+5. Set `HOMELAB_STATUS_SOURCE=manual`; confirm the report is labeled manual and
+   unknown values remain unknown.
+6. Check desktop and mobile widths for clipped text or horizontal page overflow.
+
+Future work includes per-guest details, status history, and reverse-proxy
+base-path support. SSH reads do not modify cluster resources.
