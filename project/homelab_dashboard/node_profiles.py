@@ -8,8 +8,8 @@ from homelab_dashboard.models import Hardware, HardwareSource
 DISPLAY_NAMES: Final[Dict[str, str]] = {
     "ovedur-10G": "óveður-10g",
     "creality-k1c-wifi": "varðeldur",
-    "ringom4-wifi": "りんご-M4",
-    "ringoa20": "りんご-A20",
+    "ringom4-wifi": "りんご-m4",
+    "ringoa20": "りんご-a20",
     "suika": "すいか",
     "ichigo": "いちご",
     "saru": "さる",
