@@ -9,7 +9,7 @@ from homelab_dashboard.models import ClusterSnapshot
 from homelab_dashboard.sources.base import StatusSourceError
 from homelab_dashboard.sources.pve_parser import JsonObject, parse_snapshot
 
-SOURCE_LABEL: Final[str] = "Proxmox VE over SSH"
+SOURCE_LABEL: Final[str] = "Proxmox VE via SSH"
 DEFAULT_USER: Final[str] = "root"
 
 # Public-key only, never prompts, and never relaxes host-key verification.
