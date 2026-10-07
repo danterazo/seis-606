@@ -33,7 +33,7 @@ def make_runner(
     returncode: int = 0,
     calls: Optional[List[Sequence[str]]] = None,
 ) -> CommandRunner:
-    def runner(command: Sequence[str], *, timeout: float) -> "subprocess.CompletedProcess[str]":
+    def runner(command: Sequence[str], *, timeout: float, stdin: Optional[str] = None) -> "subprocess.CompletedProcess[str]":
         if calls is not None:
             calls.append(command)
         return subprocess.CompletedProcess(args=command, returncode=returncode, stdout=stdout, stderr=stderr)

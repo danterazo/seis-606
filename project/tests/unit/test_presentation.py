@@ -52,3 +52,14 @@ def test_other_payload_fields_are_preserved(tmp_path: Path) -> None:
 
     assert presented["source"] == "test"
     assert presented["fetched_at"] == "2026-10-07T00:00:00+00:00"
+
+
+def test_configured_memory_is_independent_of_live_hardware(tmp_path: Path) -> None:
+    payload = make_payload(nodes=[{"name": name, "address": None} for name in ("kex", "cerulean", "kveikur", "stranger")])
+    descriptions = {node["name"]: node["memory_description"] for node in present_payload(payload=payload, image_dir=tmp_path)["nodes"]}
+    assert descriptions == {
+        "kex": "DDR4 ECC RDIMM (configured)",
+        "cerulean": "DDR4 SODIMM - 1 x 32 GB (configured)",
+        "kveikur": "DDR4 ECC RDIMM (configured)",
+        "stranger": None,
+    }

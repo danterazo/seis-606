@@ -1,4 +1,4 @@
-"""Runs on a Proxmox node (python3, standard library only) and prints one JSON document about its CPU and GPUs.
+"""Runs on a Proxmox node (python3, standard library only) and prints CPU and firmware ECC information.
 
 The dashboard sends this file over SSH on stdin, so it must not import anything from this project.
 """
@@ -22,7 +22,7 @@ INTEL_WINDOW_SECONDS = "1.0"
 NvidiaReading = Tuple[Optional[float], Optional[int], Optional[int]]
 
 
-def read_text(path: str) -> Optional[str]:
+def read_text(*, path: str) -> Optional[str]:
     try:
         with open(path) as handle:
             return handle.read().strip()
@@ -30,21 +30,25 @@ def read_text(path: str) -> Optional[str]:
         return None
 
 
-def read_int(path: str) -> Optional[int]:
-    text = read_text(path)
+def read_int(*, path: str) -> Optional[int]:
+    text = read_text(path=path)
     return int(text) if text is not None and text.isdigit() else None
 
 
-def run(command: List[str], *, timeout: float = 4.0) -> str:
+def run(*, command: List[str], timeout: float = 4.0) -> str:
     try:
         completed = subprocess.run(command, capture_output=True, text=True, timeout=timeout, stdin=subprocess.DEVNULL)
-    except (OSError, subprocess.TimeoutExpired):
+    except subprocess.TimeoutExpired as error:
+        # intel_gpu_top is stopped with SIGINT by `timeout`; keep whatever it printed.
+        partial = error.stdout
+        return partial.decode() if isinstance(partial, bytes) else (partial or "")
+    except OSError:
         return ""
     return completed.stdout
 
 
 def cpu_model() -> Optional[str]:
-    for line in (read_text("/proc/cpuinfo") or "").splitlines():
+    for line in (read_text(path="/proc/cpuinfo") or "").splitlines():
         if line.startswith("model name"):
             return line.split(":", 1)[1].strip()
     return None
@@ -52,15 +56,17 @@ def cpu_model() -> Optional[str]:
 
 def pretty_gpu_name(*, device: str, vendor: str) -> str:
     """Prefer the marketing name in brackets and make sure the vendor is named."""
-    match = re.search(r"\[([^\]]+)\]\s*$", device)
-    name = match.group(1) if match else device
-    if vendor and vendor.lower() not in name.lower():
-        name = f"{vendor} {name}"
-    return name
+    match = re.search(r"^(.*?)\s*\[([^\]]+)\]\s*$", device)
+    if match is None:
+        return device if not vendor or vendor.lower() in device.lower() else f"{vendor} {device}"
+    chip, marketing = match.group(1), match.group(2)
+    if vendor and vendor.lower() in marketing.lower():
+        return f"{marketing} ({chip})" if chip else marketing
+    return f"{vendor} {marketing}" if vendor else marketing
 
 
 def lspci_device_name(*, slot: str) -> Optional[str]:
-    for line in run(["lspci", "-mm", "-s", slot]).splitlines():
+    for line in run(command=["lspci", "-mm", "-s", slot]).splitlines():
         fields = shlex.split(line)
         if len(fields) > 3:
             return fields[3]
@@ -110,11 +116,11 @@ def parse_intel_busy(*, output: str) -> Optional[float]:
 
 
 def display_slots() -> List[str]:
-    slots: List[str] = []
-    for path in sorted(glob.glob(f"{PCI_ROOT}/*")):
-        if (read_text(f"{path}/class") or "").startswith(DISPLAY_CLASS_PREFIX):
-            slots.append(os.path.basename(path))
-    return slots
+    return [
+        os.path.basename(path)
+        for path in sorted(glob.glob(f"{PCI_ROOT}/*"))
+        if (read_text(path=f"{path}/class") or "").startswith(DISPLAY_CLASS_PREFIX)
+    ]
 
 
 def driver_of(*, path: str) -> Optional[str]:
@@ -126,23 +132,28 @@ def driver_of(*, path: str) -> Optional[str]:
 
 def collect_gpus() -> List[Dict[str, Any]]:
     slots = display_slots()
-    nvidia = parse_nvidia(output=run(["nvidia-smi", "--query-gpu=pci.bus_id,utilization.gpu,memory.used,memory.total", "--format=csv,noheader,nounits"])) if slots else {}
+    nvidia: Dict[str, NvidiaReading] = {}
+    if slots:
+        query = ["nvidia-smi", "--query-gpu=pci.bus_id,utilization.gpu,memory.used,memory.total", "--format=csv,noheader,nounits"]
+        nvidia = parse_nvidia(output=run(command=query))
     gpus: List[Dict[str, Any]] = []
     for slot in slots:
         path = f"{PCI_ROOT}/{slot}"
-        vendor = VENDOR_NAMES.get(read_text(f"{path}/vendor") or "", "")
+        vendor = VENDOR_NAMES.get(read_text(path=f"{path}/vendor") or "", "")
         driver = driver_of(path=path)
-        device = lspci_device_name(slot=slot) or f"GPU {(read_text(f'{path}/device') or '').removeprefix('0x')}"
+        device = lspci_device_name(slot=slot) or f"GPU {(read_text(path=f'{path}/device') or '').removeprefix('0x')}"
         utilization: Optional[float] = None
         used: Optional[int] = None
         total: Optional[int] = None
         if driver == "amdgpu":
-            utilization = float(read_int(f"{path}/gpu_busy_percent") or 0) if read_int(f"{path}/gpu_busy_percent") is not None else None
-            used, total = read_int(f"{path}/mem_info_vram_used"), read_int(f"{path}/mem_info_vram_total")
+            busy = read_int(path=f"{path}/gpu_busy_percent")
+            utilization = None if busy is None else float(busy)
+            used, total = read_int(path=f"{path}/mem_info_vram_used"), read_int(path=f"{path}/mem_info_vram_total")
         elif driver == "nvidia":
             utilization, used, total = nvidia.get(slot, (None, None, None))
         elif driver in ("i915", "xe"):
-            utilization = parse_intel_busy(output=run(["timeout", "-s", "INT", INTEL_WINDOW_SECONDS, "intel_gpu_top", "-J", "-s", INTEL_SAMPLE_MS, "-d", f"pci:slot={slot}"], timeout=6.0))
+            command = ["timeout", "-s", "INT", INTEL_WINDOW_SECONDS, "intel_gpu_top", "-J", "-s", INTEL_SAMPLE_MS, "-d", f"pci:slot={slot}"]
+            utilization = parse_intel_busy(output=run(command=command, timeout=6.0))
         gpus.append(
             {
                 "name": pretty_gpu_name(device=device, vendor=vendor),
@@ -156,8 +167,22 @@ def collect_gpus() -> List[Dict[str, Any]]:
     return gpus
 
 
+def ecc_supported() -> Optional[bool]:
+    output: str = run(command=["dmidecode", "--type", "16"])
+    corrections: List[str] = [
+        line.split(":", 1)[1].strip().casefold()
+        for line in output.splitlines()
+        if line.strip().startswith("Error Correction Type:")
+    ]
+    if not corrections:
+        return None
+    if any(value in ("single-bit ecc", "multi-bit ecc") for value in corrections):
+        return True
+    return False if all(value == "none" for value in corrections) else None
+
+
 def main() -> None:
-    print(json.dumps({"cpu_model": cpu_model(), "gpus": collect_gpus()}))
+    print(json.dumps({"cpu_model": cpu_model(), "ecc_supported": ecc_supported(), "gpus": []}))
 
 
 if __name__ == "__main__":

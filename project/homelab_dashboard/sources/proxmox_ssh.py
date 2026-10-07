@@ -41,11 +41,20 @@ _USER_PATTERN: Final[str] = r"[A-Za-z_][A-Za-z0-9_-]*"
 
 
 class CommandRunner(Protocol):
-    def __call__(self, command: Sequence[str], *, timeout: float) -> "subprocess.CompletedProcess[str]": ...
+    def __call__(self, command: Sequence[str], *, timeout: float, stdin: Optional[str] = None) -> "subprocess.CompletedProcess[str]": ...
 
 
-def run_command(command: Sequence[str], *, timeout: float) -> "subprocess.CompletedProcess[str]":
-    return subprocess.run(command, capture_output=True, text=True, timeout=timeout, check=False)
+def run_command(command: Sequence[str], *, timeout: float, stdin: Optional[str] = None) -> "subprocess.CompletedProcess[str]":
+    return subprocess.run(command, capture_output=True, text=True, timeout=timeout, check=False, input=stdin)
+
+
+def explain_ssh_failure(*, stderr: str, destination: str, action: str) -> str:
+    lowered: str = stderr.lower()
+    for needle, template in _FAILURE_MESSAGES:
+        if needle in lowered:
+            return template.format(target=destination)
+    detail: Optional[str] = stderr.strip().splitlines()[-1][:160] if stderr.strip() else None
+    return f"{action} on {destination} failed ({detail or 'no error output'})."
 
 
 def _utc_now() -> datetime:
@@ -102,7 +111,7 @@ class ProxmoxSshSource:
             raise StatusSourceError(f"Reading status from {self.target.destination} timed out.") from error
 
         if completed.returncode != 0:
-            raise StatusSourceError(self._explain_failure(stderr=completed.stderr))
+            raise StatusSourceError(explain_ssh_failure(stderr=completed.stderr, destination=self.target.destination, action="Querying Proxmox"))
 
         resources, cluster_status = _decode_arrays(text=completed.stdout, count=len(API_PATHS))
         return parse_snapshot(
@@ -111,11 +120,3 @@ class ProxmoxSshSource:
             resources=resources,
             cluster_status=cluster_status,
         )
-
-    def _explain_failure(self, *, stderr: str) -> str:
-        lowered: str = stderr.lower()
-        for needle, template in _FAILURE_MESSAGES:
-            if needle in lowered:
-                return template.format(target=self.target.destination)
-        detail: Optional[str] = stderr.strip().splitlines()[-1][:160] if stderr.strip() else None
-        return f"Querying Proxmox on {self.target.destination} failed ({detail or 'no error output'})."

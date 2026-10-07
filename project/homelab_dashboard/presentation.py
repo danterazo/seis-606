@@ -13,6 +13,7 @@ def present_payload(*, payload: Dict[str, Any], image_dir: Path) -> Dict[str, An
         node["display_name"] = profile.display_name
         node["initial"] = profile.initial
         node["color"] = profile.color
+        node["memory_description"] = profile.memory_description
         node["image"] = find_node_image(node_name=node["name"], image_dir=image_dir)
         if profile.address is not None:
             node["address"] = profile.address

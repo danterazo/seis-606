@@ -22,6 +22,19 @@ class GuestState(StrEnum):
     UNKNOWN = "unknown"
 
 
+class GpuState(StrEnum):
+    ACTIVE = "active"
+    PASSTHROUGH = "passthrough"
+    NO_DRIVER = "no_driver"
+    EXPECTED = "expected"
+
+
+class HardwareSource(StrEnum):
+    LIVE = "live"
+    EXPECTED = "expected"
+    UNKNOWN = "unknown"
+
+
 @dataclass(frozen=True, slots=True, kw_only=True)
 class Resources:
     """Readings Proxmox did not report stay None rather than becoming zero."""
@@ -43,12 +56,32 @@ class Guest:
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
+class Gpu:
+    name: str
+    state: GpuState
+    utilization_percent: Optional[float] = None
+    memory_used_bytes: Optional[int] = None
+    memory_total_bytes: Optional[int] = None
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class Hardware:
+    """`source` says whether this was read from the node (live) or taken from the configured profile (expected)."""
+
+    cpu_model: Optional[str] = None
+    gpus: Tuple[Gpu, ...] = ()
+    source: HardwareSource = HardwareSource.UNKNOWN
+    ecc_supported: Optional[bool] = None
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
 class Node:
     name: str
     state: NodeState
     address: Optional[str]
     resources: Resources
     guests: Tuple[Guest, ...]
+    hardware: Hardware = Hardware()
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)

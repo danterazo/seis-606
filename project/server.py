@@ -11,8 +11,11 @@ from urllib.parse import parse_qs, urlparse
 
 from homelab_dashboard.config import Settings
 from homelab_dashboard.presentation import present_payload
-from homelab_dashboard.sources.base import StatusSource, StatusSourceError
+from homelab_dashboard.node_profiles import expected_hardware_for
+from homelab_dashboard.sources.base import RefreshableStatusSource, StatusSource, StatusSourceError
 from homelab_dashboard.sources.cache import CachedStatusSource
+from homelab_dashboard.sources.hardware_source import HardwareEnrichedSource
+from homelab_dashboard.sources.hardware_ssh import SshHardwareProbe
 from homelab_dashboard.sources.proxmox_ssh import ProxmoxSshSource, SshTarget
 
 WEB_ROOT: Final[Path] = Path(__file__).resolve().parent / "web"
@@ -29,9 +32,9 @@ class DashboardHandler(SimpleHTTPRequestHandler):
         client_address: Any,
         server: socketserver.BaseServer,
         *,
-        source: CachedStatusSource,
+        source: RefreshableStatusSource,
     ) -> None:
-        self.source: CachedStatusSource = source
+        self.source: RefreshableStatusSource = source
         super().__init__(request, client_address, server, directory=str(WEB_ROOT))
 
     def do_GET(self) -> None:
@@ -66,7 +69,7 @@ class DashboardHandler(SimpleHTTPRequestHandler):
             return
 
 
-def create_server(*, settings: Settings, source: CachedStatusSource) -> ThreadingHTTPServer:
+def create_server(*, settings: Settings, source: RefreshableStatusSource) -> ThreadingHTTPServer:
     return ThreadingHTTPServer((settings.host, settings.port), partial(DashboardHandler, source=source))
 
 
@@ -79,7 +82,13 @@ def main() -> None:
 
     source: StatusSource = ProxmoxSshSource(target=target, timeout_seconds=settings.ssh_timeout_seconds)
     cached: CachedStatusSource = CachedStatusSource(inner=source, ttl_seconds=settings.cache_seconds)
-    server: ThreadingHTTPServer = create_server(settings=settings, source=cached)
+    enriched: RefreshableStatusSource = HardwareEnrichedSource(
+        cluster=cached,
+        probe=SshHardwareProbe(user=settings.ssh_user, timeout_seconds=settings.ssh_timeout_seconds),
+        expected_hardware=expected_hardware_for,
+        ttl_seconds=settings.hardware_cache_seconds,
+    )
+    server: ThreadingHTTPServer = create_server(settings=settings, source=enriched)
     print(f"Homelab dashboard running at http://{settings.host}:{settings.port} (source: {target.destination})")
     try:
         server.serve_forever()

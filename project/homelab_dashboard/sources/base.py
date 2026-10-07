@@ -9,3 +9,7 @@ class StatusSourceError(Exception):
 
 class StatusSource(Protocol):
     def fetch(self) -> ClusterSnapshot: ...
+
+
+class RefreshableStatusSource(StatusSource, Protocol):
+    def fetch_fresh(self) -> ClusterSnapshot: ...

@@ -1,10 +1,10 @@
-import math
 from collections import defaultdict
 from collections.abc import Mapping, Sequence
 from datetime import datetime
 from typing import Dict, Final, List, Optional
 
 from homelab_dashboard.models import ClusterSnapshot, Guest, GuestKind, GuestState, Node, NodeState, Resources
+from homelab_dashboard.sources.json_values import as_integer, as_number, as_text
 
 JsonObject = Mapping[str, object]
 
@@ -19,39 +19,24 @@ _GUEST_STATES: Final[Dict[str, GuestState]] = {
 _FALLBACK_PREFIX: Final[Dict[GuestKind, str]] = {GuestKind.VM: "VM", GuestKind.CONTAINER: "LXC"}
 
 
-def _number(*, value: object) -> Optional[float]:
-    if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value):
-        return None
-    return float(value)
-
-
-def _integer(*, value: object) -> Optional[int]:
-    number: Optional[float] = _number(value=value)
-    return None if number is None else int(number)
-
-
-def _text(*, value: object) -> Optional[str]:
-    return value if isinstance(value, str) and value else None
-
-
 def _resources(*, row: JsonObject) -> Resources:
     return Resources(
-        cpu_ratio=_number(value=row.get("cpu")),
-        cpu_cores=_integer(value=row.get("maxcpu")),
-        memory_used_bytes=_integer(value=row.get("mem")),
-        memory_total_bytes=_integer(value=row.get("maxmem")),
+        cpu_ratio=as_number(value=row.get("cpu")),
+        cpu_cores=as_integer(value=row.get("maxcpu")),
+        memory_used_bytes=as_integer(value=row.get("mem")),
+        memory_total_bytes=as_integer(value=row.get("maxmem")),
     )
 
 
 def _parse_guest(*, row: JsonObject) -> Optional[Guest]:
     kind: Optional[GuestKind] = _GUEST_KINDS.get(str(row.get("type")))
-    vmid: Optional[int] = _integer(value=row.get("vmid"))
-    node: Optional[str] = _text(value=row.get("node"))
+    vmid: Optional[int] = as_integer(value=row.get("vmid"))
+    node: Optional[str] = as_text(value=row.get("node"))
     if kind is None or vmid is None or node is None or row.get("template"):
         return None
     return Guest(
         vmid=vmid,
-        name=_text(value=row.get("name")) or f"{_FALLBACK_PREFIX[kind]} {vmid}",
+        name=as_text(value=row.get("name")) or f"{_FALLBACK_PREFIX[kind]} {vmid}",
         node=node,
         kind=kind,
         state=_GUEST_STATES.get(str(row.get("status")), GuestState.UNKNOWN),
@@ -60,7 +45,7 @@ def _parse_guest(*, row: JsonObject) -> Optional[Guest]:
 
 
 def _parse_node(*, row: JsonObject, address: Optional[str], guests: Sequence[Guest]) -> Optional[Node]:
-    name: Optional[str] = _text(value=row.get("node"))
+    name: Optional[str] = as_text(value=row.get("node"))
     if name is None:
         return None
     state: NodeState = _NODE_STATES.get(str(row.get("status")), NodeState.UNKNOWN)
@@ -83,8 +68,8 @@ def _parse_node(*, row: JsonObject, address: Optional[str], guests: Sequence[Gue
 def _node_addresses(*, cluster_status: Sequence[JsonObject]) -> Dict[str, str]:
     addresses: Dict[str, str] = {}
     for row in cluster_status:
-        name: Optional[str] = _text(value=row.get("name"))
-        address: Optional[str] = _text(value=row.get("ip"))
+        name: Optional[str] = as_text(value=row.get("name"))
+        address: Optional[str] = as_text(value=row.get("ip"))
         if row.get("type") == "node" and name is not None and address is not None:
             addresses[name] = address
     return addresses

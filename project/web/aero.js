@@ -4,7 +4,8 @@
  * @typedef {{ cpu_ratio: number | null, cpu_cores: number | null, memory_used_bytes: number | null, memory_total_bytes: number | null }} Resources
  * @typedef {"running" | "stopped" | "paused" | "unknown"} GuestState
  * @typedef {{ vmid: number, name: string, node: string, kind: "vm" | "container", state: GuestState, resources: Resources }} Guest
- * @typedef {{ name: string, display_name: string, state: "online" | "offline" | "unknown", address: string | null, image: string | null, initial: string, color: string, resources: Resources, guests: Guest[] }} PveNode
+ * @typedef {{ cpu_model: string | null, ecc_supported?: boolean | null, source: "live" | "expected" | "unknown" }} Hardware
+ * @typedef {{ name: string, display_name: string, state: "online" | "offline" | "unknown", address: string | null, image: string | null, initial: string, color: string, memory_description?: string | null, resources: Resources, guests: Guest[], hardware: Hardware }} PveNode
  * @typedef {{ source: string, fetched_at: string, nodes: PveNode[] }} Snapshot
  * @typedef {"all" | "running" | "vm" | "container"} GuestFilter
  * @typedef {{ snapshot: Snapshot | null, error: string | null, selectedNode: string | null, filter: GuestFilter, query: string }} ViewState
@@ -200,17 +201,6 @@ function gauge({ label, value, tone }) {
   return el("div", { className: "gauge" }, [ring, el("span", { className: "gauge-value", text: formatPercent(value) }), el("span", { className: "gauge-label", text: label })]);
 }
 
-/** @param {{ label: string, value: number | null, tone: "cpu" | "memory" }} args */
-function bar({ label, value, tone }) {
-  const fill = el("span", { className: `bar-fill bar-${tone}` });
-  fill.style.width = `${value ?? 0}%`;
-  return el("div", { className: "bar-row" }, [
-    el("span", { className: "bar-label", text: label }),
-    el("span", { className: "bar-track" }, [fill]),
-    el("span", { className: "bar-value", text: formatPercent(value) }),
-  ]);
-}
-
 /** @param {{ label: string, metric: GuestMetric, tone: "cpu" | "memory" }} args */
 function metricRow({ label, metric, tone }) {
   const fill = el("span", { className: `bar-fill bar-${tone}` });
@@ -262,17 +252,35 @@ function renderNodeList(nodes) {
   required("#node-list").replaceChildren(...(items.length ? items : [el("p", { className: "empty", text: "No nodes to show." })]));
 }
 
+/** @param {string} label @param {string} value */
+const fact = (label, value) => el("div", { className: "fact" }, [el("span", { className: "fact-label", text: label }), el("span", { className: "fact-value", text: value })]);
+
+/** The CPU model is a quiet subtitle; italics mark it as configured rather than read from the node. @param {Hardware} hardware */
+function cpuModelLine({ cpu_model: model, source }) {
+  if (model === null) return null;
+  const expected = source !== "live";
+  return el("small", { className: `cpu-model${expected ? " is-expected" : ""}`, text: model, attrs: { title: expected ? "Expected hardware (node not probed)" : "Read from the node" } });
+}
+
 /** @param {PveNode[]} nodes */
 function renderOverview(nodes) {
-  const tiles = nodes.map((node) =>
-    el("button", { className: `tile tile-${node.state}`, attrs: { type: "button", style: colorStyle(node.color), "data-node": node.name, "aria-pressed": String(state.selectedNode === node.name) } }, [
-      el("span", { className: "server-glyph large", attrs: { "aria-hidden": "true" } }),
-      el("strong", { text: nodeLabel(node) }),
-      statePill(node.state),
-      el("small", { text: guestSummary(node) }),
-      el("div", { className: "gauges" }, [gauge({ label: "CPU", value: cpuPercent(node.resources), tone: "cpu" }), gauge({ label: "RAM", value: memoryPercent(node.resources), tone: "memory" })]),
-    ]),
-  );
+  const tiles = nodes.map((node) => {
+    const online = node.state === "online";
+    const gauges = [gauge({ label: "CPU", value: cpuPercent(node.resources), tone: "cpu" }), gauge({ label: "RAM", value: memoryPercent(node.resources), tone: "memory" })];
+    const modelLine = cpuModelLine(node.hardware);
+    return el("button", { className: `tile tile-${node.state}`, attrs: { type: "button", style: colorStyle(node.color), "data-node": node.name, "aria-pressed": String(state.selectedNode === node.name) } }, [
+      el("span", { className: "tile-head" }, [
+        el("span", { className: "server-glyph", attrs: { "aria-hidden": "true" } }),
+        el("span", { className: "tile-title" }, [el("strong", { text: nodeLabel(node) }), ...(modelLine ? [modelLine] : []), el("small", { text: guestSummary(node) })]),
+        statePill(node.state),
+      ]),
+      ...(online
+        ? [el("div", { className: "gauges" }, gauges), el("div", { className: "facts" }, [fact("CPU", formatCores(node.resources)), fact("RAM", formatRam(node.resources))])]
+        : [el("p", { className: "offline-note", text: "No live readings while the node is unavailable." })]),
+      ...(node.memory_description ? [el("small", { className: "memory-description", text: node.memory_description, attrs: { title: "Configured memory inventory, not a live module reading" } })] : []),
+      ...(node.hardware.ecc_supported == null ? [] : [el("small", { text: `ECC: ${node.hardware.ecc_supported ? "reported by firmware" : "not reported by firmware"}`, attrs: { title: "SMBIOS memory-array error correction; not proof that ECC is enabled" } })]),
+    ]);
+  });
   required("#overview").replaceChildren(...(tiles.length ? tiles : [el("p", { className: "empty", text: "Nothing to show yet." })]));
 }
 
@@ -350,23 +358,6 @@ function renderTopology(nodes) {
   host.replaceChildren(svg("svg", { viewBox: `0 0 ${width} ${height}`, role: "img", "aria-label": "Cluster topology" }, drawing));
 }
 
-/** @param {PveNode[]} nodes */
-function renderUsage(nodes) {
-  const rows = nodes.map((node) =>
-    el("div", { className: "usage-node" }, [
-      el("strong", { text: nodeLabel(node) }),
-      ...(node.state === "online"
-        ? [
-            bar({ label: "CPU", value: cpuPercent(node.resources), tone: "cpu" }),
-            bar({ label: "RAM", value: memoryPercent(node.resources), tone: "memory" }),
-            el("small", { className: "usage-detail", text: `${formatCores(node.resources)} · RAM ${formatRam(node.resources)}` }),
-          ]
-        : [el("small", { className: "usage-detail", text: "Unavailable while the node is offline" })]),
-    ]),
-  );
-  required("#usage").replaceChildren(...(rows.length ? rows : [el("p", { className: "empty", text: "No usage data." })]));
-}
-
 /** @type {Readonly<Record<GuestState, number>>} */
 const STATE_RANK = { running: 0, paused: 1, stopped: 2, unknown: 3 };
 
@@ -416,7 +407,7 @@ function renderGuests(nodes) {
       el("div", { className: "guest-body" }, [
         el("strong", { className: "guest-name", text: guest.name }),
         el("div", { className: "guest-sub" }, [el("small", { text: `${displayNodeName(guest.node)} · ID ${guest.vmid}` }), statePill(guest.state)]),
-        ...(metrics === null ? [] : [metricRow({ label: "CPU", metric: metrics.cpu, tone: "cpu" }), metricRow({ label: "RAM", metric: metrics.ram, tone: "memory" })]),
+        ...(metrics === null ? [] : [el("div", { className: "guest-metrics" }, [metricRow({ label: "CPU", metric: metrics.cpu, tone: "cpu" }), metricRow({ label: "RAM", metric: metrics.ram, tone: "memory" })])]),
       ]),
     ]);
   });
@@ -430,7 +421,6 @@ function render() {
   renderNodeList(nodes);
   renderOverview(nodes);
   renderTopology(nodes);
-  renderUsage(nodes);
   renderGuests(nodes);
   required("#source-label").textContent = state.snapshot?.source ?? "No data source connected";
   const lastUpdate = state.snapshot ? new Date(state.snapshot.fetched_at).toLocaleTimeString() : null;
