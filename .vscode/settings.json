@@ -1,8 +1,4 @@
 {
   "git.detectSubmodules": false,
-  "python.languageServer": "Pylance",
-  "python.analysis.extraPaths": [
-    "${workspaceFolder}/assignments/*",
-    "${workspaceFolder}/project/*"
-  ]
+  "python.languageServer": "Pylance"
 }
