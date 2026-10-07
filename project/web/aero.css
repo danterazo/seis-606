@@ -193,7 +193,7 @@ button { cursor: pointer; }
 .topo-badge { stroke: none; }
 .topo-vm .topo-badge { fill: #7a6cf0; } .topo-lxc .topo-badge { fill: #4cc23a; }
 .topo-stripe { fill: var(--node-color, transparent); }
-.topo-guest.is-dim { opacity: .5; }
+.topo-guest.is-dim :is(.topo-pill, .topo-badge, .topo-guest-kind, .topo-guest-name, .topo-led) { opacity: .5; }
 .topo-guest-kind { fill: #fff; font-size: 11px; font-weight: 700; }
 .topo-guest-name { fill: var(--ink); font-size: 12px; font-weight: 600; }
 .topo-led { fill: #67ec4d; filter: drop-shadow(0 0 3px #67ec4d); }

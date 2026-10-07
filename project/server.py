@@ -10,8 +10,7 @@ from typing import Any, Dict, Final, Tuple, Union
 from urllib.parse import urlparse
 
 from homelab_dashboard.config import Settings
-from homelab_dashboard.node_colors import color_for_node
-from homelab_dashboard.node_images import find_node_image
+from homelab_dashboard.presentation import present_payload
 from homelab_dashboard.sources.base import StatusSource, StatusSourceError
 from homelab_dashboard.sources.proxmox_ssh import ProxmoxSshSource, SshTarget
 
@@ -44,11 +43,7 @@ class DashboardHandler(SimpleHTTPRequestHandler):
             self._send_json(status=HTTPStatus.SERVICE_UNAVAILABLE, payload={"error": str(error)})
 
     def _status_payload(self) -> Dict[str, Any]:
-        payload: Dict[str, Any] = self.source.fetch().to_payload()
-        for node in payload["nodes"]:
-            node["image"] = find_node_image(node_name=node["name"], image_dir=NODE_IMAGE_DIR)
-            node["color"] = color_for_node(node_name=node["name"])
-        return payload
+        return present_payload(payload=self.source.fetch().to_payload(), image_dir=NODE_IMAGE_DIR)
 
     def end_headers(self) -> None:
         self.send_header("Cache-Control", "no-store")

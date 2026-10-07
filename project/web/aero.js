@@ -4,7 +4,7 @@
  * @typedef {{ cpu_ratio: number | null, cpu_cores: number | null, memory_used_bytes: number | null, memory_total_bytes: number | null }} Resources
  * @typedef {"running" | "stopped" | "paused" | "unknown"} GuestState
  * @typedef {{ vmid: number, name: string, node: string, kind: "vm" | "container", state: GuestState, resources: Resources }} Guest
- * @typedef {{ name: string, state: "online" | "offline" | "unknown", address: string | null, image: string | null, color: string, resources: Resources, guests: Guest[] }} PveNode
+ * @typedef {{ name: string, display_name: string, state: "online" | "offline" | "unknown", address: string | null, image: string | null, color: string, resources: Resources, guests: Guest[] }} PveNode
  * @typedef {{ source: string, fetched_at: string, nodes: PveNode[] }} Snapshot
  * @typedef {"all" | "running" | "vm" | "container"} GuestFilter
  * @typedef {{ snapshot: Snapshot | null, error: string | null, selectedNode: string | null, filter: GuestFilter, query: string }} ViewState
@@ -161,6 +161,15 @@ const colorOfNode = (nodeName) => safeColor(state.snapshot?.nodes.find((node) =>
 /** @param {Guest["kind"]} kind */
 const kindLabel = (kind) => (kind === "vm" ? "VM" : "LXC");
 
+/** Capitalized name for display; the raw name stays the identifier. @param {PveNode} node */
+const nodeLabel = (node) => node.display_name || node.name;
+
+/** @param {string} nodeName */
+const displayNodeName = (nodeName) => {
+  const node = state.snapshot?.nodes.find((candidate) => candidate.name === nodeName);
+  return node === undefined ? nodeName : nodeLabel(node);
+};
+
 /** @param {string} state */
 const stateLabel = (state) => state.charAt(0).toUpperCase() + state.slice(1);
 
@@ -202,17 +211,17 @@ function renderBanner() {
   /** @type {{ tone: string, title: string, detail: string }} */
   let content;
   if (error !== null) {
-    content = { tone: "alert", title: "Can't reach Proxmox", detail: error };
+    content = { tone: "alert", title: "Can't Reach Proxmox", detail: error };
   } else if (snapshot === null) {
     content = { tone: "pending", title: "Connecting…", detail: "Asking Proxmox for the current status." };
   } else if (snapshot.nodes.length === 0) {
-    content = { tone: "pending", title: "No nodes reported", detail: "Proxmox returned an empty cluster." };
+    content = { tone: "pending", title: "No Nodes Reported", detail: "Proxmox returned an empty cluster." };
   } else {
     const down = snapshot.nodes.filter((node) => node.state !== "online").length;
     content =
       down === 0
-        ? { tone: "ok", title: "All systems operational", detail: `${plural(snapshot.nodes.length, "node")} online` }
-        : { tone: "warn", title: `${down} of ${plural(snapshot.nodes.length, "node")} unavailable`, detail: "Check the node list for details." };
+        ? { tone: "ok", title: "All Systems Operational", detail: `${plural(snapshot.nodes.length, "node")} online` }
+        : { tone: "warn", title: `${down} of ${plural(snapshot.nodes.length, "Node")} Unavailable`, detail: "Check the node list for details." };
   }
   banner.className = `banner banner-${content.tone}`;
   banner.replaceChildren(el("i", { className: "banner-icon", attrs: { "aria-hidden": "true" } }), el("strong", { text: content.title }), el("span", { text: content.detail }));
@@ -229,7 +238,7 @@ function renderNodeList(nodes) {
   const items = nodes.map((node) => {
     const button = el("button", { className: `node-row row-${node.state}`, attrs: { type: "button", style: colorStyle(node.color), "data-node": node.name, "aria-pressed": String(state.selectedNode === node.name) } }, [
       nodeAvatar(node),
-      el("span", { className: "node-meta" }, [el("strong", { text: node.name }), statePill(node.state), el("small", { text: node.address ?? "Address unknown" })]),
+      el("span", { className: "node-meta" }, [el("strong", { text: nodeLabel(node) }), statePill(node.state), el("small", { text: node.address ?? "Address unknown" })]),
     ]);
     return button;
   });
@@ -241,7 +250,7 @@ function renderOverview(nodes) {
   const tiles = nodes.map((node) =>
     el("button", { className: `tile tile-${node.state}`, attrs: { type: "button", style: colorStyle(node.color), "data-node": node.name, "aria-pressed": String(state.selectedNode === node.name) } }, [
       el("span", { className: "server-glyph large", attrs: { "aria-hidden": "true" } }),
-      el("strong", { text: node.name }),
+      el("strong", { text: nodeLabel(node) }),
       statePill(node.state),
       el("small", { text: guestSummary(node) }),
       el("div", { className: "gauges" }, [gauge({ label: "CPU", value: cpuPercent(node.resources), tone: "cpu" }), gauge({ label: "RAM", value: memoryPercent(node.resources), tone: "memory" })]),
@@ -292,7 +301,7 @@ function renderTopology(nodes) {
         svg("rect", { class: "topo-node-slot", x: x - 28, y: nodeY - 4, width: 56, height: 9, rx: 4 }),
         svg("circle", { class: "topo-node-led", cx: x + 22, cy: nodeY + 17, r: 3.5 }),
       ]),
-      svgText({ x, y: nodeY + 46, text: node.name, className: "topo-label" }),
+      svgText({ x, y: nodeY + 46, text: nodeLabel(node), className: "topo-label" }),
       svgText({ x, y: nodeY + 62, text: node.address ?? "address unknown", className: "topo-sub" }),
     );
 
@@ -328,7 +337,7 @@ function renderTopology(nodes) {
 function renderUsage(nodes) {
   const rows = nodes.map((node) =>
     el("div", { className: "usage-node" }, [
-      el("strong", { text: node.name }),
+      el("strong", { text: nodeLabel(node) }),
       bar({ label: "CPU", value: cpuPercent(node.resources), tone: "cpu" }),
       bar({ label: "RAM", value: memoryPercent(node.resources), tone: "memory" }),
       el("small", { className: "usage-detail", text: `${formatCores(node.resources)} · RAM ${formatRam(node.resources)}` }),
@@ -354,7 +363,7 @@ function visibleGuests(nodes) {
 
 /** @param {PveNode[]} nodes */
 function renderGuests(nodes) {
-  required("#guests-title").textContent = state.selectedNode === null ? "Guests" : `Guests on ${state.selectedNode}`;
+  required("#guests-title").textContent = state.selectedNode === null ? "Guests" : `Guests on ${displayNodeName(state.selectedNode)}`;
   required("#chips").replaceChildren(
     ...FILTERS.map(({ id, label }) => el("button", { className: "chip", text: label, attrs: { type: "button", "data-filter": id, "aria-pressed": String(state.filter === id) } })),
   );
@@ -366,7 +375,7 @@ function renderGuests(nodes) {
       el("span", { className: `guest-icon guest-${guest.kind}`, text: kindLabel(guest.kind), attrs: { "aria-hidden": "true" } }),
       el("span", { className: "guest-meta" }, [
         el("strong", { text: guest.name }),
-        el("small", { text: `${guest.node} · ID ${guest.vmid}` }),
+        el("small", { text: `${displayNodeName(guest.node)} · ID ${guest.vmid}` }),
         el("small", { text: compute }),
         el("small", { text: ram }),
       ]),
