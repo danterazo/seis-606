@@ -1,6 +1,6 @@
 import re
 from pathlib import Path
-from typing import Final, Tuple, Union
+from typing import Final, Optional, Tuple
 
 IMAGE_URL_PREFIX: Final[str] = "/images/nodes"
 IMAGE_EXTENSIONS: Final[Tuple[str, ...]] = (".png", ".jpg", ".jpeg", ".webp", ".gif")
@@ -9,7 +9,7 @@ IMAGE_EXTENSIONS: Final[Tuple[str, ...]] = (".png", ".jpg", ".jpeg", ".webp", ".
 _STEM_PATTERN: Final[str] = r"[A-Za-z0-9_-]+"
 
 
-def find_node_image(*, node_name: str, image_dir: Path) -> Union[str, None]:
+def find_node_image(*, node_name: str, image_dir: Path) -> Optional[str]:
     """Return the URL of `<image_dir>/<node name>.<ext>` if such a file exists."""
     stem: str = node_name.lower()
     if not re.fullmatch(_STEM_PATTERN, stem):

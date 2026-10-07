@@ -57,11 +57,12 @@
       <aside class="panel guests-panel" aria-labelledby="guests-heading">
         <h2 id="guests-heading"><span class="title-icon icon-cube" aria-hidden="true"></span><span id="guests-title">Guests</span></h2>
         <label class="search"><span class="sr-only">Search guests</span><input id="search" type="search" placeholder="Search by name or ID" autocomplete="off" /></label>
+        <div class="chips node-chips" id="node-chips" role="group" aria-label="Filter by node"></div>
         <div class="chips" id="chips" role="group" aria-label="Filter guests"></div>
         <ul class="guest-list" id="guest-list"></ul>
       </aside>
     </main>
 
-    <footer class="footer"><span id="source-label">—</span><span>Read-only · refreshes every 30 seconds</span></footer>
+    <footer class="footer"><span id="source-label">—</span><span id="refresh-note">Read-only</span></footer>
   </body>
 </html>

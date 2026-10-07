@@ -1,7 +1,7 @@
 import json
 import subprocess
 from datetime import UTC, datetime
-from typing import Any, Dict, Final, List, Sequence, Tuple, Union
+from typing import Any, Dict, Final, List, Optional, Sequence, Tuple
 
 import pytest
 
@@ -31,7 +31,7 @@ def make_runner(
     stdout: str = "",
     stderr: str = "",
     returncode: int = 0,
-    calls: Union[List[Sequence[str]], None] = None,
+    calls: Optional[List[Sequence[str]]] = None,
 ) -> CommandRunner:
     def runner(command: Sequence[str], *, timeout: float) -> "subprocess.CompletedProcess[str]":
         if calls is not None:
@@ -46,7 +46,7 @@ def make_source(
     stdout: str = "",
     stderr: str = "",
     returncode: int = 0,
-    calls: Union[List[Sequence[str]], None] = None,
+    calls: Optional[List[Sequence[str]]] = None,
 ) -> ProxmoxSshSource:
     return ProxmoxSshSource(
         target=SshTarget(host="cerulean"),

@@ -42,8 +42,9 @@ def test_display_fields_are_added_to_every_node(tmp_path: Path) -> None:
 
     kex, cerulean = present_payload(payload=payload, image_dir=tmp_path)["nodes"]
 
-    assert (kex["display_name"], kex["color"], kex["image"]) == ("Kex", "#800000", "/images/nodes/kex.png")
+    assert (kex["display_name"], kex["color"], kex["image"]) == ("Kex", "#c62839", "/images/nodes/kex.png")
     assert (cerulean["display_name"], cerulean["color"], cerulean["image"]) == ("Cerulean", "#0b7fc7", None)
+    assert (kex["initial"], cerulean["initial"]) == ("K", "C")
 
 
 def test_other_payload_fields_are_preserved(tmp_path: Path) -> None:

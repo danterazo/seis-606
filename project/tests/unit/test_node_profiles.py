@@ -9,13 +9,28 @@ HEX_COLOR: Final[str] = r"#[0-9a-f]{6}"
 
 
 def test_configured_nodes_have_their_assigned_colors() -> None:
-    assert profile_for_node(node_name="kex").color == "#800000"
+    assert profile_for_node(node_name="kex").color == "#c62839"
     assert profile_for_node(node_name="cerulean").color == "#0b7fc7"
     assert profile_for_node(node_name="kveikur").color == "#f28c1b"
 
 
 def test_nodes_are_displayed_with_capital_letters() -> None:
     assert [profile_for_node(node_name=name).display_name for name in ("kex", "cerulean", "kveikur")] == ["Kex", "Cerulean", "Kveikur"]
+
+
+def test_badge_initials_are_one_letter_and_unique_among_configured_nodes() -> None:
+    initials = [profile.initial for profile in NODE_PROFILES.values()]
+
+    assert all(len(initial) == 1 and initial.isupper() for initial in initials)
+    assert len(set(initials)) == len(initials)
+
+
+def test_configured_badge_initials() -> None:
+    assert [profile_for_node(node_name=name).initial for name in ("kex", "cerulean", "kveikur")] == ["K", "C", "V"]
+
+
+def test_unknown_nodes_use_their_first_letter_as_the_initial() -> None:
+    assert profile_for_node(node_name="new-node").initial == "N"
 
 
 def test_kex_and_kveikur_have_fixed_addresses() -> None:

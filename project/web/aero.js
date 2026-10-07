@@ -4,7 +4,7 @@
  * @typedef {{ cpu_ratio: number | null, cpu_cores: number | null, memory_used_bytes: number | null, memory_total_bytes: number | null }} Resources
  * @typedef {"running" | "stopped" | "paused" | "unknown"} GuestState
  * @typedef {{ vmid: number, name: string, node: string, kind: "vm" | "container", state: GuestState, resources: Resources }} Guest
- * @typedef {{ name: string, display_name: string, state: "online" | "offline" | "unknown", address: string | null, image: string | null, color: string, resources: Resources, guests: Guest[] }} PveNode
+ * @typedef {{ name: string, display_name: string, state: "online" | "offline" | "unknown", address: string | null, image: string | null, initial: string, color: string, resources: Resources, guests: Guest[] }} PveNode
  * @typedef {{ source: string, fetched_at: string, nodes: PveNode[] }} Snapshot
  * @typedef {"all" | "running" | "vm" | "container"} GuestFilter
  * @typedef {{ snapshot: Snapshot | null, error: string | null, selectedNode: string | null, filter: GuestFilter, query: string }} ViewState
@@ -12,7 +12,7 @@
  */
 
 const STATUS_URL = "/api/status";
-const REFRESH_INTERVAL_MS = 30_000;
+const REFRESH_INTERVAL_MS = 1_000;
 const MAX_TOPOLOGY_GUESTS = 12;
 const TOPOLOGY_NAME_LIMIT = 22;
 const BYTES_PER_MIB = 1024 ** 2;
@@ -107,11 +107,11 @@ function formatMemoryPair({ used, total }) {
   let usedText = trimNumber(used / unit.size, unit.digits);
   // A small but real reading should not be shown as zero.
   if (usedText === "0" && used > 0) usedText = trimNumber(used / unit.size, 2);
-  return `${usedText}/${trimNumber(total / unit.size, unit.digits)} ${unit.label}`;
+  return `${usedText} / ${trimNumber(total / unit.size, unit.digits)} ${unit.label}`;
 }
 
 /** @param {Resources} resources */
-const formatCores = ({ cpu_cores: cores }) => (cores === null ? "cores unknown" : `${cores} ${cores === 1 ? "core" : "cores"}`);
+const formatCores = ({ cpu_cores: cores }) => (cores === null ? "cores unknown" : `${cores} ${cores === 1 ? "core" : "Cores"}`);
 
 /** Allotment, usage, then percentage: "3/8 GB (38%)". @param {Resources} resources */
 function formatRam(resources) {
@@ -121,20 +121,23 @@ function formatRam(resources) {
   return `${formatMemoryPair({ used, total })} (${formatPercent(memoryPercent(resources))})`;
 }
 
-/** @param {Guest} guest @returns {[string, string]} */
-function guestUsageLines(guest) {
+/** @typedef {{ percent: number | null, text: string }} GuestMetric */
+
+/** Stopped guests have nothing live to show, so they get no metrics at all. @param {Guest} guest @returns {{ cpu: GuestMetric, ram: GuestMetric } | null} */
+function guestMetrics(guest) {
+  if (guest.state !== "running") return null;
   const { resources } = guest;
-  if (guest.state !== "running") {
-    const allotment = resources.memory_total_bytes === null ? "RAM allotment unknown" : `${formatBytes(resources.memory_total_bytes)} RAM allotted`;
-    return [formatCores(resources), `Not running · ${allotment}`];
-  }
-  return [`${formatCores(resources)} · CPU ${formatPercent(cpuPercent(resources))}`, `RAM ${formatRam(resources)}`];
+  return {
+    cpu: { percent: cpuPercent(resources), text: `${formatPercent(cpuPercent(resources))} · ${formatCores(resources)}` },
+    ram: { percent: memoryPercent(resources), text: formatRam(resources) },
+  };
 }
 
 /** @param {Guest} guest */
 function guestTooltip(guest) {
-  const [compute, ram] = guestUsageLines(guest);
-  return `${guest.name} (ID ${guest.vmid}) – ${guest.state}\n${compute}\n${ram}`;
+  const header = `${guest.name} (ID ${guest.vmid}) – ${guest.state}`;
+  const metrics = guestMetrics(guest);
+  return metrics === null ? header : `${header}\nCPU ${metrics.cpu.text}\nRAM ${metrics.ram.text}`;
 }
 
 /** @param {PveNode} node @param {Guest["kind"]} kind */
@@ -157,6 +160,9 @@ const colorStyle = (color) => `--node-color: ${safeColor(color)}`;
 
 /** @param {string} nodeName */
 const colorOfNode = (nodeName) => safeColor(state.snapshot?.nodes.find((node) => node.name === nodeName)?.color);
+
+/** @param {string} nodeName */
+const initialOfNode = (nodeName) => state.snapshot?.nodes.find((node) => node.name === nodeName)?.initial || nodeName.charAt(0).toUpperCase();
 
 /** @param {Guest["kind"]} kind */
 const kindLabel = (kind) => (kind === "vm" ? "VM" : "LXC");
@@ -205,13 +211,24 @@ function bar({ label, value, tone }) {
   ]);
 }
 
+/** @param {{ label: string, metric: GuestMetric, tone: "cpu" | "memory" }} args */
+function metricRow({ label, metric, tone }) {
+  const fill = el("span", { className: `bar-fill bar-${tone}` });
+  fill.style.width = `${metric.percent ?? 0}%`;
+  return el("div", { className: "metric" }, [
+    el("div", { className: "metric-head" }, [el("span", { className: "metric-label", text: label }), el("span", { text: metric.text })]),
+    el("span", { className: "bar-track slim" }, [fill]),
+  ]);
+}
+
 function renderBanner() {
   const banner = required("#banner");
   const { snapshot, error } = state;
   /** @type {{ tone: string, title: string, detail: string }} */
   let content;
   if (error !== null) {
-    content = { tone: "alert", title: "Can't Reach Proxmox", detail: error };
+    const lastGood = snapshot === null ? "" : ` Showing the last data from ${new Date(snapshot.fetched_at).toLocaleTimeString()}.`;
+    content = { tone: "alert", title: "Can't Reach Proxmox", detail: `${error}${lastGood}` };
   } else if (snapshot === null) {
     content = { tone: "pending", title: "Connecting…", detail: "Asking Proxmox for the current status." };
   } else if (snapshot.nodes.length === 0) {
@@ -338,13 +355,23 @@ function renderUsage(nodes) {
   const rows = nodes.map((node) =>
     el("div", { className: "usage-node" }, [
       el("strong", { text: nodeLabel(node) }),
-      bar({ label: "CPU", value: cpuPercent(node.resources), tone: "cpu" }),
-      bar({ label: "RAM", value: memoryPercent(node.resources), tone: "memory" }),
-      el("small", { className: "usage-detail", text: `${formatCores(node.resources)} · RAM ${formatRam(node.resources)}` }),
+      ...(node.state === "online"
+        ? [
+            bar({ label: "CPU", value: cpuPercent(node.resources), tone: "cpu" }),
+            bar({ label: "RAM", value: memoryPercent(node.resources), tone: "memory" }),
+            el("small", { className: "usage-detail", text: `${formatCores(node.resources)} · RAM ${formatRam(node.resources)}` }),
+          ]
+        : [el("small", { className: "usage-detail", text: "Unavailable while the node is offline" })]),
     ]),
   );
   required("#usage").replaceChildren(...(rows.length ? rows : [el("p", { className: "empty", text: "No usage data." })]));
 }
+
+/** @type {Readonly<Record<GuestState, number>>} */
+const STATE_RANK = { running: 0, paused: 1, stopped: 2, unknown: 3 };
+
+/** Running guests first, then paused, stopped, unknown; the cluster-unique VM id orders each group. @param {Guest} a @param {Guest} b */
+const compareGuests = (a, b) => STATE_RANK[a.state] - STATE_RANK[b.state] || a.vmid - b.vmid;
 
 /** @param {Guest} guest @param {GuestFilter} filter */
 function matchesFilter(guest, filter) {
@@ -358,28 +385,39 @@ function visibleGuests(nodes) {
     .filter((node) => state.selectedNode === null || node.name === state.selectedNode)
     .flatMap((node) => node.guests)
     .filter((guest) => matchesFilter(guest, state.filter))
-    .filter((guest) => query === "" || `${guest.name} ${guest.vmid} ${guest.node}`.toLowerCase().includes(query));
+    .filter((guest) => query === "" || `${guest.name} ${guest.vmid} ${guest.node}`.toLowerCase().includes(query))
+    .sort(compareGuests);
 }
 
 /** @param {PveNode[]} nodes */
 function renderGuests(nodes) {
   required("#guests-title").textContent = state.selectedNode === null ? "Guests" : `Guests on ${displayNodeName(state.selectedNode)}`;
+  required("#node-chips").replaceChildren(
+    el("button", { className: "chip", text: "All Nodes", attrs: { type: "button", "data-node-filter": "", "aria-pressed": String(state.selectedNode === null) } }),
+    ...nodes.map((node) =>
+      el("button", { className: "chip", attrs: { type: "button", style: colorStyle(node.color), "data-node-filter": node.name, "aria-pressed": String(state.selectedNode === node.name) } }, [
+        el("i", { className: "chip-dot", attrs: { "aria-hidden": "true" } }),
+        nodeLabel(node),
+      ]),
+    ),
+  );
   required("#chips").replaceChildren(
     ...FILTERS.map(({ id, label }) => el("button", { className: "chip", text: label, attrs: { type: "button", "data-filter": id, "aria-pressed": String(state.filter === id) } })),
   );
 
   const guests = visibleGuests(nodes);
   const rows = guests.map((guest) => {
-    const [compute, ram] = guestUsageLines(guest);
+    const metrics = guestMetrics(guest);
     return el("li", { className: "guest", attrs: { style: colorStyle(colorOfNode(guest.node)) } }, [
-      el("span", { className: `guest-icon guest-${guest.kind}`, text: kindLabel(guest.kind), attrs: { "aria-hidden": "true" } }),
-      el("span", { className: "guest-meta" }, [
-        el("strong", { text: guest.name }),
-        el("small", { text: `${displayNodeName(guest.node)} · ID ${guest.vmid}` }),
-        el("small", { text: compute }),
-        el("small", { text: ram }),
+      el("span", { className: "guest-mark", attrs: { "aria-hidden": "true" } }, [
+        el("span", { className: `guest-icon guest-${guest.kind}`, text: kindLabel(guest.kind) }),
+        el("span", { className: "guest-badge", text: initialOfNode(guest.node) }),
       ]),
-      statePill(guest.state),
+      el("div", { className: "guest-body" }, [
+        el("strong", { className: "guest-name", text: guest.name }),
+        el("div", { className: "guest-sub" }, [el("small", { text: `${displayNodeName(guest.node)} · ID ${guest.vmid}` }), statePill(guest.state)]),
+        ...(metrics === null ? [] : [metricRow({ label: "CPU", metric: metrics.cpu, tone: "cpu" }), metricRow({ label: "RAM", metric: metrics.ram, tone: "memory" })]),
+      ]),
     ]);
   });
   const empty = nodes.length === 0 ? "No guests to show." : "No guests match this view.";
@@ -395,7 +433,9 @@ function render() {
   renderUsage(nodes);
   renderGuests(nodes);
   required("#source-label").textContent = state.snapshot?.source ?? "No data source connected";
-  required("#updated").textContent = state.snapshot ? `Updated ${new Date(state.snapshot.fetched_at).toLocaleTimeString()}` : state.error ? "Update failed" : "Connecting…";
+  const lastUpdate = state.snapshot ? new Date(state.snapshot.fetched_at).toLocaleTimeString() : null;
+  required("#updated").textContent =
+    state.error !== null ? (lastUpdate === null ? "Update failed" : `Update failed · data from ${lastUpdate}`) : lastUpdate === null ? "Connecting…" : `Updated ${lastUpdate}`;
 }
 
 /** @param {unknown} payload */
@@ -403,26 +443,38 @@ function errorMessage(payload) {
   return typeof payload === "object" && payload !== null && "error" in payload && typeof payload.error === "string" ? payload.error : "Status is unavailable.";
 }
 
-async function refresh() {
+let refreshInFlight = false;
+
+/** Polls the local server, which shares one Proxmox query between callers; redraws only when something changed. @param {{ force?: boolean }} [options] */
+async function refresh({ force = false } = {}) {
+  if (refreshInFlight) return;
+  refreshInFlight = true;
   const button = required("#refresh-button");
-  button.setAttribute("disabled", "");
-  button.classList.add("is-loading");
+  if (force) {
+    button.setAttribute("disabled", "");
+    button.classList.add("is-loading");
+  }
+  let changed = true;
   try {
-    const response = await fetch(STATUS_URL, { cache: "no-store" });
+    const response = await fetch(force ? `${STATUS_URL}?refresh=1` : STATUS_URL, { cache: "no-store" });
     /** @type {unknown} */
     const payload = await response.json();
     if (!response.ok) throw new Error(errorMessage(payload));
     const snapshot = /** @type {Snapshot} */ (payload);
+    changed = state.error !== null || state.snapshot === null || state.snapshot.fetched_at !== snapshot.fetched_at;
     state.snapshot = snapshot;
     state.error = null;
     if (state.selectedNode !== null && !snapshot.nodes.some((node) => node.name === state.selectedNode)) state.selectedNode = null;
   } catch (error) {
-    state.snapshot = null;
-    state.error = error instanceof Error ? error.message : "Status is unavailable.";
+    // Keep the last good snapshot on screen; a single failed poll shouldn't blank the page.
+    const message = error instanceof Error ? error.message : "Status is unavailable.";
+    changed = state.error !== message;
+    state.error = message;
   } finally {
+    refreshInFlight = false;
     button.removeAttribute("disabled");
     button.classList.remove("is-loading");
-    render();
+    if (changed || force) render();
   }
 }
 
@@ -434,6 +486,12 @@ function toggleNode(name) {
 
 document.addEventListener("click", (event) => {
   if (!(event.target instanceof Element)) return;
+  const nodeChip = event.target.closest("[data-node-filter]");
+  if (nodeChip instanceof Element) {
+    state.selectedNode = nodeChip.getAttribute("data-node-filter") || null;
+    render();
+    return;
+  }
   const nodeTarget = event.target.closest("[data-node]");
   if (nodeTarget instanceof Element && nodeTarget.getAttribute("data-node")) {
     toggleNode(nodeTarget.getAttribute("data-node") ?? "");
@@ -450,8 +508,10 @@ required("#search").addEventListener("input", (event) => {
   state.query = event.target instanceof HTMLInputElement ? event.target.value : "";
   renderGuests(state.snapshot?.nodes ?? []);
 });
-required("#refresh-button").addEventListener("click", () => void refresh());
+required("#refresh-button").addEventListener("click", () => void refresh({ force: true }));
 
+const refreshSeconds = REFRESH_INTERVAL_MS / 1000;
+required("#refresh-note").textContent = `Read-only · checks for updates every ${refreshSeconds === 1 ? "second" : `${refreshSeconds} seconds`}`;
 render();
 void refresh();
 window.setInterval(() => void refresh(), REFRESH_INTERVAL_MS);

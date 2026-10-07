@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Mapping, Union
+from typing import Any, Dict, List, Mapping, Optional, Union
 
 
 @dataclass(kw_only=True)
@@ -9,11 +9,11 @@ class Workload:
     name: str
     kind: str
     reported_state: str
-    architecture: Union[str, None] = None
+    architecture: Optional[str] = None
     restart_count: int = 0
-    reason: Union[str, None] = None
-    health: Union[str, None] = None
-    last_seen: Union[str, None] = None
+    reason: Optional[str] = None
+    health: Optional[str] = None
+    last_seen: Optional[str] = None
     tags: List[str] = field(default_factory=list)
 
 
@@ -23,10 +23,10 @@ class Node:
     name: str
     reported_state: str
     workloads: List[Workload] = field(default_factory=list)
-    architecture: Union[str, None] = None
+    architecture: Optional[str] = None
     connection_state: str = "unknown"
-    last_successful_update: Union[str, None] = None
-    source_label: Union[str, None] = None
+    last_successful_update: Optional[str] = None
+    source_label: Optional[str] = None
     workload_counts: Dict[str, int] = field(default_factory=dict)
 
     def __post_init__(self) -> None:

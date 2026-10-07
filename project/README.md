@@ -17,6 +17,7 @@ standard library and an OpenSSH client.
 | `HOMELAB_PVE_SSH_HOST`  | `192.168.20.43`      | Host, IP, or SSH alias of any cluster node |
 | `HOMELAB_PVE_SSH_USER`  | `root`               | Account used for every connection          |
 | `HOMELAB_SSH_TIMEOUT`   | `15`                 | Seconds to wait for Proxmox                |
+| `HOMELAB_CACHE_SECONDS` | `10`                 | Minimum seconds between Proxmox queries (one costs ~2 CPU-seconds on a node); the page itself polls every second |
 | `HOMELAB_HOST` / `PORT` | `127.0.0.1` / `8765` | Where the dashboard listens                |
 
 ### First Connection

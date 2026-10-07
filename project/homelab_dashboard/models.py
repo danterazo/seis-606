@@ -1,7 +1,7 @@
 from dataclasses import asdict, dataclass
 from datetime import datetime
 from enum import StrEnum
-from typing import Any, Dict, Tuple, Union
+from typing import Any, Dict, Optional, Tuple
 
 
 class NodeState(StrEnum):
@@ -26,10 +26,10 @@ class GuestState(StrEnum):
 class Resources:
     """Readings Proxmox did not report stay None rather than becoming zero."""
 
-    cpu_ratio: Union[float, None] = None
-    cpu_cores: Union[int, None] = None
-    memory_used_bytes: Union[int, None] = None
-    memory_total_bytes: Union[int, None] = None
+    cpu_ratio: Optional[float] = None
+    cpu_cores: Optional[int] = None
+    memory_used_bytes: Optional[int] = None
+    memory_total_bytes: Optional[int] = None
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -46,7 +46,7 @@ class Guest:
 class Node:
     name: str
     state: NodeState
-    address: Union[str, None]
+    address: Optional[str]
     resources: Resources
     guests: Tuple[Guest, ...]
 

@@ -3,7 +3,7 @@ import re
 import subprocess
 from dataclasses import dataclass
 from datetime import UTC, datetime
-from typing import Callable, Final, List, Protocol, Sequence, Tuple, Union
+from typing import Callable, Final, List, Optional, Protocol, Sequence, Tuple
 
 from homelab_dashboard.models import ClusterSnapshot
 from homelab_dashboard.sources.base import StatusSourceError
@@ -117,5 +117,5 @@ class ProxmoxSshSource:
         for needle, template in _FAILURE_MESSAGES:
             if needle in lowered:
                 return template.format(target=self.target.destination)
-        detail: Union[str, None] = stderr.strip().splitlines()[-1][:160] if stderr.strip() else None
+        detail: Optional[str] = stderr.strip().splitlines()[-1][:160] if stderr.strip() else None
         return f"Querying Proxmox on {self.target.destination} failed ({detail or 'no error output'})."
