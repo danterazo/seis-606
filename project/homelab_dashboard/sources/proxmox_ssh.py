@@ -6,8 +6,9 @@ import os
 import re
 import subprocess
 from collections import Counter
+from collections.abc import Callable
 from datetime import datetime, timezone
-from typing import Any, Callable
+from typing import Any
 
 
 def _run_pvesh(

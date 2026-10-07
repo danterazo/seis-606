@@ -9,7 +9,6 @@ from urllib.parse import urlparse
 from homelab_dashboard.sources.operator_report import build_operator_report
 from homelab_dashboard.sources.proxmox_ssh import build_ssh_report
 
-
 WEB_ROOT = Path(__file__).resolve().parent / "web"
 
 
