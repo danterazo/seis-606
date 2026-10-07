@@ -15,6 +15,7 @@ LEASES: str = "2000000000 AA:BB:CC:DD:EE:FF 192.168.10.23 ringo-M4 *\n0 11:22:33
 def test_dnsmasq_leases_preserve_identity_and_use_shared_names() -> None:
     named, unnamed = parse_leases(text=LEASES)
     assert named.mac == "aa:bb:cc:dd:ee:ff"
+    assert named.to_payload()["mac"] == "AA:BB:CC:DD:EE:FF"
     assert named.hostname == "ringo-M4"
     assert named.to_payload()["display_name"] == "\u308a\u3093\u3054-M4"
     assert named.expires_at == datetime.fromtimestamp(2000000000, UTC)
@@ -51,6 +52,7 @@ def test_router_source_caches_failures_and_retains_last_good_data() -> None:
     assert len(first["leases"]) == 2
     assert first["stale"] is False
     assert first["router"] == "192.168.10.1"
+    assert first["source"] == "OpenWRT DHCPv4"
     source.fetch()
     assert len(runner.calls) == 1
     command = runner.calls[0]

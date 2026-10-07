@@ -61,7 +61,7 @@ button { cursor: pointer; }
   box-shadow: 0 0 0 2px rgba(255,255,255,.8), 0 4px 12px rgba(0,70,130,.45), inset 0 -5px 9px rgba(0,60,130,.4);
 }
 .brand-text strong { display: block; font-size: 38px; font-weight: 800; line-height: 1.02; letter-spacing: -.015em; color: #0a3a6b; text-shadow: 0 1px 0 #fff, 0 2px 0 rgba(255,255,255,.55), 0 0 18px rgba(255,255,255,.95), 0 3px 8px rgba(0,70,130,.35); }
-.brand-text small { display: block; margin-top: 2px; font-size: 14px; font-weight: 700; color: #0a3a6b; text-shadow: 0 0 8px rgba(255,255,255,.95), 0 1px 0 rgba(255,255,255,.9); }
+.brand-text small { display: block; margin-top: 6px; font-size: 16px; line-height: 1.4; font-weight: 700; color: #03243c; text-shadow: 0 1px 0 rgba(255,255,255,.45); }
 .topbar-actions { display: flex; align-items: center; gap: 14px; }
 .updated { font-size: 13px; color: #fff; text-shadow: 0 1px 2px rgba(0,60,110,.5); }
 

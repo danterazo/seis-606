@@ -443,18 +443,16 @@ function renderGuests(nodes) {
 function renderDevices() {
   const status = required("#devices-status");
   const error = devicesError ?? devicesSnapshot?.error;
-  const fetchedAt = devicesSnapshot?.fetched_at;
   const stale = devicesSnapshot?.stale || error != null;
   status.classList.toggle("is-stale", Boolean(stale));
   status.textContent = error
-    ? `${error}${fetchedAt ? ` Last read ${new Date(fetchedAt).toLocaleString()}.` : ""}`
-    : devicesSnapshot === null ? "Loading DHCP leases…" : `${devicesSnapshot.source} · ${devicesSnapshot.router}${fetchedAt ? ` · ${new Date(fetchedAt).toLocaleTimeString()}` : ""}`;
+    ? `${error}${devicesSnapshot?.fetched_at ? " Showing last-known leases." : ""}`
+    : devicesSnapshot === null ? "Loading DHCP leases…" : `${devicesSnapshot.source} · ${devicesSnapshot.router}`;
   const leases = devicesSnapshot?.leases ?? [];
   const rows = leases.map((lease) => el("li", { className: "device" }, [
     el("strong", { text: lease.display_name, attrs: { title: lease.hostname ?? "Unnamed device" } }),
     el("span", { className: "device-address", text: lease.address }),
-    el("small", { text: lease.mac }),
-    el("small", { text: `${stale ? "Last-known lease" : "DHCP lease"} · ${lease.expires_at === null ? "No expiry" : `Expires ${new Date(lease.expires_at).toLocaleString()}`}` }),
+    el("small", { text: lease.mac.toUpperCase() }),
   ]));
   required("#device-list").replaceChildren(...(rows.length ? rows : [el("li", { className: "empty", text: error ? "Leases unavailable." : devicesSnapshot === null ? "" : "No unexpired DHCPv4 leases." })]));
 }

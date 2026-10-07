@@ -45,7 +45,7 @@ class DashboardHandler(SimpleHTTPRequestHandler):
         url = urlparse(self.path)
         if url.path == DEVICES_PATH:
             if self.devices is None:
-                self._send_json(status=HTTPStatus.SERVICE_UNAVAILABLE, payload={"error": "OpenWrt lease source is not configured."})
+                self._send_json(status=HTTPStatus.SERVICE_UNAVAILABLE, payload={"error": "OpenWRT lease source is not configured."})
             else:
                 self._send_json(status=HTTPStatus.OK, payload=self.devices.fetch(force="refresh" in parse_qs(url.query)))
             return

@@ -20,7 +20,7 @@ standard library and an OpenSSH client.
 | `HOMELAB_SSH_TIMEOUT`   | `15`                 | Seconds to wait for Proxmox                |
 | `HOMELAB_CACHE_SECONDS` | `10`                 | Minimum seconds between Proxmox queries (one costs ~2 CPU-seconds on a node); the page itself polls every second |
 | `HOMELAB_HARDWARE_CACHE_SECONDS` | `3` | Minimum seconds between CPU/firmware ECC probes of each online node (a tiny read-only Python script sent over the same SSH connection settings; nothing is installed or written on the node) |
-| `HOMELAB_ROUTER_SSH_HOST` | `192.168.10.1` | OpenWrt router for DHCPv4 leases |
+| `HOMELAB_ROUTER_SSH_HOST` | `192.168.10.1` | OpenWRT router for DHCPv4 leases |
 | `HOMELAB_ROUTER_SSH_USER` | `root` | Router SSH account (key authentication only) |
 | `HOMELAB_ROUTER_CACHE_SECONDS` | `60` | Router lease cache TTL, including failures; independent of PVE |
 | `HOMELAB_HOST` / `PORT` | `127.0.0.1` / `8765` | Where the dashboard listens                |
@@ -49,7 +49,8 @@ hiragana while preserving the `-M4` and `-A20` suffixes. Future aliases do not c
 placeholder nodes; they apply when a node or lease is discovered.
 
 The Devices section below Nodes reads dnsmasq's default `/tmp/dhcp.leases` over SSH
-through `/api/devices`. It shows hostname, IPv4 address, MAC, and expiry. It polls the
+through `/api/devices`. It shows hostname, IPv4 address, and uppercase MAC addresses,
+without read timestamps or expiry dates. Expiry stays internal for filtering. It polls the
 local cache every 10 seconds; Refresh forces both sources independently. Router errors
 retain unexpired last-known leases with an explicit stale/error indication and do not
 block PVE status. Leases are not proof of current connectivity. IPv6, static-IP device
@@ -136,12 +137,12 @@ validated change proposals, explicit confirmation, transactions, and audit recor
 Treat discovered hostnames/notes as untrusted data, not model instructions. A vector
 database is unnecessary for structured inventory; SQLite search is enough initially.
 
-### Further OpenWrt discovery
+### Further OpenWRT discovery
 
 The DHCPv4 collector targets `root@192.168.10.1` through SSH with key authentication,
 verified host keys, an 8-second timeout, and a 60-second independent cache. For richer discovery,
 Use `ubus -v list` to discover the router's actual methods: availability depends on its
-OpenWrt version and installed packages. Prefer structured `ubus` JSON and `ip -j neigh`
+OpenWRT version and installed packages. Prefer structured `ubus` JSON and `ip -j neigh`
 where supported; the default BusyBox `ip` may need an `ip-full` installation for JSON.
 
 On suitable installations, `ubus call dhcp ipv4leases` / `ipv6leases` expose leases;

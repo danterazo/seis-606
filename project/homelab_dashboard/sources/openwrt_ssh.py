@@ -22,7 +22,7 @@ class DhcpLease:
     def to_payload(self) -> Dict[str, Any]:
         return {
             "address": self.address,
-            "mac": self.mac,
+            "mac": self.mac.upper(),
             "hostname": self.hostname,
             "display_name": display_name_for(name=self.hostname) if self.hostname is not None else self.address,
             "expires_at": self.expires_at.isoformat(timespec="seconds") if self.expires_at is not None else None,
@@ -36,7 +36,7 @@ def parse_leases(*, text: str) -> Tuple[DhcpLease, ...]:
             continue
         fields: List[str] = line.split()
         if len(fields) != 5:
-            raise StatusSourceError("OpenWrt returned an unexpected DHCP lease record.")
+            raise StatusSourceError("OpenWRT returned an unexpected DHCP lease record.")
         expiry, mac, address, hostname, _client_id = fields
         try:
             seconds: int = int(expiry)
@@ -45,7 +45,7 @@ def parse_leases(*, text: str) -> Tuple[DhcpLease, ...]:
             parsed_address: ipaddress.IPv4Address = ipaddress.IPv4Address(address)
             expires_at: Optional[datetime] = datetime.fromtimestamp(seconds, UTC) if seconds else None
         except (ValueError, OverflowError, OSError) as error:
-            raise StatusSourceError("OpenWrt returned an invalid DHCP lease record.") from error
+            raise StatusSourceError("OpenWRT returned an invalid DHCP lease record.") from error
         leases.append(DhcpLease(address=str(parsed_address), mac=mac.lower(), hostname=None if hostname == "*" else hostname, expires_at=expires_at))
     return tuple(leases)
 
@@ -75,7 +75,7 @@ class OpenWrtLeaseSource:
         except FileNotFoundError as error:
             raise StatusSourceError("The OpenSSH client is not installed in this environment.") from error
         except subprocess.TimeoutExpired as error:
-            raise StatusSourceError("Reading OpenWrt DHCP leases timed out.") from error
+            raise StatusSourceError("Reading OpenWRT DHCP leases timed out.") from error
         if completed.returncode != 0:
             raise StatusSourceError(explain_ssh_failure(stderr=completed.stderr, destination=self.target.destination, action="Reading DHCP leases"))
         return parse_leases(text=completed.stdout)
@@ -92,7 +92,7 @@ class OpenWrtLeaseSource:
                 self._stored_at = self.clock()
             now: datetime = self.now()
             return {
-                "source": "OpenWrt DHCPv4",
+                "source": "OpenWRT DHCPv4",
                 "router": self.target.host,
                 "fetched_at": self._fetched_at.isoformat(timespec="seconds") if self._fetched_at is not None else None,
                 "stale": self._error is not None,
