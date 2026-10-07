@@ -20,11 +20,9 @@ echo -e "\n\033[1mSyncing\033[0m \033[1;36m$SRC\033[0m \033[1;33m->\033[0m \033[
 rsync -avh --mkpath .vscode "$DST/"
 rsync -avh --mkpath --delete scripts "$DST/"
 
-# sync single files into .github
-rsync -avh --mkpath .github/copilot-instructions.md "$DST/.github/"
-
 # sync files
-rsync -avh .envrc Makefile .editorconfig "$DST/"
+rsync -avh --mkpath .github/copilot-instructions.md "$DST/.github/"
+rsync -avh .envrc Makefile .editorconfig .gitignore "$DST/"
 
 # announce completion
 echo -e "\033[1;32mSync complete\033[0m"

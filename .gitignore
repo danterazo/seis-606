@@ -7,3 +7,6 @@
 *.pyd
 __pycache__/
 *.so
+
+# IDE
+.vscode/settings.json
