@@ -4,7 +4,7 @@
  * @typedef {{ cpu_ratio: number | null, cpu_cores: number | null, memory_used_bytes: number | null, memory_total_bytes: number | null }} Resources
  * @typedef {"running" | "stopped" | "paused" | "unknown"} GuestState
  * @typedef {{ vmid: number, name: string, node: string, kind: "vm" | "container", state: GuestState, resources: Resources }} Guest
- * @typedef {{ name: string, state: "online" | "offline" | "unknown", address: string | null, image: string | null, resources: Resources, guests: Guest[] }} PveNode
+ * @typedef {{ name: string, state: "online" | "offline" | "unknown", address: string | null, image: string | null, color: string, resources: Resources, guests: Guest[] }} PveNode
  * @typedef {{ source: string, fetched_at: string, nodes: PveNode[] }} Snapshot
  * @typedef {"all" | "running" | "vm" | "container"} GuestFilter
  * @typedef {{ snapshot: Snapshot | null, error: string | null, selectedNode: string | null, filter: GuestFilter, query: string }} ViewState
@@ -27,7 +27,7 @@ const FILTERS = [
   { id: "all", label: "All" },
   { id: "running", label: "Running" },
   { id: "vm", label: "VMs" },
-  { id: "container", label: "Containers" },
+  { id: "container", label: "LXCs" },
 ];
 
 /**
@@ -104,7 +104,10 @@ function formatBytes(bytes) {
 /** @param {{ used: number, total: number }} args */
 function formatMemoryPair({ used, total }) {
   const unit = memoryUnit(total);
-  return `${trimNumber(used / unit.size, unit.digits)}/${trimNumber(total / unit.size, unit.digits)} ${unit.label}`;
+  let usedText = trimNumber(used / unit.size, unit.digits);
+  // A small but real reading should not be shown as zero.
+  if (usedText === "0" && used > 0) usedText = trimNumber(used / unit.size, 2);
+  return `${usedText}/${trimNumber(total / unit.size, unit.digits)} ${unit.label}`;
 }
 
 /** @param {Resources} resources */
@@ -142,6 +145,21 @@ const plural = (count, noun) => `${count} ${noun}${count === 1 ? "" : "s"}`;
 
 /** @param {PveNode} node */
 const guestSummary = (node) => `${plural(countKind(node, "vm"), "VM")} · ${plural(countKind(node, "container"), "LXC")}`;
+
+const NODE_COLOR_PATTERN = /^#[0-9a-f]{6}$/i;
+const FALLBACK_NODE_COLOR = "#5b6b7a";
+
+/** The color is injected into a style attribute, so only plain hex values pass. @param {string | undefined} color */
+const safeColor = (color) => (color !== undefined && NODE_COLOR_PATTERN.test(color) ? color : FALLBACK_NODE_COLOR);
+
+/** @param {string | undefined} color */
+const colorStyle = (color) => `--node-color: ${safeColor(color)}`;
+
+/** @param {string} nodeName */
+const colorOfNode = (nodeName) => safeColor(state.snapshot?.nodes.find((node) => node.name === nodeName)?.color);
+
+/** @param {Guest["kind"]} kind */
+const kindLabel = (kind) => (kind === "vm" ? "VM" : "LXC");
 
 /** @param {string} state */
 const stateLabel = (state) => state.charAt(0).toUpperCase() + state.slice(1);
@@ -202,14 +220,14 @@ function renderBanner() {
 
 /** @param {PveNode} node */
 function nodeAvatar(node) {
-  if (node.image === null) return el("span", { className: "server-glyph", attrs: { "aria-hidden": "true" } });
+  if (!node.image) return el("span", { className: "server-glyph", attrs: { "aria-hidden": "true" } });
   return el("img", { className: "node-avatar", attrs: { src: node.image, alt: "", width: "48", height: "48", loading: "lazy" } });
 }
 
 /** @param {PveNode[]} nodes */
 function renderNodeList(nodes) {
   const items = nodes.map((node) => {
-    const button = el("button", { className: `node-row row-${node.state}`, attrs: { type: "button", "data-node": node.name, "aria-pressed": String(state.selectedNode === node.name) } }, [
+    const button = el("button", { className: `node-row row-${node.state}`, attrs: { type: "button", style: colorStyle(node.color), "data-node": node.name, "aria-pressed": String(state.selectedNode === node.name) } }, [
       nodeAvatar(node),
       el("span", { className: "node-meta" }, [el("strong", { text: node.name }), statePill(node.state), el("small", { text: node.address ?? "Address unknown" })]),
     ]);
@@ -221,7 +239,7 @@ function renderNodeList(nodes) {
 /** @param {PveNode[]} nodes */
 function renderOverview(nodes) {
   const tiles = nodes.map((node) =>
-    el("button", { className: `tile tile-${node.state}`, attrs: { type: "button", "data-node": node.name, "aria-pressed": String(state.selectedNode === node.name) } }, [
+    el("button", { className: `tile tile-${node.state}`, attrs: { type: "button", style: colorStyle(node.color), "data-node": node.name, "aria-pressed": String(state.selectedNode === node.name) } }, [
       el("span", { className: "server-glyph large", attrs: { "aria-hidden": "true" } }),
       el("strong", { text: node.name }),
       statePill(node.state),
@@ -247,7 +265,7 @@ function renderTopology(nodes) {
     return;
   }
   const column = 244;
-  const pill = { width: 214, height: 30, gap: 7, badge: 42 };
+  const pill = { width: 214, height: 30, gap: 7, badge: 42, stripe: 6 };
   const width = Math.max(520, nodes.length * column);
   const hub = { x: width / 2, y: 42 };
   const nodeY = 150;
@@ -256,17 +274,19 @@ function renderTopology(nodes) {
   const height = guestTop + Math.max(1, tallest) * (pill.height + pill.gap) + 34;
 
   /** @type {SVGElement[]} */
-  const drawing = [];
+  const drawing = [
+    svg("defs", {}, [svg("clipPath", { id: "topo-badge-clip" }, [svg("rect", { width: pill.badge, height: pill.height, rx: pill.height / 2 })])]),
+  ];
   drawing.push(svg("circle", { class: "topo-hub", cx: hub.x, cy: hub.y, r: 22 }), svgText({ x: hub.x, y: hub.y - 28, text: "Cluster", className: "topo-label" }));
 
   nodes.forEach((node, index) => {
     const x = (width / nodes.length) * (index + 0.5);
     const offline = node.state !== "online";
     const mid = (hub.y + nodeY) / 2;
-    drawing.push(svg("path", { class: `topo-link${offline ? " is-down" : ""}`, d: `M ${hub.x} ${hub.y + 22} C ${hub.x} ${mid}, ${x} ${mid}, ${x} ${nodeY - 28}` }));
+    drawing.push(svg("path", { class: `topo-link${offline ? " is-down" : ""}`, style: colorStyle(node.color), d: `M ${hub.x} ${hub.y + 22} C ${hub.x} ${mid}, ${x} ${mid}, ${x} ${nodeY - 28}` }));
 
     drawing.push(
-      svg("g", { class: `topo-node${offline ? " is-down" : ""}${state.selectedNode === node.name ? " is-selected" : ""}`, "data-node": node.name }, [
+      svg("g", { class: `topo-node${offline ? " is-down" : ""}${state.selectedNode === node.name ? " is-selected" : ""}`, style: colorStyle(node.color), "data-node": node.name }, [
         svg("rect", { class: "topo-node-body", x: x - 38, y: nodeY - 28, width: 76, height: 56, rx: 10 }),
         svg("rect", { class: "topo-node-slot", x: x - 28, y: nodeY - 18, width: 56, height: 9, rx: 4 }),
         svg("rect", { class: "topo-node-slot", x: x - 28, y: nodeY - 4, width: 56, height: 9, rx: 4 }),
@@ -280,14 +300,17 @@ function renderTopology(nodes) {
     shown.forEach((guest, guestIndex) => {
       const gx = x - pill.width / 2;
       const gy = guestTop + guestIndex * (pill.height + pill.gap);
-      const kind = guest.kind === "vm" ? "vm" : "ct";
+      const kind = guest.kind === "vm" ? "vm" : "lxc";
       const dim = offline || guest.state !== "running";
       drawing.push(
-        svg("g", { class: `topo-guest topo-${kind}${dim ? " is-dim" : ""}` }, [
+        svg("g", { class: `topo-guest topo-${kind}${dim ? " is-dim" : ""}`, style: colorStyle(node.color) }, [
           svg("title", {}, [guestTooltip(guest)]),
           svg("rect", { class: "topo-pill", x: gx, y: gy, width: pill.width, height: pill.height, rx: 15 }),
-          svg("rect", { class: "topo-badge", x: gx, y: gy, width: pill.badge, height: pill.height, rx: 15 }),
-          svgText({ x: gx + pill.badge / 2, y: gy + 19.5, text: kind === "vm" ? "VM" : "CT", className: "topo-guest-kind" }),
+          svg("g", { transform: `translate(${gx} ${gy})`, "clip-path": "url(#topo-badge-clip)" }, [
+            svg("rect", { class: "topo-badge", width: pill.badge, height: pill.height }),
+            svg("rect", { class: "topo-stripe", y: pill.height - pill.stripe, width: pill.badge, height: pill.stripe }),
+          ]),
+          svgText({ x: gx + pill.badge / 2, y: gy + 17.5, text: kindLabel(guest.kind), className: "topo-guest-kind" }),
           svgText({ x: gx + pill.badge + 8, y: gy + 19.5, text: truncate(guest.name, TOPOLOGY_NAME_LIMIT), className: "topo-guest-name", anchor: "start" }),
           svg("circle", { class: "topo-led", cx: gx + pill.width - 14, cy: gy + pill.height / 2, r: 4 }),
         ]),
@@ -339,8 +362,8 @@ function renderGuests(nodes) {
   const guests = visibleGuests(nodes);
   const rows = guests.map((guest) => {
     const [compute, ram] = guestUsageLines(guest);
-    return el("li", { className: "guest" }, [
-      el("span", { className: `guest-icon guest-${guest.kind}`, text: guest.kind === "vm" ? "VM" : "CT", attrs: { "aria-hidden": "true" } }),
+    return el("li", { className: "guest", attrs: { style: colorStyle(colorOfNode(guest.node)) } }, [
+      el("span", { className: `guest-icon guest-${guest.kind}`, text: kindLabel(guest.kind), attrs: { "aria-hidden": "true" } }),
       el("span", { className: "guest-meta" }, [
         el("strong", { text: guest.name }),
         el("small", { text: `${guest.node} · ID ${guest.vmid}` }),

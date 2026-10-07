@@ -16,7 +16,7 @@ _GUEST_STATES: Final[Dict[str, GuestState]] = {
     "paused": GuestState.PAUSED,
 }
 # Proxmox omits names for guests on unreachable nodes.
-_FALLBACK_PREFIX: Final[Dict[GuestKind, str]] = {GuestKind.VM: "VM", GuestKind.CONTAINER: "CT"}
+_FALLBACK_PREFIX: Final[Dict[GuestKind, str]] = {GuestKind.VM: "VM", GuestKind.CONTAINER: "LXC"}
 
 
 def _number(*, value: object) -> Union[float, None]:

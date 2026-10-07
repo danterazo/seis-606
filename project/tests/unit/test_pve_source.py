@@ -105,7 +105,7 @@ def test_guests_without_names_get_a_short_fallback() -> None:
     ]
     snapshot = make_source(stdout=documents(resources=resources, cluster_status=[])).fetch()
 
-    assert snapshot.nodes[0].guests[0].name == "CT 7"
+    assert snapshot.nodes[0].guests[0].name == "LXC 7"
 
 
 def test_ssh_command_never_prompts_or_relaxes_host_checking() -> None:
