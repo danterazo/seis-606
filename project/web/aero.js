@@ -355,7 +355,9 @@ function renderStorageDialog(node) {
   const diskRows = (storage?.disks ?? []).map((disk) =>
     el("tr", {}, [
       el("td", {}, [levelCell(disk.level, disk.standby ? "Standby" : stateLabel(disk.level === "ok" ? "OK" : disk.level))]),
-      el("td", {}, [el("code", { text: disk.device }), el("small", { text: ` ${[disk.model, disk.serial].filter(Boolean).join(" · ")}` })]),
+      el("td", {}, [el("code", { text: disk.device })]),
+      el("td", {}, [el("small", { text: disk.model ?? "" })]),
+      el("td", {}, [el("small", { text: disk.serial ?? "" })]),
       el("td", { text: disk.kind.toUpperCase() }),
       el("td", { text: disk.temperature_celsius === null ? "—" : `${disk.temperature_celsius} °C` }),
       el("td", { text: disk.power_on_hours === null ? "—" : `${Math.round(disk.power_on_hours / 24)} d` }),
@@ -375,7 +377,7 @@ function renderStorageDialog(node) {
     rows.length === 0 ? el("p", { className: "empty", text: empty }) : el("table", { className: "storage-table" }, [el("thead", {}, [el("tr", {}, headers.map((header) => el("th", { text: header })))]), el("tbody", {}, rows)]);
   required("#storage-body").replaceChildren(
     el("h3", { text: "Disks (SMART)" }),
-    table(["Status", "Device", "Type", "Temp", "Age", "Findings"], diskRows, storage?.smart_available ? "No disks reported." : "smartctl is not installed on this node."),
+    table(["Status", "Device", "Model", "Serial #", "Type", "Temp", "Age", "Findings"], diskRows, storage?.smart_available ? "No disks reported." : "smartctl is not installed on this node."),
     el("h3", { text: "ZFS Pools" }),
     table(["Status", "Pool", "Capacity", "Findings"], poolRows, storage?.zfs_available ? "No pools reported." : "ZFS tools are not installed on this node."),
   );

@@ -125,7 +125,6 @@ span.health-badge[role="button"] { cursor: pointer; }
 .storage-table th { text-align: left; color: var(--ink-soft); font-size: 11px; }
 .storage-table th, .storage-table td { padding: 5px 8px 5px 0; border-bottom: 1px solid rgba(15,90,150,.14); vertical-align: top; }
 .storage-table small { color: var(--ink-soft); }
-.storage-table td > code { display: inline-block; min-width: 10.5ch; }
 
 .layout {
   display: grid; grid-template-columns: 380px minmax(0, 1fr) 400px; gap: 18px;
