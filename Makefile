@@ -24,9 +24,22 @@ upgrade:
 verify-gpu:
 	poetry run python -c "import llama_cpp.llama_cpp as lib; print('supports_gpu_offload =', bool(lib.llama_supports_gpu_offload()))"
 
-fix:
-	ruff check --fix .
-	ruff format .
+fix: fix-python fix-web
+
+fix-python:
+	poetry run ruff check --fix .
+	poetry run ruff format .
+
+fix-web:
+	npm --prefix project/web run format
+
+lint: lint-python lint-web
+
+lint-python:
+	poetry run ruff check .
+
+lint-web:
+	npm --prefix project/web run lint
 
 pull:
 	git pull

@@ -22,9 +22,7 @@
       </a>
       <div class="topbar-actions">
         <span class="updated" id="updated" aria-live="polite">Connecting…</span>
-        <button class="aqua-button" id="refresh-button" type="button">
-          <span class="refresh-icon" aria-hidden="true">↻</span> Refresh
-        </button>
+        <button class="aqua-button" id="refresh-button" type="button"><span class="refresh-icon" aria-hidden="true">↻</span> Refresh</button>
         <button class="aqua-button log-button" id="logs-button" type="button">Logs</button>
       </div>
     </header>
@@ -50,45 +48,56 @@
       </div>
 
       <section class="center">
-        <div class="panel" aria-labelledby="overview-heading">
+        <section class="panel" aria-labelledby="overview-heading">
           <h2 id="overview-heading"><span class="title-icon icon-monitor" aria-hidden="true"></span>System Overview</h2>
           <div class="tiles" id="overview"></div>
-        </div>
+        </section>
 
-        <div class="panel" aria-labelledby="topology-heading">
+        <section class="panel" aria-labelledby="topology-heading">
           <h2 id="topology-heading"><span class="title-icon icon-globe" aria-hidden="true"></span>Topology</h2>
           <div class="legend" aria-hidden="true">
-            <span><i class="dot dot-node"></i>Node</span><span><i class="dot dot-vm"></i>VM</span><span><i class="dot dot-lxc"></i>LXC</span><span><i class="dot dot-stripe"></i>Stripe = node</span>
+            <span><i class="dot dot-node"></i>Node</span><span><i class="dot dot-vm"></i>VM</span><span><i class="dot dot-lxc"></i>LXC</span
+            ><span><i class="dot dot-stripe"></i>Stripe = node</span>
           </div>
           <div class="topology" id="topology"></div>
-        </div>
+        </section>
       </section>
 
       <div class="workload-sidebar">
         <aside class="panel guests-panel" aria-labelledby="guests-heading">
-          <h2 id="guests-heading"><span class="title-icon icon-cube" aria-hidden="true"></span><span id="guests-title">VMs &amp; Containers</span></h2>
-          <label class="search"><span class="sr-only">Search VMs and containers</span><input id="search" type="search" placeholder="Search by name or ID" autocomplete="off" /></label>
+          <h2 id="guests-heading">
+            <span class="title-icon icon-cube" aria-hidden="true"></span><span id="guests-title">VMs &amp; Containers</span>
+          </h2>
+          <label class="search"
+            ><span class="sr-only">Search VMs and containers</span
+            ><input id="search" type="search" placeholder="Search by name or ID" autocomplete="off"
+          /></label>
           <div class="chips node-chips" id="node-chips" role="group" aria-label="Filter by node"></div>
           <div class="chips" id="chips" role="group" aria-label="Filter VMs and containers"></div>
           <ul class="guest-list" id="guest-list"></ul>
         </aside>
         <aside class="panel haiku-panel" aria-labelledby="haiku-heading">
           <h2 id="haiku-heading">Homelab Haiku</h2>
-          <p class="haiku-poem" id="haiku"><span>I turn off the rack /</span><span>There is nothing left to fix /</span><span>I have found my peace</span></p>
+          <p class="haiku-poem" id="haiku">
+            <span>I turn off the rack /</span><span>There is nothing left to fix /</span><span>I have found my peace</span>
+          </p>
         </aside>
       </div>
     </main>
 
     <footer class="footer">
       <span id="source-label">—</span><span id="refresh-note">Guest controls</span>
-      <div class="dns-corner"><pre class="dns-cow" role="img" aria-label="A cow says: All's fair in LAN and war">     ___________________________
+      <div class="dns-corner">
+        <pre class="dns-cow" role="img" aria-label="A cow says: All's fair in LAN and war">
+     ___________________________
     &lt; All's fair in LAN and war &gt;
      ---------------------------
         \   ^__^
          \  (oo)\_______
             (__)\       )\/\
                 ||----w |
-                ||     ||</pre></div>
+                ||     ||</pre>
+      </div>
     </footer>
 
     <dialog class="logs-dialog" id="storage-dialog" aria-labelledby="storage-heading">

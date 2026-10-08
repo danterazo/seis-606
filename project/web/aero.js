@@ -126,7 +126,8 @@ const trimNumber = (value, digits) => value.toFixed(digits).replace(/\.0+$/, "")
 
 /** Memory under 1 GB reads better in MB. */
 /** @param {number} total @returns {{ size: number, label: string, digits: number }} */
-const memoryUnit = (total) => (total < BYTES_PER_GIB ? { size: BYTES_PER_MIB, label: "MB", digits: 0 } : { size: BYTES_PER_GIB, label: "GB", digits: 1 });
+const memoryUnit = (total) =>
+  total < BYTES_PER_GIB ? { size: BYTES_PER_MIB, label: "MB", digits: 0 } : { size: BYTES_PER_GIB, label: "GB", digits: 1 };
 
 /** @param {number} bytes */
 function formatBytes(bytes) {
@@ -142,7 +143,9 @@ function formatPoolBytes(bytes) {
 
 /** @param {Pool} pool */
 function poolUsage(pool) {
-  return pool.allocated_bytes === null || pool.size_bytes === null ? null : `${formatPoolBytes(pool.allocated_bytes)} / ${formatPoolBytes(pool.size_bytes)}`;
+  return pool.allocated_bytes === null || pool.size_bytes === null
+    ? null
+    : `${formatPoolBytes(pool.allocated_bytes)} / ${formatPoolBytes(pool.size_bytes)}`;
 }
 
 /** @param {{ used: number, total: number }} args */
@@ -256,9 +259,19 @@ function gauge({ label, value, tone, arcValue = null, title }) {
       transform: "rotate(-90 28 28)",
     });
   // The ARC arc sits underneath and spans all used memory; the green arc covers the non-ARC part.
-  const arcs = arcValue === null || value === null ? [ringArc(`gauge-arc gauge-${tone}`, value)] : [ringArc("gauge-arc gauge-arc-zfs", value), ringArc(`gauge-arc gauge-${tone}`, value - arcValue)];
-  const ring = svg("svg", { viewBox: "0 0 56 56", "aria-hidden": "true" }, [svg("circle", { class: "gauge-track", cx: 28, cy: 28, r: radius }), ...arcs]);
-  return el("div", { className: "gauge", attrs: title ? { title } : {} }, [ring, el("span", { className: "gauge-value", text: formatPercent(value) }), el("span", { className: "gauge-label", text: label })]);
+  const arcs =
+    arcValue === null || value === null
+      ? [ringArc(`gauge-arc gauge-${tone}`, value)]
+      : [ringArc("gauge-arc gauge-arc-zfs", value), ringArc(`gauge-arc gauge-${tone}`, value - arcValue)];
+  const ring = svg("svg", { viewBox: "0 0 56 56", "aria-hidden": "true" }, [
+    svg("circle", { class: "gauge-track", cx: 28, cy: 28, r: radius }),
+    ...arcs,
+  ]);
+  return el("div", { className: "gauge", attrs: title ? { title } : {} }, [
+    ring,
+    el("span", { className: "gauge-value", text: formatPercent(value) }),
+    el("span", { className: "gauge-label", text: label }),
+  ]);
 }
 
 /** @param {{ label: string, metric: GuestMetric, tone: "cpu" | "memory" }} args */
@@ -291,7 +304,11 @@ function renderBanner() {
         : { tone: "warn", title: `${down} of ${plural(snapshot.nodes.length, "Node")} Unavailable!`, detail: "Check the node list for details." };
   }
   banner.className = `banner banner-${content.tone}`;
-  banner.replaceChildren(el("i", { className: "banner-icon", attrs: { "aria-hidden": "true" } }), el("strong", { text: content.title }), el("span", { text: content.detail }));
+  banner.replaceChildren(
+    el("i", { className: "banner-icon", attrs: { "aria-hidden": "true" } }),
+    el("strong", { text: content.title }),
+    el("span", { text: content.detail }),
+  );
 }
 
 /** @param {PveNode} node */
@@ -303,17 +320,29 @@ function nodeAvatar(node) {
 /** @param {PveNode[]} nodes */
 function renderNodeList(nodes) {
   const items = nodes.map((node) => {
-    const button = el("button", { className: `node-row row-${node.state}`, attrs: { type: "button", style: colorStyle(node.color), "data-node": node.name, "aria-pressed": String(state.selectedNode === node.name) } }, [
-      nodeAvatar(node),
-      el("span", { className: "node-meta" }, [el("strong", { text: nodeLabel(node) }), statePill(node.state), el("small", { text: node.address ?? "Address unknown" })]),
-    ]);
+    const button = el(
+      "button",
+      {
+        className: `node-row row-${node.state}`,
+        attrs: { type: "button", style: colorStyle(node.color), "data-node": node.name, "aria-pressed": String(state.selectedNode === node.name) },
+      },
+      [
+        nodeAvatar(node),
+        el("span", { className: "node-meta" }, [
+          el("strong", { text: nodeLabel(node) }),
+          statePill(node.state),
+          el("small", { text: node.address ?? "Address unknown" }),
+        ]),
+      ],
+    );
     return button;
   });
   required("#node-list").replaceChildren(...(items.length ? items : [el("p", { className: "empty", text: "No nodes to show." })]));
 }
 
 /** @param {string} label @param {string} value */
-const fact = (label, value) => el("div", { className: "fact" }, [el("span", { className: "fact-label", text: label }), el("span", { className: "fact-value", text: value })]);
+const fact = (label, value) =>
+  el("div", { className: "fact" }, [el("span", { className: "fact-label", text: label }), el("span", { className: "fact-value", text: value })]);
 
 /** CPU topology is polled and cached with the per-node hardware probe. @param {Hardware} hardware */
 function cpuModelLine({ cpu_model: model, cpu_cores: cores, cpu_threads: threads, source }) {
@@ -328,11 +357,16 @@ function cpuModelLine({ cpu_model: model, cpu_cores: cores, cpu_threads: threads
 const HEALTH_ORDER = ["ok", "unknown", "warning", "critical"];
 
 /** @param {ReadonlyArray<HealthLevel>} levels @returns {HealthLevel} */
-const worstLevel = (levels) => levels.reduce((worst, level) => (HEALTH_ORDER.indexOf(level) > HEALTH_ORDER.indexOf(worst) ? level : worst), /** @type {HealthLevel} */ ("ok"));
+const worstLevel = (levels) =>
+  levels.reduce((worst, level) => (HEALTH_ORDER.indexOf(level) > HEALTH_ORDER.indexOf(worst) ? level : worst), /** @type {HealthLevel} */ ("ok"));
 
 /** A badge that opens the node's storage details; a span because tiles are buttons and can't nest one. @param {string} nodeName @param {HealthLevel | "na"} level @param {string} text @param {string} title */
 function healthBadge(nodeName, level, text, title) {
-  return el("span", { className: `health-badge health-${level}`, text, attrs: { role: "button", tabindex: "0", title: `${title}\nClick for details`, "data-storage-node": nodeName } });
+  return el("span", {
+    className: `health-badge health-${level}`,
+    text,
+    attrs: { role: "button", tabindex: "0", title: `${title}\nClick for details`, "data-storage-node": nodeName },
+  });
 }
 
 /** One SMART badge plus one badge per zpool, each coloured by its worst finding. @param {PveNode} node */
@@ -347,21 +381,52 @@ function storageBadges(node) {
     const level = worstLevel(storage.disks.map((disk) => disk.level));
     const flagged = storage.disks.filter((disk) => disk.level !== "ok");
     const hottest = Math.max(...storage.disks.map((disk) => disk.temperature_celsius ?? -Infinity));
-    const text = flagged.length === 0 ? "SMART OK" : `SMART ${flagged.length} ${level === "unknown" ? "UNREADABLE" : level === "warning" ? "WARN" : "CRITICAL"}`;
-    const lines = flagged.length === 0 ? [`All ${plural(storage.disks.length, "disk")} healthy${Number.isFinite(hottest) ? `, Hottest ${hottest} °C` : ""}`] : flagged.map((disk) => `${disk.device}: ${disk.findings.join("; ")}`);
+    const text =
+      flagged.length === 0 ? "SMART OK" : `SMART ${flagged.length} ${level === "unknown" ? "UNREADABLE" : level === "warning" ? "WARN" : "CRITICAL"}`;
+    const lines =
+      flagged.length === 0
+        ? [`All ${plural(storage.disks.length, "disk")} healthy${Number.isFinite(hottest) ? `, Hottest ${hottest} °C` : ""}`]
+        : flagged.map((disk) => `${disk.device}: ${disk.findings.join("; ")}`);
     // Warnings and criticals both go red so a flagged disk stands out.
     badges.push(healthBadge(node.name, level === "warning" ? "critical" : level, text, lines.join("\n")));
   }
   if (storage.zfs_available) {
     for (const pool of storage.pools) {
-      const reason = (pool.state !== "ONLINE" ? pool.state : pool.findings[0] ?? pool.state).toUpperCase();
+      const reason = (pool.state !== "ONLINE" ? pool.state : (pool.findings[0] ?? pool.state)).toUpperCase();
       const usage = poolUsage(pool);
-      const headline = pool.level === "ok" ? `${pool.name} ${pool.state}` : `${pool.name} ${reason}${pool.findings.length > 1 ? ` +${pool.findings.length - 1}` : ""}`;
+      const headline =
+        pool.level === "ok"
+          ? `${pool.name} ${pool.state}`
+          : `${pool.name} ${reason}${pool.findings.length > 1 ? ` +${pool.findings.length - 1}` : ""}`;
       // Only tank carries the extra stats on its badge for now.
-      const extras = pool.name === "tank" ? [pool.fragmentation_percent === null ? null : `${pool.fragmentation_percent}% Frag`, pool.free_bytes === null ? null : `${formatPoolBytes(pool.free_bytes)} Free`, pool.scan].filter(Boolean) : [];
+      const extras =
+        pool.name === "tank"
+          ? [
+              pool.fragmentation_percent === null ? null : `${pool.fragmentation_percent}% Frag`,
+              pool.free_bytes === null ? null : `${formatPoolBytes(pool.free_bytes)} Free`,
+              pool.scan,
+            ].filter(Boolean)
+          : [];
       const text = [headline, ...extras].join(" · ");
-      const details = [usage === null ? null : `Used: ${usage}`, pool.fragmentation_percent === null ? null : `${pool.fragmentation_percent}% Fragmented`, pool.layout, pool.scan === null ? null : `Last Scan: ${pool.scan}`].filter(Boolean);
-      badges.push(healthBadge(node.name, pool.level, text, [pool.findings.length === 0 ? `${pool.name} is healthy${pool.capacity_percent === null ? "" : `, ${pool.capacity_percent}% Full`}` : `${pool.name}: ${pool.findings.join("; ")}`, ...details].join("\n")));
+      const details = [
+        usage === null ? null : `Used: ${usage}`,
+        pool.fragmentation_percent === null ? null : `${pool.fragmentation_percent}% Fragmented`,
+        pool.layout,
+        pool.scan === null ? null : `Last Scan: ${pool.scan}`,
+      ].filter(Boolean);
+      badges.push(
+        healthBadge(
+          node.name,
+          pool.level,
+          text,
+          [
+            pool.findings.length === 0
+              ? `${pool.name} is healthy${pool.capacity_percent === null ? "" : `, ${pool.capacity_percent}% Full`}`
+              : `${pool.name}: ${pool.findings.join("; ")}`,
+            ...details,
+          ].join("\n"),
+        ),
+      );
     }
   }
   return badges.length === 0 ? [] : [el("div", { className: "storage-badges" }, badges)];
@@ -373,9 +438,21 @@ function hardwareErrorBadges(node) {
   if (!errors) return [];
   const current = errors.incidents.filter((incident) => incident.current_boot && incident.level !== "ok");
   const history = errors.incidents.filter((incident) => !incident.current_boot).length;
-  const headline = errors.level === "unknown" ? "HW Errors N/A" : errors.level === "ok" ? "HW Errors: None" : current.length > 0 ? `HW Errors: ${plural(current.length, "Incident")}` : errors.incidents.length === 0 ? "HW Errors: Counters" : `HW Errors: ${plural(history, "Past Incident")}`;
+  const headline =
+    errors.level === "unknown"
+      ? "HW Errors N/A"
+      : errors.level === "ok"
+        ? "HW Errors: None"
+        : current.length > 0
+          ? `HW Errors: ${plural(current.length, "Incident")}`
+          : errors.incidents.length === 0
+            ? "HW Errors: Counters"
+            : `HW Errors: ${plural(history, "Past Incident")}`;
   const staleness = errors.stale ? " · Stale" : "";
-  const lines = [errors.findings.length === 0 ? "No hardware errors reported since the last check" : errors.findings.join("\n"), errors.stale ? errors.error ?? "Data is stale" : null].filter(Boolean);
+  const lines = [
+    errors.findings.length === 0 ? "No hardware errors reported since the last check" : errors.findings.join("\n"),
+    errors.stale ? (errors.error ?? "Data is stale") : null,
+  ].filter(Boolean);
   const badge = healthBadge(node.name, errors.level, headline + staleness, lines.join("\n"));
   badge.removeAttribute("data-storage-node");
   badge.setAttribute("data-hwerrors-node", node.name);
@@ -386,23 +463,44 @@ function hardwareErrorBadges(node) {
 const formatTime = (iso) => (iso === null ? "—" : new Date(iso).toLocaleString());
 
 /** @param {ErrorIncident["category"]} category */
-const categoryLabel = (category) => ({ ecc_memory: "ECC memory", cpu_mce: "CPU machine check", page_offline: "Page soft-offline", pcie: "PCIe", storage_path: "Storage path" })[category];
+const categoryLabel = (category) =>
+  ({ ecc_memory: "ECC memory", cpu_mce: "CPU machine check", page_offline: "Page soft-offline", pcie: "PCIe", storage_path: "Storage path" })[
+    category
+  ];
 
 /** Hardware errors, boots and currently flagged storage in one time-ordered list; nothing here asserts a cause. @param {PveNode} node @param {HardwareErrors} errors */
 function timelineEntries(node, errors) {
   /** @type {{ time: string | null, label: string, detail: string, level: HealthLevel | "info", historical: boolean }[]} */
   const entries = [];
   for (const boot of errors.boots) {
-    entries.push({ time: boot.first_seen, label: "Boot started (uptime reset)", detail: boot.current ? "Current boot" : "Earlier boot", level: "info", historical: !boot.current });
+    entries.push({
+      time: boot.first_seen,
+      label: "Boot started (uptime reset)",
+      detail: boot.current ? "Current boot" : "Earlier boot",
+      level: "info",
+      historical: !boot.current,
+    });
   }
   for (const incident of errors.incidents) {
-    entries.push({ time: incident.first_seen, label: `${categoryLabel(incident.category)}: ${incident.title}`, detail: `${plural(incident.count, "event")}, last ${formatTime(incident.last_seen)}`, level: incident.level, historical: !incident.current_boot });
+    entries.push({
+      time: incident.first_seen,
+      label: `${categoryLabel(incident.category)}: ${incident.title}`,
+      detail: `${plural(incident.count, "event")}, last ${formatTime(incident.last_seen)}`,
+      level: incident.level,
+      historical: !incident.current_boot,
+    });
   }
   const storage = node.hardware.storage;
   const flagged = [...(storage?.disks ?? []), ...(storage?.pools ?? [])].filter((item) => item.level !== "ok");
   for (const item of flagged) {
     const name = "device" in item ? item.device : item.name;
-    entries.push({ time: errors.collected_at, label: `Storage currently flagged: ${name}`, detail: item.findings.join("; "), level: item.level, historical: false });
+    entries.push({
+      time: errors.collected_at,
+      label: `Storage currently flagged: ${name}`,
+      detail: item.findings.join("; "),
+      level: item.level,
+      historical: false,
+    });
   }
   return entries.sort((a, b) => (b.time ?? "").localeCompare(a.time ?? ""));
 }
@@ -419,15 +517,35 @@ function renderHardwareErrorsDialog(node) {
   const levelCell = (level, text) => el("span", { className: `health-badge health-${level}`, text });
   /** @param {string[]} headers @param {HTMLElement[]} rows @param {string} empty */
   const table = (headers, rows, empty) =>
-    rows.length === 0 ? el("p", { className: "empty", text: empty }) : el("table", { className: "storage-table" }, [el("thead", {}, [el("tr", {}, headers.map((header) => el("th", { text: header })))]), el("tbody", {}, rows)]);
+    rows.length === 0
+      ? el("p", { className: "empty", text: empty })
+      : el("table", { className: "storage-table" }, [
+          el("thead", {}, [
+            el(
+              "tr",
+              {},
+              headers.map((header) => el("th", { text: header })),
+            ),
+          ]),
+          el("tbody", {}, rows),
+        ]);
   const monitoring = [
-    errors.stale ? `Stale: ${errors.error ?? "no recent reading"}. Last successful check ${formatTime(errors.last_success)}.` : `Checked ${formatTime(errors.collected_at)}.`,
-    errors.boot_started === null ? null : `Current boot began ${formatTime(errors.boot_started)}; counters since boot restart from zero at each reboot.`,
-    errors.counters_reset ? "A reboot was observed, so since-boot counters were reset; earlier events come from the journal and rasdaemon history." : null,
+    errors.stale
+      ? `Stale: ${errors.error ?? "no recent reading"}. Last successful check ${formatTime(errors.last_success)}.`
+      : `Checked ${formatTime(errors.collected_at)}.`,
+    errors.boot_started === null
+      ? null
+      : `Current boot began ${formatTime(errors.boot_started)}; counters since boot restart from zero at each reboot.`,
+    errors.counters_reset
+      ? "A reboot was observed, so since-boot counters were reset; earlier events come from the journal and rasdaemon history."
+      : null,
     errors.edac_available ? null : "EDAC counters are not available on this node.",
     errors.journal_available ? null : "The kernel journal could not be read.",
   ].filter(Boolean);
-  const persisted = errors.persisted_corrected === null ? "rasdaemon is not installed or has no history" : `${errors.persisted_corrected} corrected / ${errors.persisted_uncorrected ?? 0} uncorrected${errors.persisted_mce === null ? "" : `, ${errors.persisted_mce} MCE records`}`;
+  const persisted =
+    errors.persisted_corrected === null
+      ? "rasdaemon is not installed or has no history"
+      : `${errors.persisted_corrected} corrected / ${errors.persisted_uncorrected ?? 0} uncorrected${errors.persisted_mce === null ? "" : `, ${errors.persisted_mce} MCE records`}`;
   const counterRows = errors.memory_counters.map((counter) =>
     el("tr", {}, [
       el("td", {}, [el("code", { text: counter.label ?? counter.controller })]),
@@ -442,7 +560,13 @@ function renderHardwareErrorsDialog(node) {
       el("td", {}, [
         el("div", { text: incident.title }),
         el("small", { text: [...incident.recurrence, ...incident.fields.map(([name, value]) => `${name}=${value}`)].join(" · ") }),
-        el("details", {}, [el("summary", { text: `Raw records (latest ${incident.raw.length} of ${incident.count})` }), el("pre", { className: "raw-events", text: incident.raw.map((raw) => `${raw.timestamp} boot ${raw.boot_id.slice(0, 8)} ${raw.source}: ${raw.message}`).join("\n") })]),
+        el("details", {}, [
+          el("summary", { text: `Raw records (latest ${incident.raw.length} of ${incident.count})` }),
+          el("pre", {
+            className: "raw-events",
+            text: incident.raw.map((raw) => `${raw.timestamp} boot ${raw.boot_id.slice(0, 8)} ${raw.source}: ${raw.message}`).join("\n"),
+          }),
+        ]),
       ]),
       el("td", { text: `${incident.count} (${incident.last_hour} in 1 h, ${incident.last_day} in 24 h)` }),
       el("td", { text: formatTime(incident.first_seen) }),
@@ -452,7 +576,9 @@ function renderHardwareErrorsDialog(node) {
   const timelineRows = timelineEntries(node, errors).map((entry) =>
     el("tr", { className: entry.historical ? "is-historical" : "" }, [
       el("td", { text: formatTime(entry.time) }),
-      el("td", {}, [entry.level === "info" ? el("span", { className: "health-badge health-na", text: "Info" }) : levelCell(entry.level, stateLabel(entry.level))]),
+      el("td", {}, [
+        entry.level === "info" ? el("span", { className: "health-badge health-na", text: "Info" }) : levelCell(entry.level, stateLabel(entry.level)),
+      ]),
       el("td", { text: entry.historical ? "Earlier boot" : "Current" }),
       el("td", { text: entry.label }),
       el("td", {}, [el("small", { text: entry.detail })]),
@@ -461,16 +587,29 @@ function renderHardwareErrorsDialog(node) {
   required("#hwerrors-body").replaceChildren(
     el("p", { className: "hw-status", text: monitoring.join(" ") }),
     el("h3", { text: "Findings" }),
-    errors.findings.length === 0 ? el("p", { className: "empty", text: "No hardware errors reported." }) : el("ul", { className: "hw-findings" }, errors.findings.map((finding) => el("li", { text: finding }))),
+    errors.findings.length === 0
+      ? el("p", { className: "empty", text: "No hardware errors reported." })
+      : el(
+          "ul",
+          { className: "hw-findings" },
+          errors.findings.map((finding) => el("li", { text: finding })),
+        ),
     el("h3", { text: "ECC Counters" }),
     el("p", { className: "hw-status", text: `Persisted history (survives reboots): ${persisted}` }),
     table(["DIMM / Controller (since boot)", "Corrected", "Uncorrected"], counterRows, "No EDAC counters on this node."),
     el("h3", { text: "Incidents" }),
-    table(["Scope", "Class", "Evidence", "Events", "First seen", "Last seen"], incidentRows, errors.journal_available ? "No hardware error events in the last 14 days." : "Event history unavailable."),
+    table(
+      ["Scope", "Class", "Evidence", "Events", "First seen", "Last seen"],
+      incidentRows,
+      errors.journal_available ? "No hardware error events in the last 14 days." : "Event history unavailable.",
+    ),
     el("h3", { text: "Timeline" }),
     el("p", { className: "hw-status", text: "Entries are listed together by time only; being close in time does not mean one caused another." }),
     table(["Time", "Level", "Scope", "Event", "Detail"], timelineRows, "Nothing to show."),
-    el("p", { className: "hw-status", text: "This view only reads. Offlining CPUs, rebooting, clearing counters, or running scrubs and stress tests are manual operator actions." }),
+    el("p", {
+      className: "hw-status",
+      text: "This view only reads. Offlining CPUs, rebooting, clearing counters, or running scrubs and stress tests are manual operator actions.",
+    }),
   );
 }
 
@@ -540,12 +679,31 @@ function renderStorageDialog(node) {
   );
   /** @param {string[]} headers @param {HTMLElement[]} rows @param {string} empty */
   const table = (headers, rows, empty) =>
-    rows.length === 0 ? el("p", { className: "empty", text: empty }) : el("table", { className: "storage-table" }, [el("thead", {}, [el("tr", {}, headers.map((header) => el("th", { text: header })))]), el("tbody", {}, rows)]);
+    rows.length === 0
+      ? el("p", { className: "empty", text: empty })
+      : el("table", { className: "storage-table" }, [
+          el("thead", {}, [
+            el(
+              "tr",
+              {},
+              headers.map((header) => el("th", { text: header })),
+            ),
+          ]),
+          el("tbody", {}, rows),
+        ]);
   required("#storage-body").replaceChildren(
     el("h3", { text: "Disks (SMART)" }),
-    table(["Status", "Device", "Model", "Serial #", "Type", "Temp", "Age", "Findings"], diskRows, storage?.smart_available ? "No disks reported." : "smartctl is not installed on this node."),
+    table(
+      ["Status", "Device", "Model", "Serial #", "Type", "Temp", "Age", "Findings"],
+      diskRows,
+      storage?.smart_available ? "No disks reported." : "smartctl is not installed on this node.",
+    ),
     el("h3", { text: "ZFS Pools" }),
-    table(["Status", "Pool", "Capacity", "Used / Size", "Free", "Frag", "Layout", "Last Scan", "Findings"], poolRows, storage?.zfs_available ? "No pools reported." : "ZFS tools are not installed on this node."),
+    table(
+      ["Status", "Pool", "Capacity", "Used / Size", "Free", "Frag", "Layout", "Last Scan", "Findings"],
+      poolRows,
+      storage?.zfs_available ? "No pools reported." : "ZFS tools are not installed on this node.",
+    ),
   );
 }
 
@@ -584,31 +742,59 @@ function renderOverview(nodes) {
     const arcBytes = node.hardware.zfs_arc_bytes ?? null;
     const arcMax = node.hardware.zfs_arc_max_bytes ?? null;
     const ramTitle = arcBytes === null ? undefined : `ZFS ARC (amber): ${formatBytes(arcBytes)}`;
-    const gauges = [gauge({ label: "CPU", value: cpuPercent(node.resources), tone: "cpu" }), gauge({ label: "RAM", value: memoryPercent(node.resources), tone: "memory", arcValue: arcPercent(node), title: ramTitle })];
+    const gauges = [
+      gauge({ label: "CPU", value: cpuPercent(node.resources), tone: "cpu" }),
+      gauge({ label: "RAM", value: memoryPercent(node.resources), tone: "memory", arcValue: arcPercent(node), title: ramTitle }),
+    ];
     const modelLine = cpuModelLine(node.hardware);
     const { memory_used_bytes: used, memory_total_bytes: total } = node.resources;
     const memoryText = used !== null && total !== null ? formatMemoryPair({ used, total }) : formatRam(node.resources);
     const hardwareDetails =
       node.memory_ecc == null && !node.memory_description
         ? []
-        : [el("div", { className: "memory-details" }, [el("span", {
-            className: `memory-ecc ${node.memory_ecc ? "ecc-memory" : "non-ecc-memory"}`,
-            text: [node.memory_description, node.memory_ecc == null ? null : node.memory_ecc ? "ECC" : "Non-ECC"].filter(Boolean).join(" "),
-            attrs: { title: node.memory_ecc ? "Configured ECC memory; active error correction is not verified" : "Configured memory" },
-          })])];
-    return el("button", { className: `tile tile-${node.state}`, attrs: { type: "button", style: colorStyle(node.color), "data-node": node.name, "aria-pressed": String(state.selectedNode === node.name) } }, [
-      el("span", { className: "tile-head" }, [
-        el("span", { className: "server-glyph", attrs: { "aria-hidden": "true" } }),
-        el("span", { className: "tile-title" }, [el("strong", { text: nodeLabel(node) }), ...(modelLine ? [modelLine] : []), el("small", { text: guestSummary(node) })]),
-        statePill(node.state),
-      ]),
-      ...(online
-        ? [el("div", { className: "tile-readings" }, [
-            el("div", { className: "gauges" }, gauges),
-            el("div", { className: "tile-details" }, [el("div", { className: "facts" }, [fact("RAM", memoryText), ...(arcBytes === null ? [] : [fact("ZFS ARC", arcMax ? formatMemoryPair({ used: arcBytes, total: arcMax }) : formatBytes(arcBytes))])])]),
-          ]), footerRows([...hardwareDetails, ...hardwareErrorBadges(node)], storageBadges(node))]
-        : [el("p", { className: "offline-note", text: "No live readings." }), ...hardwareDetails, footerRows(hardwareErrorBadges(node), [])]),
-    ]);
+        : [
+            el("div", { className: "memory-details" }, [
+              el("span", {
+                className: `memory-ecc ${node.memory_ecc ? "ecc-memory" : "non-ecc-memory"}`,
+                text: [node.memory_description, node.memory_ecc == null ? null : node.memory_ecc ? "ECC" : "Non-ECC"].filter(Boolean).join(" "),
+                attrs: { title: node.memory_ecc ? "Configured ECC memory; active error correction is not verified" : "Configured memory" },
+              }),
+            ]),
+          ];
+    return el(
+      "button",
+      {
+        className: `tile tile-${node.state}`,
+        attrs: { type: "button", style: colorStyle(node.color), "data-node": node.name, "aria-pressed": String(state.selectedNode === node.name) },
+      },
+      [
+        el("span", { className: "tile-head" }, [
+          el("span", { className: "server-glyph", attrs: { "aria-hidden": "true" } }),
+          el("span", { className: "tile-title" }, [
+            el("strong", { text: nodeLabel(node) }),
+            ...(modelLine ? [modelLine] : []),
+            el("small", { text: guestSummary(node) }),
+          ]),
+          statePill(node.state),
+        ]),
+        ...(online
+          ? [
+              el("div", { className: "tile-readings" }, [
+                el("div", { className: "gauges" }, gauges),
+                el("div", { className: "tile-details" }, [
+                  el("div", { className: "facts" }, [
+                    fact("RAM", memoryText),
+                    ...(arcBytes === null
+                      ? []
+                      : [fact("ZFS ARC", arcMax ? formatMemoryPair({ used: arcBytes, total: arcMax }) : formatBytes(arcBytes))]),
+                  ]),
+                ]),
+              ]),
+              footerRows([...hardwareDetails, ...hardwareErrorBadges(node)], storageBadges(node)),
+            ]
+          : [el("p", { className: "offline-note", text: "No live readings." }), ...hardwareDetails, footerRows(hardwareErrorBadges(node), [])]),
+      ],
+    );
   });
   const host = required("#overview");
   const columnCount = Math.max(1, Math.min(tiles.length, Math.floor((host.clientWidth + 12) / 292)));
@@ -644,21 +830,38 @@ function renderTopology(nodes) {
   const drawing = [
     svg("defs", {}, [svg("clipPath", { id: "topo-badge-clip" }, [svg("rect", { width: pill.badge, height: pill.height, rx: pill.height / 2 })])]),
   ];
-  drawing.push(svg("circle", { class: "topo-hub", cx: hub.x, cy: hub.y, r: 22 }), svgText({ x: hub.x, y: hub.y - 28, text: "Cluster", className: "topo-label" }));
+  drawing.push(
+    svg("circle", { class: "topo-hub", cx: hub.x, cy: hub.y, r: 22 }),
+    svgText({ x: hub.x, y: hub.y - 28, text: "Cluster", className: "topo-label" }),
+  );
 
   nodes.forEach((node, index) => {
     const x = (width / nodes.length) * (index + 0.5);
     const offline = node.state !== "online";
     const mid = (hub.y + nodeY) / 2;
-    drawing.push(svg("path", { class: `topo-link${offline ? " is-down" : ""}`, style: colorStyle(node.color), d: `M ${hub.x} ${hub.y + 22} C ${hub.x} ${mid}, ${x} ${mid}, ${x} ${nodeY - 28}` }));
+    drawing.push(
+      svg("path", {
+        class: `topo-link${offline ? " is-down" : ""}`,
+        style: colorStyle(node.color),
+        d: `M ${hub.x} ${hub.y + 22} C ${hub.x} ${mid}, ${x} ${mid}, ${x} ${nodeY - 28}`,
+      }),
+    );
 
     drawing.push(
-      svg("g", { class: `topo-node${offline ? " is-down" : ""}${state.selectedNode === node.name ? " is-selected" : ""}`, style: colorStyle(node.color), "data-node": node.name }, [
-        svg("rect", { class: "topo-node-body", x: x - 38, y: nodeY - 28, width: 76, height: 56, rx: 10 }),
-        svg("rect", { class: "topo-node-slot", x: x - 28, y: nodeY - 18, width: 56, height: 9, rx: 4 }),
-        svg("rect", { class: "topo-node-slot", x: x - 28, y: nodeY - 4, width: 56, height: 9, rx: 4 }),
-        svg("circle", { class: "topo-node-led", cx: x + 22, cy: nodeY + 17, r: 3.5 }),
-      ]),
+      svg(
+        "g",
+        {
+          class: `topo-node${offline ? " is-down" : ""}${state.selectedNode === node.name ? " is-selected" : ""}`,
+          style: colorStyle(node.color),
+          "data-node": node.name,
+        },
+        [
+          svg("rect", { class: "topo-node-body", x: x - 38, y: nodeY - 28, width: 76, height: 56, rx: 10 }),
+          svg("rect", { class: "topo-node-slot", x: x - 28, y: nodeY - 18, width: 56, height: 9, rx: 4 }),
+          svg("rect", { class: "topo-node-slot", x: x - 28, y: nodeY - 4, width: 56, height: 9, rx: 4 }),
+          svg("circle", { class: "topo-node-led", cx: x + 22, cy: nodeY + 17, r: 3.5 }),
+        ],
+      ),
       svgText({ x, y: nodeY + 46, text: nodeLabel(node), className: "topo-label" }),
       svgText({ x, y: nodeY + 62, text: node.address ?? "address unknown", className: "topo-sub" }),
     );
@@ -678,13 +881,26 @@ function renderTopology(nodes) {
             svg("rect", { class: "topo-stripe", y: pill.height - pill.stripe, width: pill.badge, height: pill.stripe }),
           ]),
           svgText({ x: gx + pill.badge / 2, y: gy + 17.5, text: kindLabel(guest.kind), className: "topo-guest-kind" }),
-          svgText({ x: gx + pill.badge + 8, y: gy + 19.5, text: truncate(guestLabel(guest), TOPOLOGY_NAME_LIMIT), className: "topo-guest-name", anchor: "start" }),
+          svgText({
+            x: gx + pill.badge + 8,
+            y: gy + 19.5,
+            text: truncate(guestLabel(guest), TOPOLOGY_NAME_LIMIT),
+            className: "topo-guest-name",
+            anchor: "start",
+          }),
           svg("circle", { class: "topo-led", cx: gx + pill.width - 14, cy: gy + pill.height / 2, r: 4 }),
         ]),
       );
     });
     if (node.guests.length > shown.length) {
-      drawing.push(svgText({ x, y: guestTop + shown.length * (pill.height + pill.gap) + 10, text: `+${node.guests.length - shown.length} more`, className: "topo-sub" }));
+      drawing.push(
+        svgText({
+          x,
+          y: guestTop + shown.length * (pill.height + pill.gap) + 10,
+          text: `+${node.guests.length - shown.length} more`,
+          className: "topo-sub",
+        }),
+      );
     }
   });
 
@@ -709,39 +925,68 @@ function visibleGuests(nodes) {
     .filter((node) => state.selectedNode === null || node.name === state.selectedNode)
     .flatMap((node) => node.guests)
     .filter((guest) => matchesFilter(guest, state.filter))
-    .filter((guest) => query === "" || `${guest.name} ${guestLabel(guest)} ${guest.vmid} ${guest.node} ${displayNodeName(guest.node)}`.toLowerCase().includes(query))
+    .filter(
+      (guest) =>
+        query === "" || `${guest.name} ${guestLabel(guest)} ${guest.vmid} ${guest.node} ${displayNodeName(guest.node)}`.toLowerCase().includes(query),
+    )
     .sort(compareGuests);
 }
 
 /** @param {PveNode[]} nodes */
 function renderGuests(nodes) {
-  required("#guests-title").textContent = state.selectedNode === null ? "VMs & Containers" : `VMs & Containers on ${displayNodeName(state.selectedNode)}`;
+  required("#guests-title").textContent =
+    state.selectedNode === null ? "VMs & Containers" : `VMs & Containers on ${displayNodeName(state.selectedNode)}`;
   required("#node-chips").replaceChildren(
-    el("button", { className: "chip", text: "All Nodes", attrs: { type: "button", "data-node-filter": "", "aria-pressed": String(state.selectedNode === null) } }),
+    el("button", {
+      className: "chip",
+      text: "All Nodes",
+      attrs: { type: "button", "data-node-filter": "", "aria-pressed": String(state.selectedNode === null) },
+    }),
     ...nodes.map((node) =>
-      el("button", { className: "chip", attrs: { type: "button", style: colorStyle(node.color), "data-node-filter": node.name, "aria-pressed": String(state.selectedNode === node.name) } }, [
-        el("i", { className: "chip-dot", attrs: { "aria-hidden": "true" } }),
-        nodeLabel(node),
-      ]),
+      el(
+        "button",
+        {
+          className: "chip",
+          attrs: {
+            type: "button",
+            style: colorStyle(node.color),
+            "data-node-filter": node.name,
+            "aria-pressed": String(state.selectedNode === node.name),
+          },
+        },
+        [el("i", { className: "chip-dot", attrs: { "aria-hidden": "true" } }), nodeLabel(node)],
+      ),
     ),
   );
   required("#chips").replaceChildren(
-    ...FILTERS.map(({ id, label }) => el("button", { className: "chip", text: label, attrs: { type: "button", "data-filter": id, "aria-pressed": String(state.filter === id) } })),
+    ...FILTERS.map(({ id, label }) =>
+      el("button", { className: "chip", text: label, attrs: { type: "button", "data-filter": id, "aria-pressed": String(state.filter === id) } }),
+    ),
   );
 
   const guests = visibleGuests(nodes);
   const rows = guests.map((guest) => {
     const metrics = guestMetrics(guest);
     const action = guestActions.get(guest.vmid);
-    const rebootButton = el("button", {
-      className: `guest-reboot${action?.pending ? " is-loading" : ""}`,
-      attrs: {
-        type: "button", "data-reboot-vmid": String(guest.vmid), "data-reboot-node": guest.node,
-        title: `Reboot ${guestLabel(guest)} (ID ${guest.vmid}) on ${displayNodeName(guest.node)}`,
-        "aria-label": `Reboot ${guestLabel(guest)} (ID ${guest.vmid})`,
+    const rebootButton = el(
+      "button",
+      {
+        className: `guest-reboot${action?.pending ? " is-loading" : ""}`,
+        attrs: {
+          type: "button",
+          "data-reboot-vmid": String(guest.vmid),
+          "data-reboot-node": guest.node,
+          title: `Reboot ${guestLabel(guest)} (ID ${guest.vmid}) on ${displayNodeName(guest.node)}`,
+          "aria-label": `Reboot ${guestLabel(guest)} (ID ${guest.vmid})`,
+        },
       },
-    }, [el("span", { className: "refresh-icon", text: "↻", attrs: { "aria-hidden": "true" } })]);
-    rebootButton.disabled = guest.state !== "running" || nodes.find((node) => node.name === guest.node)?.state !== "online" || Boolean(action?.pending) || (action?.retryAt ?? 0) > Date.now();
+      [el("span", { className: "refresh-icon", text: "↻", attrs: { "aria-hidden": "true" } })],
+    );
+    rebootButton.disabled =
+      guest.state !== "running" ||
+      nodes.find((node) => node.name === guest.node)?.state !== "online" ||
+      Boolean(action?.pending) ||
+      (action?.retryAt ?? 0) > Date.now();
     return el("li", { className: "guest", attrs: { style: colorStyle(colorOfNode(guest.node)) } }, [
       el("span", { className: "guest-mark", attrs: { "aria-hidden": "true" } }, [
         el("span", { className: `guest-icon guest-${guest.kind}`, text: kindLabel(guest.kind) }),
@@ -753,8 +998,17 @@ function renderGuests(nodes) {
           el("div", { className: "guest-state-actions" }, [rebootButton, statePill(guest.state)]),
         ]),
         el("div", { className: "guest-sub" }, [el("small", { text: `${displayNodeName(guest.node)} · ID ${guest.vmid}` })]),
-        ...(metrics === null ? [] : [el("div", { className: "guest-metrics" }, [metricRow({ label: "CPU", metric: metrics.cpu, tone: "cpu" }), metricRow({ label: "RAM", metric: metrics.ram, tone: "memory" })])]),
-        ...(action ? [el("small", { className: `guest-action-status${action.error ? " is-error" : ""}`, text: action.message, attrs: { role: "status" } })] : []),
+        ...(metrics === null
+          ? []
+          : [
+              el("div", { className: "guest-metrics" }, [
+                metricRow({ label: "CPU", metric: metrics.cpu, tone: "cpu" }),
+                metricRow({ label: "RAM", metric: metrics.ram, tone: "memory" }),
+              ]),
+            ]),
+        ...(action
+          ? [el("small", { className: `guest-action-status${action.error ? " is-error" : ""}`, text: action.message, attrs: { role: "status" } })]
+          : []),
       ]),
     ]);
   });
@@ -769,12 +1023,18 @@ async function rebootGuest(vmid, nodeName) {
   const node = state.snapshot?.nodes.find((candidate) => candidate.name === nodeName);
   const guest = node?.guests.find((candidate) => candidate.vmid === vmid);
   if (!guest || node?.state !== "online" || guest.state !== "running") return;
-  if (!window.confirm(`Reboot ${guestLabel(guest)} (ID ${vmid}) on ${nodeLabel(node)}?\nThis interrupts services running in this ${kindLabel(guest.kind)}.`)) return;
+  if (
+    !window.confirm(
+      `Reboot ${guestLabel(guest)} (ID ${vmid}) on ${nodeLabel(node)}?\nThis interrupts services running in this ${kindLabel(guest.kind)}.`,
+    )
+  )
+    return;
   guestActions.set(vmid, { pending: true, message: "Submitting reboot…", error: false, retryAt: 0 });
   renderGuests(state.snapshot?.nodes ?? []);
   try {
     const response = await fetch(REBOOT_URL, {
-      method: "POST", headers: { "Content-Type": "application/json", "X-Homelab-Action": "reboot" },
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-Homelab-Action": "reboot" },
       body: JSON.stringify({ vmid, node: nodeName }),
     });
     /** @type {unknown} */
@@ -783,7 +1043,12 @@ async function rebootGuest(vmid, nodeName) {
     guestActions.set(vmid, { pending: false, message: "Reboot command submitted.", error: false, retryAt: Date.now() + 30_000 });
     void refresh({ force: true });
   } catch (error) {
-    guestActions.set(vmid, { pending: false, message: error instanceof Error ? error.message : "Reboot failed.", error: true, retryAt: Date.now() + 30_000 });
+    guestActions.set(vmid, {
+      pending: false,
+      message: error instanceof Error ? error.message : "Reboot failed.",
+      error: true,
+      retryAt: Date.now() + 30_000,
+    });
   } finally {
     renderGuests(state.snapshot?.nodes ?? []);
     window.setTimeout(() => renderGuests(state.snapshot?.nodes ?? []), 30_000);
@@ -793,25 +1058,34 @@ async function rebootGuest(vmid, nodeName) {
 function renderDevices() {
   const error = devicesError ?? devicesSnapshot?.error;
   const stale = devicesSnapshot?.stale || error != null;
-  for (const { group, prefix } of [{ group: "lan", prefix: "lan" }, { group: "guest_iot", prefix: "guest-iot" }]) {
+  for (const { group, prefix } of [
+    { group: "lan", prefix: "lan" },
+    { group: "guest_iot", prefix: "guest-iot" },
+  ]) {
     const status = required(`#${prefix}-devices-status`);
     status.classList.toggle("is-stale", Boolean(stale));
     status.textContent = error
       ? `${error}${devicesSnapshot?.fetched_at ? " Showing last-known leases." : ""}`
-      : devicesSnapshot === null ? "Loading DHCP leases…" : `${devicesSnapshot.source} · ${devicesSnapshot.router}`;
+      : devicesSnapshot === null
+        ? "Loading DHCP leases…"
+        : `${devicesSnapshot.source} · ${devicesSnapshot.router}`;
     const leases = (devicesSnapshot?.leases ?? []).filter((lease) => lease.network_group === group && typeof lease.address === "string");
-    const rows = leases.map((lease) => el("li", { className: "device" }, [
-      el("div", { className: "device-title" }, [
-        el("strong", { text: lease.display_name, attrs: { title: lease.hostname ?? "Unnamed device" } }),
+    const rows = leases.map((lease) =>
+      el("li", { className: "device" }, [
+        el("div", { className: "device-title" }, [el("strong", { text: lease.display_name, attrs: { title: lease.hostname ?? "Unnamed device" } })]),
+        el("dl", { className: "device-fields" }, [
+          el("dt", { className: "device-field-label", text: "IPv4" }),
+          el("dd", { className: "device-address", text: lease.address ?? "Not reported" }),
+          el("dt", { className: "device-field-label", text: "MAC" }),
+          el("dd", { className: "device-mac", text: lease.mac?.toUpperCase() ?? "Not reported" }),
+        ]),
       ]),
-      el("dl", { className: "device-fields" }, [
-        el("dt", { className: "device-field-label", text: "IPv4" }),
-        el("dd", { className: "device-address", text: lease.address ?? "Not reported" }),
-        el("dt", { className: "device-field-label", text: "MAC" }),
-        el("dd", { className: "device-mac", text: lease.mac?.toUpperCase() ?? "Not reported" }),
-      ]),
-    ]));
-    required(`#${prefix}-device-list`).replaceChildren(...(rows.length ? rows : [el("li", { className: "empty", text: error ? "Devices unavailable." : devicesSnapshot === null ? "" : "No devices reported." })]));
+    );
+    required(`#${prefix}-device-list`).replaceChildren(
+      ...(rows.length
+        ? rows
+        : [el("li", { className: "empty", text: error ? "Devices unavailable." : devicesSnapshot === null ? "" : "No devices reported." })]),
+    );
   }
 }
 
@@ -842,16 +1116,19 @@ async function loadActivityLog() {
     /** @type {unknown} */
     const payload = await response.json();
     if (!response.ok) throw new Error(errorMessage(payload));
-    const entries = payload && typeof payload === "object" && "entries" in payload && Array.isArray(payload.entries)
-      ? /** @type {ActivityLogEntry[]} */ (payload.entries)
-      : [];
-    const rows = entries.map((entry) => el("li", { className: "log-entry" }, [
-      el("span", { className: `log-status log-status-${Math.floor(entry.status / 100)}`, text: String(entry.status) }),
-      el("div", { className: "log-detail" }, [
-        el("code", { className: "log-path", text: `${entry.method} ${entry.path}` }),
-        el("span", { className: "log-meta", text: `${new Date(entry.timestamp).toLocaleString()} · ${entry.client}` }),
+    const entries =
+      payload && typeof payload === "object" && "entries" in payload && Array.isArray(payload.entries)
+        ? /** @type {ActivityLogEntry[]} */ (payload.entries)
+        : [];
+    const rows = entries.map((entry) =>
+      el("li", { className: "log-entry" }, [
+        el("span", { className: `log-status log-status-${Math.floor(entry.status / 100)}`, text: String(entry.status) }),
+        el("div", { className: "log-detail" }, [
+          el("code", { className: "log-path", text: `${entry.method} ${entry.path}` }),
+          el("span", { className: "log-meta", text: `${new Date(entry.timestamp).toLocaleString()} · ${entry.client}` }),
+        ]),
       ]),
-    ]));
+    );
     required("#logs-list").replaceChildren(...rows);
     status.textContent = `${entries.length} ${entries.length === 1 ? "record" : "records"} · newest 500`;
   } catch (error) {
@@ -892,12 +1169,20 @@ function render() {
   required("#source-label").textContent = state.snapshot?.source ?? "No data source connected";
   const lastUpdate = state.snapshot ? new Date(state.snapshot.fetched_at).toLocaleTimeString() : null;
   required("#updated").textContent =
-    state.error !== null ? (lastUpdate === null ? "Update failed" : `Update failed · data from ${lastUpdate}`) : lastUpdate === null ? "Connecting…" : `Updated ${lastUpdate}`;
+    state.error !== null
+      ? lastUpdate === null
+        ? "Update failed"
+        : `Update failed · data from ${lastUpdate}`
+      : lastUpdate === null
+        ? "Connecting…"
+        : `Updated ${lastUpdate}`;
 }
 
 /** @param {unknown} payload */
 function errorMessage(payload) {
-  return typeof payload === "object" && payload !== null && "error" in payload && typeof payload.error === "string" ? payload.error : "Status is unavailable.";
+  return typeof payload === "object" && payload !== null && "error" in payload && typeof payload.error === "string"
+    ? payload.error
+    : "Status is unavailable.";
 }
 
 let refreshInFlight = false;
@@ -1023,7 +1308,9 @@ document.addEventListener("keydown", (event) => {
 });
 
 const selectedHaiku = HEADER_HAIKUS[Math.floor(Math.random() * HEADER_HAIKUS.length)];
-required("#haiku").replaceChildren(...selectedHaiku.map((line, index) => el("span", { text: index < selectedHaiku.length - 1 ? `${line} /` : line })));
+required("#haiku").replaceChildren(
+  ...selectedHaiku.map((line, index) => el("span", { text: index < selectedHaiku.length - 1 ? `${line} /` : line })),
+);
 const refreshSeconds = REFRESH_INTERVAL_MS / 1000;
 required("#refresh-note").textContent = `Guest controls · checks for updates every ${refreshSeconds === 1 ? "second" : `${refreshSeconds} seconds`}`;
 let overviewWidth = 0;
@@ -1056,25 +1343,39 @@ void (async () => {
 
   /** @param {string} path @param {number} version @returns {Promise<boolean>} */
   const replaceStylesheet = (path, version) => {
-    const links = /** @type {HTMLLinkElement[]} */ ([...document.querySelectorAll('link[rel="stylesheet"]')])
-      .filter((link) => new URL(link.href).pathname === path);
+    const links = /** @type {HTMLLinkElement[]} */ ([...document.querySelectorAll('link[rel="stylesheet"]')]).filter(
+      (link) => new URL(link.href).pathname === path,
+    );
     if (links.length === 0) return Promise.resolve(true);
 
-    return Promise.all(links.map((link) => new Promise((resolve) => {
-      const replacement = /** @type {HTMLLinkElement} */ (link.cloneNode());
-      const url = new URL(link.href);
-      url.searchParams.set("__dev", String(version));
-      replacement.href = url.toString();
-      replacement.addEventListener("load", () => {
-        link.remove();
-        resolve(true);
-      }, { once: true });
-      replacement.addEventListener("error", () => {
-        replacement.remove();
-        resolve(false);
-      }, { once: true });
-      link.after(replacement);
-    }))).then((results) => results.every(Boolean));
+    return Promise.all(
+      links.map(
+        (link) =>
+          new Promise((resolve) => {
+            const replacement = /** @type {HTMLLinkElement} */ (link.cloneNode());
+            const url = new URL(link.href);
+            url.searchParams.set("__dev", String(version));
+            replacement.href = url.toString();
+            replacement.addEventListener(
+              "load",
+              () => {
+                link.remove();
+                resolve(true);
+              },
+              { once: true },
+            );
+            replacement.addEventListener(
+              "error",
+              () => {
+                replacement.remove();
+                resolve(false);
+              },
+              { once: true },
+            );
+            link.after(replacement);
+          }),
+      ),
+    ).then((results) => results.every(Boolean));
   };
 
   let checkInFlight = false;
@@ -1089,15 +1390,14 @@ void (async () => {
         return;
       }
 
-      const changedPaths = [...new Set([...Object.keys(previous.assets), ...Object.keys(current.assets)])]
-        .filter((path) => previous.assets[path] !== current.assets[path]);
+      const changedPaths = [...new Set([...Object.keys(previous.assets), ...Object.keys(current.assets)])].filter(
+        (path) => previous.assets[path] !== current.assets[path],
+      );
       if (changedPaths.length === 0) return;
 
-      const requiresReload = changedPaths.some((path) => (
-        !path.toLowerCase().endsWith(".css")
-        || previous.assets[path] === undefined
-        || current.assets[path] === undefined
-      ));
+      const requiresReload = changedPaths.some(
+        (path) => !path.toLowerCase().endsWith(".css") || previous.assets[path] === undefined || current.assets[path] === undefined,
+      );
       if (requiresReload) {
         location.reload();
         return;

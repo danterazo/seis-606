@@ -1,0 +1,20 @@
+{
+  "name": "homelab-dashboard-web",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "format": "prettier --write \"*.{js,html,css}\"",
+    "format:check": "prettier --check \"*.{js,html,css}\"",
+    "lint": "eslint aero.js && biome lint aero.css && html-validate index.html && npm run typecheck",
+    "typecheck": "tsc --noEmit --allowJs --checkJs --target ES2022 --module ESNext --lib ES2022,DOM aero.js"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "*",
+    "@eslint/js": "*",
+    "eslint": "*",
+    "globals": "*",
+    "html-validate": "*",
+    "prettier": "*",
+    "typescript": "*"
+  }
+}
