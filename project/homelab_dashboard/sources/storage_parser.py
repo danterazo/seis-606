@@ -17,6 +17,8 @@ ATA_ZERO_EXPECTED: Final[Tuple[int, ...]] = (5, 10, 184, 187, 196, 197, 198, 199
 
 _SEVERITY: Final[Tuple[HealthLevel, ...]] = (HealthLevel.OK, HealthLevel.UNKNOWN, HealthLevel.WARNING, HealthLevel.CRITICAL)
 _Finding = Tuple[HealthLevel, str]
+# AVAIL (idle spare) and INUSE are intentionally excluded; they are not problems.
+_DEVICE_STATES: Final[Tuple[str, ...]] = ("ONLINE", "DEGRADED", "FAULTED", "OFFLINE", "UNAVAIL", "REMOVED")
 
 
 def _worst(*, findings: List[_Finding], base: HealthLevel = HealthLevel.OK) -> HealthLevel:
@@ -119,6 +121,14 @@ def _pool_status_findings(*, name: str, status: str) -> List[_Finding]:
         # The pool's own row in the config table: NAME STATE READ WRITE CKSUM.
         if len(fields) == 5 and fields[0] == name and fields[2:] != ["0", "0", "0"]:
             findings.append((HealthLevel.WARNING, f"Device errors on pool: read {fields[2]}, write {fields[3]}, checksum {fields[4]}"))
+        if len(fields) >= 5 and fields[0] != name and fields[1] in _DEVICE_STATES:
+            detail: str = " ".join(fields[5:])
+            suffix: str = f" ({detail})" if detail else ""
+            if fields[1] != "ONLINE":
+                level: HealthLevel = HealthLevel.WARNING if fields[1] == "DEGRADED" else HealthLevel.CRITICAL
+                findings.append((level, f"Device {fields[0]} is {fields[1]}{suffix}"))
+            elif fields[2:5] != ["0", "0", "0"]:
+                findings.append((HealthLevel.WARNING, f"Device {fields[0]} errors: read {fields[2]}, write {fields[3]}, checksum {fields[4]}"))
         if line.strip().startswith("errors:") and "No known data errors" not in line:
             findings.append((HealthLevel.CRITICAL, line.strip().removeprefix("errors:").strip().capitalize()))
         if "resilver in progress" in line:
