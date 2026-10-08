@@ -10,6 +10,10 @@ deps:
 # alias
 update: deps
 
+run:
+	@fuser -k 8766/tcp 2>/dev/null || true
+	PORT=8766 poetry run python3 project/app.py
+
 upgrade:
 	sudo apt update
 	sudo apt full-upgrade -y
