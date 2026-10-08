@@ -349,12 +349,12 @@ function storageBadges(node) {
 /** @param {PveNode} node */
 function renderStorageDialog(node) {
   const storage = node.hardware.storage;
-  required("#storage-heading").textContent = `Storage health · ${nodeLabel(node)}`;
+  required("#storage-heading").textContent = `Storage Health · ${nodeLabel(node)}`;
   /** @param {HealthLevel} level @param {string} text */
   const levelCell = (level, text) => el("span", { className: `health-badge health-${level}`, text });
   const diskRows = (storage?.disks ?? []).map((disk) =>
     el("tr", {}, [
-      el("td", {}, [levelCell(disk.level, disk.standby ? "standby" : disk.level)]),
+      el("td", {}, [levelCell(disk.level, disk.standby ? "Standby" : stateLabel(disk.level === "ok" ? "OK" : disk.level))]),
       el("td", {}, [el("code", { text: disk.device }), el("small", { text: ` ${[disk.model, disk.serial].filter(Boolean).join(" · ")}` })]),
       el("td", { text: disk.kind.toUpperCase() }),
       el("td", { text: disk.temperature_celsius === null ? "—" : `${disk.temperature_celsius} °C` }),
