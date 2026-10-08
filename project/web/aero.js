@@ -318,10 +318,10 @@ function renderOverview(nodes) {
     const hardwareDetails =
       node.memory_ecc == null && !node.memory_description
         ? []
-        : [el("div", { className: "memory-inventory" }, [el("span", {
+        : [el("div", { className: "memory-details" }, [el("span", {
             className: `memory-ecc ${node.memory_ecc ? "ecc-memory" : "non-ecc-memory"}`,
             text: [node.memory_description, node.memory_ecc == null ? null : node.memory_ecc ? "ECC" : "Non-ECC"].filter(Boolean).join(" "),
-            attrs: { title: node.memory_ecc ? "ECC memory inventory; active error correction is not verified" : "Memory inventory" },
+            attrs: { title: node.memory_ecc ? "Configured ECC memory; active error correction is not verified" : "Configured memory" },
           })])];
     return el("button", { className: `tile tile-${node.state}`, attrs: { type: "button", style: colorStyle(node.color), "data-node": node.name, "aria-pressed": String(state.selectedNode === node.name) } }, [
       el("span", { className: "tile-head" }, [

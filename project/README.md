@@ -3,7 +3,7 @@
 A status dashboard with explicit guest reboot controls for a Proxmox VE cluster,
 styled after Frutiger Aero / Y2K desktops.
 Resource readings come from Proxmox; display profiles, pinned addresses, fallback CPU
-models, and memory inventory are configured separately and are not live discoveries.
+models, and memory descriptions are configured separately and are not live discoveries.
 
 ## Run
 
@@ -136,12 +136,12 @@ With multiple memory arrays, a positive result means at least one reports ECC.
 
 Memory descriptions in `homelab_dashboard/node_profiles.py` are explicitly configured:
 Kex and Kveikur use DDR4 ECC RDIMMs; Cerulean uses one 32 GB DDR4 SODIMM.
-The overview uses compact ECC / Non-ECC badges from the configured memory inventory,
+The overview uses compact ECC / Non-ECC badges from the configured memory details,
 independently of whether the node is online. Firmware ECC diagnostics remain available
 in hardware data but are not shown as a sentence in the cards. An ECC badge identifies
-the memory inventory; it does not verify active error correction. Unconfigured nodes
+configured memory; it does not verify active error correction. Unconfigured nodes
 have no ECC badge rather than an assumed negative result.
-Offline nodes retain configured inventory without claiming live readings. CPU fallbacks
+Offline nodes retain configured memory details without claiming live readings. CPU fallbacks
 remain italicized with an explanatory tooltip. GPU display and collection are disabled.
 
 ## Roadmap

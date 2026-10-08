@@ -220,7 +220,7 @@ button { cursor: pointer; }
 .fact { display: flex; justify-content: space-between; gap: 6px; }
 .fact-label { color: var(--ink-soft); font-weight: 600; }
 .fact-value { text-align: right; font-weight: 600; min-width: 0; overflow-wrap: anywhere; }
-.memory-inventory { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 6px; min-width: 0; }
+.memory-details { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 6px; min-width: 0; }
 .memory-ecc { display: inline-flex; align-items: center; min-height: 16px; padding: 1px 5px; border: 1px solid rgba(60,85,100,.3); border-radius: 4px; font-size: 10px; font-weight: 700; line-height: 1.2; white-space: nowrap; }
 .ecc-memory { color: #245c42; background: rgba(220,244,227,.9); border-color: rgba(36,92,66,.3); }
 .non-ecc-memory { color: #4d5d67; background: rgba(236,244,248,.9); }
