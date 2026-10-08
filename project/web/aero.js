@@ -12,7 +12,7 @@
  * @typedef {{ level: HealthLevel, findings: string[], incidents: ErrorIncident[], boots: BootRecord[], memory_counters: MemoryCounter[], edac_available: boolean, journal_available: boolean, persisted_corrected: number | null, persisted_uncorrected: number | null, persisted_mce: number | null, boot_id: string | null, boot_started: string | null, collected_at: string | null, stale: boolean, error: string | null, last_success: string | null, counters_reset: boolean }} HardwareErrors
  * @typedef {"ok" | "warning" | "critical" | "unknown"} HealthLevel
  * @typedef {{ device: string, model: string | null, serial: string | null, kind: string, level: HealthLevel, standby: boolean, temperature_celsius: number | null, power_on_hours: number | null, findings: string[] }} Disk
- * @typedef {{ name: string, state: string, level: HealthLevel, capacity_percent: number | null, size_bytes: number | null, allocated_bytes: number | null, free_bytes: number | null, fragmentation_percent: number | null, layout: string | null, scan: string | null, findings: string[] }} Pool
+ * @typedef {{ name: string, state: string, level: HealthLevel, capacity_percent: number | null, size_bytes: number | null, dataset_available_bytes: number | null, allocated_bytes: number | null, free_bytes: number | null, fragmentation_percent: number | null, layout: string | null, scan: string | null, findings: string[] }} Pool
  * @typedef {{ disks: Disk[], pools: Pool[], smart_available: boolean, zfs_available: boolean }} StorageHealth
  * @typedef {{ name: string, display_name: string, state: "online" | "offline" | "unknown", address: string | null, image: string | null, initial: string, color: string, memory_description?: string | null, memory_ecc?: boolean | null, resources: Resources, guests: Guest[], hardware: Hardware }} PveNode
  * @typedef {{ source: string, fetched_at: string, nodes: PveNode[] }} Snapshot
@@ -244,7 +244,16 @@ function arcPercent(node) {
   return clamp((Math.min(arc, used) / total) * 100);
 }
 
-/** @param {{ label: string, value: number | null, tone: "cpu" | "memory", arcValue?: number | null, title?: string }} args */
+/** Sums every pool with known capacity; used space comes from the pool's root dataset, so child datasets are counted once. @param {Pool[]} pools */
+function zfsTotals(pools) {
+  const known = pools.filter((pool) => pool.size_bytes !== null && pool.size_bytes > 0 && pool.dataset_available_bytes !== null);
+  if (known.length === 0) return null;
+  const size = known.reduce((sum, pool) => sum + (pool.size_bytes ?? 0), 0);
+  const used = known.reduce((sum, pool) => sum + (pool.size_bytes ?? 0) - (pool.dataset_available_bytes ?? 0), 0);
+  return { size, used, names: known.map((pool) => pool.name) };
+}
+
+/** @param {{ label: string, value: number | null, tone: "cpu" | "memory" | "storage", arcValue?: number | null, title?: string }} args */
 function gauge({ label, value, tone, arcValue = null, title }) {
   const radius = 22;
   const circumference = 2 * Math.PI * radius;
@@ -392,12 +401,14 @@ function storageBadges(node) {
   }
   if (storage.zfs_available) {
     for (const pool of storage.pools) {
-      const reason = (pool.state !== "ONLINE" ? pool.state : (pool.findings[0] ?? pool.state)).toUpperCase();
+      // Capacity is already shown by the ZFS gauge.
+      const headlineFindings = pool.findings.filter((finding) => !/% full$/i.test(finding));
+      const reason = (pool.state !== "ONLINE" ? pool.state : (headlineFindings[0] ?? pool.state)).toUpperCase();
       const usage = poolUsage(pool);
       const headline =
-        pool.level === "ok"
+        pool.level === "ok" || (pool.state === "ONLINE" && headlineFindings.length === 0)
           ? `${pool.name} ${pool.state}`
-          : `${pool.name} ${reason}${pool.findings.length > 1 ? ` +${pool.findings.length - 1}` : ""}`;
+          : `${pool.name} ${reason}${headlineFindings.length > 1 ? ` +${headlineFindings.length - 1}` : ""}`;
       // Only tank carries the extra stats on its badge for now.
       const extras =
         pool.name === "tank"
@@ -746,6 +757,12 @@ function renderOverview(nodes) {
       gauge({ label: "CPU", value: cpuPercent(node.resources), tone: "cpu" }),
       gauge({ label: "RAM", value: memoryPercent(node.resources), tone: "memory", arcValue: arcPercent(node), title: ramTitle }),
     ];
+    const zfs = zfsTotals(node.hardware.storage?.pools ?? []);
+    if (zfs !== null) {
+      const value = clamp((zfs.used / zfs.size) * 100);
+      const title = `ZFS: ${formatPercent(value)} used · ${formatPoolBytes(zfs.used)} of ${formatPoolBytes(zfs.size)} across ${zfs.names.join(", ")}`;
+      gauges.push(gauge({ label: "ZFS", value, tone: "storage", title }));
+    }
     const modelLine = cpuModelLine(node.hardware);
     const { memory_used_bytes: used, memory_total_bytes: total } = node.resources;
     const memoryText = used !== null && total !== null ? formatMemoryPair({ used, total }) : formatRam(node.resources);

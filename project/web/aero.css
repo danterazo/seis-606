@@ -887,15 +887,15 @@ span.health-badge[role="button"] {
 }
 .tile-readings {
   display: grid;
-  grid-template-columns: minmax(104px, 0.9fr) minmax(0, 1.1fr);
-  gap: 10px;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0;
   align-items: center;
 }
 .tile-details {
   display: grid;
   gap: 5px;
   min-width: 0;
-  padding-left: 10px;
+  padding-left: 8px;
   border-left: 1px solid rgba(15, 90, 150, 0.18);
 }
 .facts {
@@ -906,9 +906,10 @@ span.health-badge[role="button"] {
 .fact {
   display: flex;
   justify-content: space-between;
-  gap: 6px;
+  gap: 4px;
 }
 .fact-label {
+  white-space: nowrap;
   color: var(--ink-soft);
   font-weight: 600;
 }
@@ -980,6 +981,10 @@ span.health-badge[role="button"] {
   stroke: var(--green);
   filter: drop-shadow(0 0 3px rgba(76, 194, 58, 0.7));
 }
+.gauge-storage {
+  stroke: #d66b3f;
+  filter: drop-shadow(0 0 3px rgba(214, 107, 63, 0.65));
+}
 .gauge-arc-zfs {
   stroke: #f2a93b;
   filter: drop-shadow(0 0 3px rgba(242, 169, 59, 0.7));
@@ -1005,6 +1010,10 @@ span.health-badge[role="button"] {
 .tile-readings .gauge-value {
   top: 14px;
   font-size: 11px;
+}
+.tile-readings .gauges {
+  flex-wrap: nowrap;
+  padding-right: 8px;
 }
 
 .legend {

@@ -93,6 +93,7 @@ class Pool:
     level: HealthLevel
     capacity_percent: int | None = None
     size_bytes: int | None = None
+    dataset_available_bytes: int | None = None
     allocated_bytes: int | None = None
     free_bytes: int | None = None
     fragmentation_percent: int | None = None

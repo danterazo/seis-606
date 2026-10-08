@@ -93,12 +93,18 @@ def collect_pools() -> list[dict[str, Any]] | None:
             continue
         name, health, capacity, size, allocated, free, fragmentation = fields
         status = run(command=["zpool", "status", "-p", name], timeout=ZPOOL_TIMEOUT_SECONDS)
+        dataset = run(command=["zfs", "get", "-Hp", "-d", "0", "-o", "name,value", "available", name], timeout=ZPOOL_TIMEOUT_SECONDS)
+        dataset_available = next(
+            (int(value) for line in dataset.splitlines() if len((row := line.split("\t"))) == 2 and row[0] == name and (value := row[1]).isdigit()),
+            None,
+        )
         pools.append(
             {
                 "name": name,
                 "health": health,
                 "capacity": capacity,
                 "size": size,
+                "dataset_available": dataset_available,
                 "allocated": allocated,
                 "free": free,
                 "fragmentation": fragmentation,

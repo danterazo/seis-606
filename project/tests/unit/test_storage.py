@@ -7,6 +7,7 @@ from typing import Any
 import pytest
 from homelab_dashboard.models import ClusterSnapshot, Hardware, HardwareSource, HealthLevel, Node, NodeState, Resources, Storage
 from homelab_dashboard.node_profiles import expected_hardware_for
+from homelab_dashboard.sources import storage_probe
 from homelab_dashboard.sources.base import StatusSourceError
 from homelab_dashboard.sources.hardware_source import HardwareEnrichedSource
 from homelab_dashboard.sources.storage_parser import parse_storage
@@ -81,8 +82,11 @@ HEALTHY_STATUS: str = "  pool: rpool\n state: ONLINE\n  scan: scrub repaired 0B 
 
 
 def test_healthy_pool() -> None:
-    pool = parse_storage(document={"pools": [{"name": "rpool", "health": "ONLINE", "capacity": "12", "status": HEALTHY_STATUS}]}).pools[0]
+    pool = parse_storage(
+        document={"pools": [{"name": "rpool", "health": "ONLINE", "capacity": "12", "size": "1000", "dataset_available": "400", "status": HEALTHY_STATUS}]}
+    ).pools[0]
     assert (pool.level, pool.capacity_percent, pool.findings) == (HealthLevel.OK, 12, ())
+    assert (pool.size_bytes, pool.dataset_available_bytes) == (1000, 400)
 
 
 def test_pool_problems() -> None:
@@ -111,6 +115,29 @@ def test_ssh_probe_sends_script_and_parses() -> None:
 
     assert len(SshStorageProbe(runner=runner).probe(node_name="kex", address="10.0.0.1").disks) == 1
     assert sent == [STORAGE_SCRIPT]
+
+
+def test_pool_probe_reads_available_from_only_the_root_dataset(monkeypatch: pytest.MonkeyPatch) -> None:
+    commands: list[list[str]] = []
+
+    def fake_run(*, command: list[str], timeout: float) -> str:
+        commands.append(command)
+        if command[:2] == ["zpool", "list"]:
+            return "rpool\tONLINE\t40\t1000\t400\t600\t1\n"
+        if command[:2] == ["zpool", "status"]:
+            return HEALTHY_STATUS
+        if command[0] == "zfs":
+            return "rpool\t600\n"
+        raise AssertionError(command)
+
+    monkeypatch.setattr(storage_probe.shutil, "which", lambda name: "/sbin/zpool" if name == "zpool" else None)
+    monkeypatch.setattr(storage_probe, "run", fake_run)
+
+    pools = storage_probe.collect_pools()
+
+    assert pools is not None
+    assert pools[0]["dataset_available"] == 600
+    assert ["zfs", "get", "-Hp", "-d", "0", "-o", "name,value", "available", "rpool"] in commands
 
 
 class OneNode:

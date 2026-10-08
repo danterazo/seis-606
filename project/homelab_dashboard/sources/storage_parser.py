@@ -213,6 +213,7 @@ def _parse_pool(*, row: object) -> Pool | None:
         level=_worst(findings=findings),
         capacity_percent=capacity,
         size_bytes=_as_count(value=row.get("size")),
+        dataset_available_bytes=_as_count(value=row.get("dataset_available")),
         allocated_bytes=_as_count(value=row.get("allocated")),
         free_bytes=_as_count(value=row.get("free")),
         fragmentation_percent=int(fragmentation_text) if fragmentation_text.isdigit() else None,
