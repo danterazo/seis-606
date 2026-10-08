@@ -1,7 +1,7 @@
 import threading
 import time
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Callable, Optional
 
 from homelab_dashboard.models import ClusterSnapshot
 from homelab_dashboard.sources.base import StatusSource, StatusSourceError
@@ -15,9 +15,9 @@ class CachedStatusSource:
     ttl_seconds: float
     clock: Callable[[], float] = time.monotonic
     _lock: threading.Lock = field(default_factory=threading.Lock, init=False)
-    _stored_at: Optional[float] = field(default=None, init=False)
-    _snapshot: Optional[ClusterSnapshot] = field(default=None, init=False)
-    _error: Optional[StatusSourceError] = field(default=None, init=False)
+    _stored_at: float | None = field(default=None, init=False)
+    _snapshot: ClusterSnapshot | None = field(default=None, init=False)
+    _error: StatusSourceError | None = field(default=None, init=False)
 
     def fetch(self) -> ClusterSnapshot:
         with self._lock:

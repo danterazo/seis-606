@@ -1,10 +1,10 @@
 import json
 import subprocess
+from collections.abc import Sequence
 from datetime import UTC, datetime
-from typing import Any, Dict, Final, List, Optional, Sequence, Tuple
+from typing import Any, Final
 
 import pytest
-
 from homelab_dashboard.config import Settings
 from homelab_dashboard.models import GuestKind, GuestState, NodeState
 from homelab_dashboard.sources.base import StatusSourceError
@@ -12,7 +12,7 @@ from homelab_dashboard.sources.proxmox_ssh import SSH_OPTIONS, CommandRunner, Pr
 
 FIXED_TIME: Final[datetime] = datetime(2026, 10, 6, 12, 0, tzinfo=UTC)
 
-RESOURCES: Final[List[Dict[str, Any]]] = [
+RESOURCES: Final[list[dict[str, Any]]] = [
     {"type": "node", "node": "cerulean", "status": "online", "cpu": 0.25, "mem": 8, "maxmem": 16},
     {"type": "node", "node": "violet", "status": "offline", "cpu": 0.9, "mem": 4, "maxmem": 8},
     {"type": "qemu", "vmid": 101, "node": "cerulean", "name": "web", "status": "running", "cpu": 0.1, "mem": 2, "maxmem": 4},
@@ -20,7 +20,7 @@ RESOURCES: Final[List[Dict[str, Any]]] = [
     {"type": "qemu", "vmid": 900, "node": "cerulean", "name": "base", "status": "stopped", "template": 1},
     {"type": "storage", "id": "storage/cerulean/local"},
 ]
-CLUSTER_STATUS: Final[List[Dict[str, Any]]] = [
+CLUSTER_STATUS: Final[list[dict[str, Any]]] = [
     {"type": "cluster", "name": "home"},
     {"type": "node", "name": "cerulean", "ip": "192.168.20.43"},
 ]
@@ -31,9 +31,9 @@ def make_runner(
     stdout: str = "",
     stderr: str = "",
     returncode: int = 0,
-    calls: Optional[List[Sequence[str]]] = None,
+    calls: list[Sequence[str]] | None = None,
 ) -> CommandRunner:
-    def runner(command: Sequence[str], *, timeout: float, stdin: Optional[str] = None) -> "subprocess.CompletedProcess[str]":
+    def runner(command: Sequence[str], *, timeout: float, stdin: str | None = None) -> "subprocess.CompletedProcess[str]":
         if calls is not None:
             calls.append(command)
         return subprocess.CompletedProcess(args=command, returncode=returncode, stdout=stdout, stderr=stderr)
@@ -46,7 +46,7 @@ def make_source(
     stdout: str = "",
     stderr: str = "",
     returncode: int = 0,
-    calls: Optional[List[Sequence[str]]] = None,
+    calls: list[Sequence[str]] | None = None,
 ) -> ProxmoxSshSource:
     return ProxmoxSshSource(
         target=SshTarget(host="cerulean"),
@@ -55,7 +55,7 @@ def make_source(
     )
 
 
-def documents(*, resources: Sequence[Dict[str, Any]], cluster_status: Sequence[Dict[str, Any]]) -> str:
+def documents(*, resources: Sequence[dict[str, Any]], cluster_status: Sequence[dict[str, Any]]) -> str:
     return json.dumps(list(resources)) + "\n" + json.dumps(list(cluster_status))
 
 
@@ -84,7 +84,7 @@ def test_offline_node_drops_stale_usage_but_keeps_capacity() -> None:
 
 
 def test_missing_readings_stay_unknown_instead_of_zero() -> None:
-    resources: List[Dict[str, Any]] = [{"type": "node", "node": "cerulean", "status": "online"}]
+    resources: list[dict[str, Any]] = [{"type": "node", "node": "cerulean", "status": "online"}]
     snapshot = make_source(stdout=documents(resources=resources, cluster_status=[])).fetch()
 
     assert snapshot.nodes[0].resources.cpu_ratio is None
@@ -92,14 +92,14 @@ def test_missing_readings_stay_unknown_instead_of_zero() -> None:
 
 
 def test_unrecognised_status_is_reported_as_unknown() -> None:
-    resources: List[Dict[str, Any]] = [{"type": "node", "node": "cerulean", "status": "mystery"}]
+    resources: list[dict[str, Any]] = [{"type": "node", "node": "cerulean", "status": "mystery"}]
     snapshot = make_source(stdout=documents(resources=resources, cluster_status=[])).fetch()
 
     assert snapshot.nodes[0].state is NodeState.UNKNOWN
 
 
 def test_guests_without_names_get_a_short_fallback() -> None:
-    resources: List[Dict[str, Any]] = [
+    resources: list[dict[str, Any]] = [
         {"type": "node", "node": "violet", "status": "offline"},
         {"type": "lxc", "vmid": 7, "node": "violet", "status": "unknown"},
     ]
@@ -109,7 +109,7 @@ def test_guests_without_names_get_a_short_fallback() -> None:
 
 
 def test_ssh_command_never_prompts_or_relaxes_host_checking() -> None:
-    calls: List[Sequence[str]] = []
+    calls: list[Sequence[str]] = []
     make_source(stdout="[][]", calls=calls).fetch()
 
     (command,) = calls
@@ -120,12 +120,12 @@ def test_ssh_command_never_prompts_or_relaxes_host_checking() -> None:
 
 
 def test_reachable_node_stays_online_and_keeps_its_figures_without_quorum() -> None:
-    resources: List[Dict[str, Any]] = [{"type": "node", "node": "cerulean", "status": "unknown"}, {"type": "node", "node": "kex", "status": "unknown"}]
-    cluster_status: List[Dict[str, Any]] = [
+    resources: list[dict[str, Any]] = [{"type": "node", "node": "cerulean", "status": "unknown"}, {"type": "node", "node": "kex", "status": "unknown"}]
+    cluster_status: list[dict[str, Any]] = [
         {"type": "node", "name": "cerulean", "ip": "10.0.0.2", "online": 1, "local": 1},
         {"type": "node", "name": "kex", "ip": "10.0.0.1", "online": 0, "local": 0},
     ]
-    local_status: Dict[str, Any] = {"cpu": 0.25, "cpuinfo": {"cpus": 4}, "memory": {"used": 1, "total": 4}}
+    local_status: dict[str, Any] = {"cpu": 0.25, "cpuinfo": {"cpus": 4}, "memory": {"used": 1, "total": 4}}
     stdout: str = documents(resources=resources, cluster_status=cluster_status) + "\n" + json.dumps(local_status)
 
     cerulean, kex = make_source(stdout=stdout).fetch().nodes
@@ -135,7 +135,7 @@ def test_reachable_node_stays_online_and_keeps_its_figures_without_quorum() -> N
 
 
 def test_core_counts_are_kept_for_guests_and_for_offline_nodes() -> None:
-    resources: List[Dict[str, Any]] = [
+    resources: list[dict[str, Any]] = [
         {"type": "node", "node": "cerulean", "status": "online", "maxcpu": 4, "cpu": 0.5},
         {"type": "node", "node": "violet", "status": "offline", "maxcpu": 8, "cpu": 0.9},
         {"type": "lxc", "vmid": 100, "node": "cerulean", "name": "pocket-id", "status": "running", "maxcpu": 2, "cpu": 0.25},
@@ -151,7 +151,7 @@ def test_core_counts_are_kept_for_guests_and_for_offline_nodes() -> None:
 
 
 def test_connections_use_root_by_default() -> None:
-    calls: List[Sequence[str]] = []
+    calls: list[Sequence[str]] = []
     make_source(stdout="[][]", calls=calls).fetch()
 
     assert "root@cerulean" in calls[0]

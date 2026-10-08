@@ -1,14 +1,16 @@
 import subprocess
+from collections.abc import Sequence
 from datetime import UTC, datetime
-from typing import List, Optional, Sequence
 
 import pytest
-
 from homelab_dashboard.node_profiles import DISPLAY_NAMES
 from homelab_dashboard.sources.base import StatusSourceError
 from homelab_dashboard.sources.openwrt_ssh import (
     REMOTE_COMMAND,
-    OpenWrtLeaseSource, build_device_payloads, parse_ipv6_records, parse_leases,
+    OpenWrtLeaseSource,
+    build_device_payloads,
+    parse_ipv6_records,
+    parse_leases,
 )
 from homelab_dashboard.sources.proxmox_ssh import SshTarget
 
@@ -37,12 +39,12 @@ def test_malformed_leases_are_not_presented_as_empty_inventory(text: str) -> Non
 
 class FakeRunner:
     def __init__(self) -> None:
-        self.calls: List[Sequence[str]] = []
+        self.calls: list[Sequence[str]] = []
         self.returncode: int = 0
         self.stdout: str = LEASES
         self.stderr: str = ""
 
-    def __call__(self, command: Sequence[str], *, timeout: float, stdin: Optional[str] = None) -> "subprocess.CompletedProcess[str]":
+    def __call__(self, command: Sequence[str], *, timeout: float, stdin: str | None = None) -> "subprocess.CompletedProcess[str]":
         assert timeout == 8.0
         self.calls.append(command)
         return subprocess.CompletedProcess(args=command, returncode=self.returncode, stdout=self.stdout, stderr=self.stderr)
@@ -50,7 +52,7 @@ class FakeRunner:
 
 def test_router_source_caches_failures_and_retains_last_good_data() -> None:
     runner = FakeRunner()
-    ticks: List[float] = [0.0]
+    ticks: list[float] = [0.0]
     source = OpenWrtLeaseSource(target=SshTarget(host="192.168.10.1"), runner=runner, now=lambda: NOW, clock=lambda: ticks[0])
     first = source.fetch()
     assert len(first["leases"]) == 2
@@ -92,7 +94,7 @@ def test_first_failure_has_no_fake_leases_or_success_timestamp() -> None:
 def test_expired_leases_are_filtered_even_when_the_cache_is_fresh() -> None:
     runner = FakeRunner()
     runner.stdout = "100 aa:bb:cc:dd:ee:ff 192.168.10.2 suika *"
-    seconds: List[int] = [99]
+    seconds: list[int] = [99]
     source = OpenWrtLeaseSource(target=SshTarget(host="router"), runner=runner, now=lambda: datetime.fromtimestamp(seconds[0], UTC))
     assert len(source.fetch()["leases"]) == 1
     seconds[0] = 100
@@ -102,7 +104,7 @@ def test_expired_leases_are_filtered_even_when_the_cache_is_fresh() -> None:
 
 def test_leases_are_grouped_lan_first_and_sorted_by_numeric_ip() -> None:
     runner = FakeRunner()
-    addresses: List[str] = ["172.16.10.170", "192.168.20.30", "192.168.10.10", "172.16.0.2", "192.168.10.2"]
+    addresses: list[str] = ["172.16.10.170", "192.168.20.30", "192.168.10.10", "172.16.0.2", "192.168.10.2"]
     runner.stdout = "\n".join(f"0 aa:bb:cc:dd:ee:ff {address} device *" for address in addresses)
     source = OpenWrtLeaseSource(target=SshTarget(host="router"), runner=runner)
     leases = source.fetch()["leases"]
@@ -139,7 +141,7 @@ def test_named_devices_precede_ip_only_devices_in_both_panels() -> None:
 
 @pytest.mark.parametrize("error", [FileNotFoundError(), subprocess.TimeoutExpired(cmd="ssh", timeout=8)])
 def test_transport_errors_stay_local_to_the_devices_payload(error: Exception) -> None:
-    def runner(command: Sequence[str], *, timeout: float, stdin: Optional[str] = None) -> "subprocess.CompletedProcess[str]":
+    def runner(command: Sequence[str], *, timeout: float, stdin: str | None = None) -> "subprocess.CompletedProcess[str]":
         raise error
 
     source = OpenWrtLeaseSource(target=SshTarget(host="router"), runner=runner)

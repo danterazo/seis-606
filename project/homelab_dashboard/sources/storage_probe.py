@@ -7,7 +7,7 @@ Judging what is abnormal happens on the dashboard side; this script only reports
 import json
 import shutil
 import subprocess
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 # `-n standby` makes smartctl skip a spun-down disk instead of waking it.
 SMARTCTL_TIMEOUT_SECONDS = 20.0
@@ -15,7 +15,7 @@ ZPOOL_TIMEOUT_SECONDS = 15.0
 NVME_FIELDS = ("critical_warning", "available_spare", "available_spare_threshold", "percentage_used", "media_errors")
 
 
-def run(*, command: List[str], timeout: float) -> str:
+def run(*, command: list[str], timeout: float) -> str:
     try:
         completed = subprocess.run(command, capture_output=True, text=True, timeout=timeout, stdin=subprocess.DEVNULL)
     except (subprocess.TimeoutExpired, OSError):
@@ -23,7 +23,7 @@ def run(*, command: List[str], timeout: float) -> str:
     return completed.stdout
 
 
-def run_json(*, command: List[str]) -> Optional[Dict[str, Any]]:
+def run_json(*, command: list[str]) -> dict[str, Any] | None:
     # smartctl exits non-zero to flag SMART findings while still printing valid JSON, so ignore the exit status.
     try:
         document = json.loads(run(command=command, timeout=SMARTCTL_TIMEOUT_SECONDS))
@@ -32,7 +32,7 @@ def run_json(*, command: List[str]) -> Optional[Dict[str, Any]]:
     return document if isinstance(document, dict) else None
 
 
-def describe_disk(*, name: str, report: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+def describe_disk(*, name: str, report: dict[str, Any] | None) -> dict[str, Any]:
     if report is None:
         return {"device": name, "read_failed": True}
     messages = " ".join(str(message.get("string", "")) for message in report.get("smartctl", {}).get("messages", []))
@@ -65,11 +65,11 @@ def describe_disk(*, name: str, report: Optional[Dict[str, Any]]) -> Dict[str, A
     }
 
 
-def collect_disks() -> Optional[List[Dict[str, Any]]]:
+def collect_disks() -> list[dict[str, Any]] | None:
     if shutil.which("smartctl") is None:
         return None
     scan = run_json(command=["smartctl", "--scan", "-j"]) or {}
-    disks: List[Dict[str, Any]] = []
+    disks: list[dict[str, Any]] = []
     for entry in scan.get("devices", []):
         name = entry.get("name")
         if not isinstance(name, str):
@@ -82,11 +82,11 @@ def collect_disks() -> Optional[List[Dict[str, Any]]]:
     return disks
 
 
-def collect_pools() -> Optional[List[Dict[str, Any]]]:
+def collect_pools() -> list[dict[str, Any]] | None:
     if shutil.which("zpool") is None:
         return None
     listing = run(command=["zpool", "list", "-Hp", "-o", "name,health,capacity,size,allocated,free,fragmentation"], timeout=ZPOOL_TIMEOUT_SECONDS)
-    pools: List[Dict[str, Any]] = []
+    pools: list[dict[str, Any]] = []
     for line in listing.splitlines():
         fields = line.split("\t")
         if len(fields) != 7:

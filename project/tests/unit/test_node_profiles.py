@@ -2,7 +2,6 @@ import re
 from typing import Final
 
 import pytest
-
 from homelab_dashboard.node_profiles import FALLBACK_PALETTE, NODE_PROFILES, display_name_for, node_sort_key, profile_for_node
 
 HEX_COLOR: Final[str] = r"#[0-9a-f]{6}"

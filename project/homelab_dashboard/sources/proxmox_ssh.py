@@ -1,9 +1,10 @@
 import json
 import re
 import subprocess
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from datetime import UTC, datetime
-from typing import Callable, Final, List, Optional, Protocol, Sequence, Tuple
+from typing import Final, Protocol
 
 from homelab_dashboard.models import ClusterSnapshot
 from homelab_dashboard.sources.base import StatusSourceError
@@ -13,7 +14,7 @@ SOURCE_LABEL: Final[str] = "Proxmox VE via SSH"
 DEFAULT_USER: Final[str] = "root"
 
 # Public-key only, never prompts, and never relaxes host-key verification.
-SSH_OPTIONS: Final[Tuple[str, ...]] = (
+SSH_OPTIONS: Final[tuple[str, ...]] = (
     "-oBatchMode=yes",
     "-oConnectTimeout=6",
     "-oConnectionAttempts=1",
@@ -24,12 +25,12 @@ SSH_OPTIONS: Final[Tuple[str, ...]] = (
 )
 
 # The documents arrive over one connection; their order matters to the decoder.
-API_PATHS: Final[Tuple[str, ...]] = ("/cluster/resources", "/cluster/status")
+API_PATHS: Final[tuple[str, ...]] = ("/cluster/resources", "/cluster/status")
 # Without quorum Proxmox reports no figures for any node, so the queried node's own status is fetched too (best effort).
 LOCAL_STATUS_COMMAND: Final[str] = "{ pvesh get /nodes/$(hostname -s)/status --output-format json || true; }"
 REMOTE_COMMAND: Final[str] = " && ".join([*(f"pvesh get {path} --output-format json" for path in API_PATHS), LOCAL_STATUS_COMMAND])
 
-_FAILURE_MESSAGES: Final[Tuple[Tuple[str, str], ...]] = (
+_FAILURE_MESSAGES: Final[tuple[tuple[str, str], ...]] = (
     ("host key verification failed", "{target}'s SSH host key is not in this user's known_hosts file."),
     ("permission denied", "SSH key authentication to {target} was refused."),
     ("could not resolve", "{target} could not be resolved."),
@@ -43,10 +44,10 @@ _USER_PATTERN: Final[str] = r"[A-Za-z_][A-Za-z0-9_-]*"
 
 
 class CommandRunner(Protocol):
-    def __call__(self, command: Sequence[str], *, timeout: float, stdin: Optional[str] = None) -> "subprocess.CompletedProcess[str]": ...
+    def __call__(self, command: Sequence[str], *, timeout: float, stdin: str | None = None) -> "subprocess.CompletedProcess[str]": ...
 
 
-def run_command(command: Sequence[str], *, timeout: float, stdin: Optional[str] = None) -> "subprocess.CompletedProcess[str]":
+def run_command(command: Sequence[str], *, timeout: float, stdin: str | None = None) -> "subprocess.CompletedProcess[str]":
     return subprocess.run(command, capture_output=True, text=True, timeout=timeout, check=False, input=stdin)
 
 
@@ -55,7 +56,7 @@ def explain_ssh_failure(*, stderr: str, destination: str, action: str) -> str:
     for needle, template in _FAILURE_MESSAGES:
         if needle in lowered:
             return template.format(target=destination)
-    detail: Optional[str] = stderr.strip().splitlines()[-1][:160] if stderr.strip() else None
+    detail: str | None = stderr.strip().splitlines()[-1][:160] if stderr.strip() else None
     return f"{action} on {destination} failed ({detail or 'no error output'})."
 
 
@@ -79,9 +80,9 @@ class SshTarget:
         return f"{self.user}@{self.host}"
 
 
-def _decode_arrays(*, text: str, count: int) -> List[List[JsonObject]]:
+def _decode_arrays(*, text: str, count: int) -> list[list[JsonObject]]:
     decoder: json.JSONDecoder = json.JSONDecoder()
-    arrays: List[List[JsonObject]] = []
+    arrays: list[list[JsonObject]] = []
     index: int = 0
     for _ in range(count):
         while index < len(text) and text[index].isspace():
@@ -96,7 +97,7 @@ def _decode_arrays(*, text: str, count: int) -> List[List[JsonObject]]:
     return arrays
 
 
-def _decode_local_status(*, text: str) -> Optional[JsonObject]:
+def _decode_local_status(*, text: str) -> JsonObject | None:
     """The third document, if the node returned one; anything unreadable is simply absent."""
     decoder: json.JSONDecoder = json.JSONDecoder()
     index: int = 0
@@ -119,9 +120,9 @@ class ProxmoxSshSource:
     clock: Callable[[], datetime] = _utc_now
 
     def fetch(self) -> ClusterSnapshot:
-        command: Tuple[str, ...] = ("ssh", *SSH_OPTIONS, self.target.destination, REMOTE_COMMAND)
+        command: tuple[str, ...] = ("ssh", *SSH_OPTIONS, self.target.destination, REMOTE_COMMAND)
         try:
-            completed: "subprocess.CompletedProcess[str]" = self.runner(command, timeout=self.timeout_seconds)
+            completed: subprocess.CompletedProcess[str] = self.runner(command, timeout=self.timeout_seconds)
         except FileNotFoundError as error:
             raise StatusSourceError("The OpenSSH client is not installed in this environment.") from error
         except subprocess.TimeoutExpired as error:

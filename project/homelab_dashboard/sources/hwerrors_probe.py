@@ -13,7 +13,7 @@ import subprocess
 import time
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Deque, Dict, List, Optional
+from typing import Any
 
 LOOKBACK = "14 days ago"
 MAX_EVENTS = 3000
@@ -31,7 +31,7 @@ INTERESTING = re.compile(
 )
 
 
-def run(*, command: List[str]) -> Optional[str]:
+def run(*, command: list[str]) -> str | None:
     try:
         completed = subprocess.run(command, capture_output=True, text=True, timeout=COMMAND_TIMEOUT_SECONDS, stdin=subprocess.DEVNULL)
     except (subprocess.TimeoutExpired, OSError):
@@ -39,29 +39,29 @@ def run(*, command: List[str]) -> Optional[str]:
     return completed.stdout if completed.returncode == 0 else None
 
 
-def read_text(*, path: Path) -> Optional[str]:
+def read_text(*, path: Path) -> str | None:
     try:
         return path.read_text(encoding="utf-8").strip()
     except OSError:
         return None
 
 
-def read_count(*, path: Path) -> Optional[int]:
+def read_count(*, path: Path) -> int | None:
     text = read_text(path=path)
     return int(text) if text is not None and text.isdigit() else None
 
 
-def iso(*, microseconds: Any) -> Optional[str]:
+def iso(*, microseconds: Any) -> str | None:
     try:
         return datetime.fromtimestamp(int(microseconds) / 1_000_000, timezone.utc).isoformat()
     except (TypeError, ValueError, OverflowError, OSError):
         return None
 
 
-def collect_edac() -> Optional[List[Dict[str, Any]]]:
+def collect_edac() -> list[dict[str, Any]] | None:
     if not EDAC_ROOT.is_dir():
         return None
-    controllers: List[Dict[str, Any]] = []
+    controllers: list[dict[str, Any]] = []
     for controller in sorted(EDAC_ROOT.glob("mc[0-9]*")):
         dimms = []
         for dimm in sorted(controller.glob("dimm[0-9]*")):
@@ -83,7 +83,7 @@ def collect_edac() -> Optional[List[Dict[str, Any]]]:
     return controllers
 
 
-def stream_journal(*, matches: List[str], source: str) -> Optional[List[Dict[str, Any]]]:
+def stream_journal(*, matches: list[str], source: str) -> list[dict[str, Any]] | None:
     if shutil.which("journalctl") is None:
         return None
     command = ["journalctl", "--no-pager", "-o", "json", "--output-fields=MESSAGE,_BOOT_ID", "--since", LOOKBACK, *matches]
@@ -92,7 +92,7 @@ def stream_journal(*, matches: List[str], source: str) -> Optional[List[Dict[str
     except OSError:
         return None
     assert process.stdout is not None
-    kept: Deque[Dict[str, Any]] = collections.deque(maxlen=MAX_EVENTS)
+    kept: collections.deque[dict[str, Any]] = collections.deque(maxlen=MAX_EVENTS)
     deadline = time.monotonic() + JOURNAL_DEADLINE_SECONDS
     for line in process.stdout:
         if time.monotonic() > deadline:
@@ -113,7 +113,7 @@ def stream_journal(*, matches: List[str], source: str) -> Optional[List[Dict[str
     return list(kept) if process.wait() == 0 or kept else None
 
 
-def collect_events() -> Optional[List[Dict[str, Any]]]:
+def collect_events() -> list[dict[str, Any]] | None:
     kernel = stream_journal(matches=["_TRANSPORT=kernel"], source="kernel")
     rasdaemon = stream_journal(matches=["SYSLOG_IDENTIFIER=rasdaemon"], source="rasdaemon")
     if kernel is None and rasdaemon is None:
@@ -121,7 +121,7 @@ def collect_events() -> Optional[List[Dict[str, Any]]]:
     return sorted([*(kernel or []), *(rasdaemon or [])], key=lambda event: event["timestamp"])[-MAX_EVENTS:]
 
 
-def collect_boots() -> List[Dict[str, Any]]:
+def collect_boots() -> list[dict[str, Any]]:
     output = run(command=["journalctl", "--list-boots", "--no-pager", "-o", "json"]) if shutil.which("journalctl") else None
     try:
         rows = json.loads(output) if output else []
@@ -134,7 +134,7 @@ def collect_boots() -> List[Dict[str, Any]]:
     ]
 
 
-def collect_ras_summary() -> Optional[str]:
+def collect_ras_summary() -> str | None:
     return run(command=["ras-mc-ctl", "--summary"]) if shutil.which("ras-mc-ctl") else None
 
 

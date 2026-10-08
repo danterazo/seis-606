@@ -1,9 +1,8 @@
 import subprocess
+from collections.abc import Sequence
 from datetime import UTC, datetime
-from typing import List, Optional, Sequence
 
 import pytest
-
 from homelab_dashboard.models import ClusterSnapshot, Guest, GuestKind, GuestState, Node, NodeState, Resources
 from homelab_dashboard.services.guests import GuestRebooter
 from homelab_dashboard.sources.base import StatusSourceError
@@ -29,9 +28,9 @@ class FakeSource:
 
 @pytest.mark.parametrize(("kind", "expected"), [(GuestKind.CONTAINER, "pct reboot 112"), (GuestKind.VM, "qm reboot 112")])
 def test_reboot_uses_the_current_node_address_and_server_derived_kind(kind: GuestKind, expected: str) -> None:
-    calls: List[Sequence[str]] = []
+    calls: list[Sequence[str]] = []
 
-    def runner(command: Sequence[str], *, timeout: float, stdin: Optional[str] = None) -> "subprocess.CompletedProcess[str]":
+    def runner(command: Sequence[str], *, timeout: float, stdin: str | None = None) -> "subprocess.CompletedProcess[str]":
         calls.append(command)
         return subprocess.CompletedProcess(args=command, returncode=0, stdout="", stderr="")
 
@@ -46,7 +45,7 @@ def test_reboot_uses_the_current_node_address_and_server_derived_kind(kind: Gues
     assert len(calls) == 1
 
 
-def forbidden_runner(command: Sequence[str], *, timeout: float, stdin: Optional[str] = None) -> "subprocess.CompletedProcess[str]":
+def forbidden_runner(command: Sequence[str], *, timeout: float, stdin: str | None = None) -> "subprocess.CompletedProcess[str]":
     pytest.fail("An invalid request must not run SSH")
 
 
@@ -72,7 +71,7 @@ def test_unavailable_guests_never_run_ssh(guest_state: GuestState, node_state: N
 
 
 def test_command_failure_does_not_claim_a_successful_reboot() -> None:
-    def runner(command: Sequence[str], *, timeout: float, stdin: Optional[str] = None) -> "subprocess.CompletedProcess[str]":
+    def runner(command: Sequence[str], *, timeout: float, stdin: str | None = None) -> "subprocess.CompletedProcess[str]":
         return subprocess.CompletedProcess(args=command, returncode=255, stdout="", stderr="Permission denied")
 
     service = GuestRebooter(source=FakeSource(), runner=runner)
@@ -81,7 +80,7 @@ def test_command_failure_does_not_claim_a_successful_reboot() -> None:
 
 
 def test_command_timeout_warns_against_blind_retries() -> None:
-    def runner(command: Sequence[str], *, timeout: float, stdin: Optional[str] = None) -> "subprocess.CompletedProcess[str]":
+    def runner(command: Sequence[str], *, timeout: float, stdin: str | None = None) -> "subprocess.CompletedProcess[str]":
         raise subprocess.TimeoutExpired(cmd=command, timeout=timeout)
 
     service = GuestRebooter(source=FakeSource(), runner=runner)

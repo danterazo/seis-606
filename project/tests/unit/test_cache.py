@@ -1,8 +1,6 @@
 from datetime import UTC, datetime
-from typing import List
 
 import pytest
-
 from homelab_dashboard.models import ClusterSnapshot
 from homelab_dashboard.sources.base import StatusSourceError
 from homelab_dashboard.sources.cache import CachedStatusSource
@@ -38,7 +36,7 @@ def test_repeated_fetches_within_the_ttl_share_one_query() -> None:
     source, clock = ScriptedSource(), FakeClock()
     cache = make_cache(source=source, clock=clock)
 
-    results: List[str] = [cache.fetch().source for _ in range(3)]
+    results: list[str] = [cache.fetch().source for _ in range(3)]
     clock.now = 3.9
     results.append(cache.fetch().source)
 

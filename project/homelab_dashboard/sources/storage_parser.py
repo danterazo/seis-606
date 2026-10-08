@@ -1,37 +1,37 @@
 import re
 from collections.abc import Mapping
-from typing import Final, List, Optional, Tuple
+from typing import Final
 
 from homelab_dashboard.models import Disk, HealthLevel, Pool, Storage
 from homelab_dashboard.sources.base import StatusSourceError
 from homelab_dashboard.sources.json_values import as_integer, as_text
 
 # (warning, critical) in degrees Celsius; spinning disks are rated far lower than flash.
-HDD_TEMPERATURE_LIMITS: Final[Tuple[int, int]] = (45, 50)
-SOLID_STATE_TEMPERATURE_LIMITS: Final[Tuple[int, int]] = (70, 80)
-POOL_CAPACITY_LIMITS: Final[Tuple[int, int]] = (80, 90)
+HDD_TEMPERATURE_LIMITS: Final[tuple[int, int]] = (45, 50)
+SOLID_STATE_TEMPERATURE_LIMITS: Final[tuple[int, int]] = (70, 80)
+POOL_CAPACITY_LIMITS: Final[tuple[int, int]] = (80, 90)
 NVME_WEAR_WARNING_PERCENT: Final[int] = 90
 
 # ATA attributes whose raw count should be zero on a healthy disk.
-ATA_ZERO_EXPECTED: Final[Tuple[int, ...]] = (5, 10, 184, 187, 196, 197, 198, 199)
+ATA_ZERO_EXPECTED: Final[tuple[int, ...]] = (5, 10, 184, 187, 196, 197, 198, 199)
 
-_SEVERITY: Final[Tuple[HealthLevel, ...]] = (HealthLevel.OK, HealthLevel.UNKNOWN, HealthLevel.WARNING, HealthLevel.CRITICAL)
-_Finding = Tuple[HealthLevel, str]
+_SEVERITY: Final[tuple[HealthLevel, ...]] = (HealthLevel.OK, HealthLevel.UNKNOWN, HealthLevel.WARNING, HealthLevel.CRITICAL)
+_Finding = tuple[HealthLevel, str]
 # AVAIL (idle spare) and INUSE are intentionally excluded; they are not problems.
-_DEVICE_STATES: Final[Tuple[str, ...]] = ("ONLINE", "DEGRADED", "FAULTED", "OFFLINE", "UNAVAIL", "REMOVED")
+_DEVICE_STATES: Final[tuple[str, ...]] = ("ONLINE", "DEGRADED", "FAULTED", "OFFLINE", "UNAVAIL", "REMOVED")
 
 
-def _worst(*, findings: List[_Finding], base: HealthLevel = HealthLevel.OK) -> HealthLevel:
+def _worst(*, findings: list[_Finding], base: HealthLevel = HealthLevel.OK) -> HealthLevel:
     return max([base, *(level for level, _ in findings)], key=_SEVERITY.index)
 
 
-def _disk_kind(*, protocol: Optional[str], rotation_rate: Optional[int]) -> str:
+def _disk_kind(*, protocol: str | None, rotation_rate: int | None) -> str:
     if protocol is not None and protocol.casefold() == "nvme":
         return "nvme"
     return "ssd" if rotation_rate == 0 else "hdd"
 
 
-def _temperature_finding(*, kind: str, celsius: int) -> Optional[_Finding]:
+def _temperature_finding(*, kind: str, celsius: int) -> _Finding | None:
     warning, critical = HDD_TEMPERATURE_LIMITS if kind == "hdd" else SOLID_STATE_TEMPERATURE_LIMITS
     if celsius >= critical:
         return HealthLevel.CRITICAL, f"Temperature {celsius} °C (critical at {critical} °C)"
@@ -40,15 +40,15 @@ def _temperature_finding(*, kind: str, celsius: int) -> Optional[_Finding]:
     return None
 
 
-def _attribute_findings(*, rows: object) -> List[_Finding]:
-    findings: List[_Finding] = []
+def _attribute_findings(*, rows: object) -> list[_Finding]:
+    findings: list[_Finding] = []
     for row in rows if isinstance(rows, list) else []:
         if not isinstance(row, Mapping):
             continue
         name: str = as_text(value=row.get("name")) or f"Attribute {row.get('id')}"
-        value: Optional[int] = as_integer(value=row.get("value"))
-        threshold: Optional[int] = as_integer(value=row.get("thresh"))
-        raw: Optional[int] = as_integer(value=row.get("raw"))
+        value: int | None = as_integer(value=row.get("value"))
+        threshold: int | None = as_integer(value=row.get("thresh"))
+        raw: int | None = as_integer(value=row.get("raw"))
         failed: str = as_text(value=row.get("when_failed")) or ""
         if failed.casefold() == "failing_now" or (value is not None and threshold and value <= threshold):
             detail: str = f"normalized {value} at or below threshold {threshold}" if value is not None else "failing now"
@@ -60,15 +60,15 @@ def _attribute_findings(*, rows: object) -> List[_Finding]:
     return findings
 
 
-def _nvme_findings(*, log: object) -> List[_Finding]:
+def _nvme_findings(*, log: object) -> list[_Finding]:
     if not isinstance(log, Mapping):
         return []
-    findings: List[_Finding] = []
-    warning_flags: Optional[int] = as_integer(value=log.get("critical_warning"))
-    spare: Optional[int] = as_integer(value=log.get("available_spare"))
-    spare_floor: Optional[int] = as_integer(value=log.get("available_spare_threshold"))
-    used: Optional[int] = as_integer(value=log.get("percentage_used"))
-    media_errors: Optional[int] = as_integer(value=log.get("media_errors"))
+    findings: list[_Finding] = []
+    warning_flags: int | None = as_integer(value=log.get("critical_warning"))
+    spare: int | None = as_integer(value=log.get("available_spare"))
+    spare_floor: int | None = as_integer(value=log.get("available_spare_threshold"))
+    used: int | None = as_integer(value=log.get("percentage_used"))
+    media_errors: int | None = as_integer(value=log.get("media_errors"))
     if warning_flags:
         findings.append((HealthLevel.CRITICAL, f"NVMe critical warning flags 0x{warning_flags:02x}"))
     if spare is not None and spare_floor is not None and spare < spare_floor:
@@ -80,24 +80,24 @@ def _nvme_findings(*, log: object) -> List[_Finding]:
     return findings
 
 
-def _parse_disk(*, row: object) -> Optional[Disk]:
+def _parse_disk(*, row: object) -> Disk | None:
     if not isinstance(row, Mapping):
         return None
-    device: Optional[str] = as_text(value=row.get("device"))
+    device: str | None = as_text(value=row.get("device"))
     if device is None:
         return None
-    model: Optional[str] = as_text(value=row.get("model"))
-    serial: Optional[str] = as_text(value=row.get("serial"))
+    model: str | None = as_text(value=row.get("model"))
+    serial: str | None = as_text(value=row.get("serial"))
     if row.get("read_failed") is True:
         return Disk(device=device, model=model, serial=serial, kind="hdd", level=HealthLevel.UNKNOWN, findings=("SMART data could not be read",))
     kind: str = _disk_kind(protocol=as_text(value=row.get("protocol")), rotation_rate=as_integer(value=row.get("rotation_rate")))
     if row.get("standby") is True:
         return Disk(device=device, model=model, serial=serial, kind=kind, level=HealthLevel.OK, standby=True)
-    findings: List[_Finding] = []
+    findings: list[_Finding] = []
     if row.get("smart_passed") is False:
         findings.append((HealthLevel.CRITICAL, "SMART overall health check failed"))
-    temperature: Optional[int] = as_integer(value=row.get("temperature"))
-    hot: Optional[_Finding] = None if temperature is None else _temperature_finding(kind=kind, celsius=temperature)
+    temperature: int | None = as_integer(value=row.get("temperature"))
+    hot: _Finding | None = None if temperature is None else _temperature_finding(kind=kind, celsius=temperature)
     if hot is not None:
         findings.append(hot)
     findings.extend(_attribute_findings(rows=row.get("attributes")))
@@ -114,10 +114,10 @@ def _parse_disk(*, row: object) -> Optional[Disk]:
     )
 
 
-def _pool_status_findings(*, name: str, status: str) -> List[_Finding]:
-    findings: List[_Finding] = []
+def _pool_status_findings(*, name: str, status: str) -> list[_Finding]:
+    findings: list[_Finding] = []
     for line in status.splitlines():
-        fields: List[str] = line.split()
+        fields: list[str] = line.split()
         # The pool's own row in the config table: NAME STATE READ WRITE CKSUM.
         if len(fields) == 5 and fields[0] == name and fields[2:] != ["0", "0", "0"]:
             findings.append((HealthLevel.WARNING, f"Device errors on pool: read {fields[2]}, write {fields[3]}, checksum {fields[4]}"))
@@ -133,18 +133,18 @@ def _pool_status_findings(*, name: str, status: str) -> List[_Finding]:
             findings.append((HealthLevel.CRITICAL, line.strip().removeprefix("errors:").strip().capitalize()))
         if "resilver in progress" in line:
             findings.append((HealthLevel.WARNING, "Resilver in progress"))
-        scrub: Optional["re.Match[str]"] = re.search(r"with (\d+) errors", line)
+        scrub: re.Match[str] | None = re.search(r"with (\d+) errors", line)
         if line.strip().startswith("scan:") and scrub is not None and int(scrub.group(1)) > 0:
             findings.append((HealthLevel.WARNING, f"Last scrub found {scrub.group(1)} errors"))
     return findings
 
 
-def _pool_layout(*, name: str, status: str) -> Optional[str]:
+def _pool_layout(*, name: str, status: str) -> str | None:
     """Summarises the top-level vdevs, e.g. "2 × Mirror (2 Disks per Mirror)"."""
-    groups: List[Tuple[str, int]] = []
-    pool_indent: Optional[int] = None
+    groups: list[tuple[str, int]] = []
+    pool_indent: int | None = None
     for line in status.splitlines():
-        fields: List[str] = line.split()
+        fields: list[str] = line.split()
         indent: int = len(line) - len(line.lstrip())
         if len(fields) >= 2 and fields[0] == name and fields[1] in _DEVICE_STATES:
             pool_indent = indent
@@ -158,47 +158,47 @@ def _pool_layout(*, name: str, status: str) -> Optional[str]:
             groups[-1] = (groups[-1][0], groups[-1][1] + 1)
     if not groups:
         return None
-    kinds: dict[str, List[int]] = {}
+    kinds: dict[str, list[int]] = {}
     for kind, disks in groups:
         kinds.setdefault(kind, []).append(disks)
-    parts: List[str] = []
+    parts: list[str] = []
     for kind, counts in kinds.items():
         label: str = kind.capitalize()
         parts.append(f"{len(counts)} × {label} ({counts[0]} Disks per {label})" if counts[0] > 0 else f"{len(counts)} × Disk (Stripe)")
     return ", ".join(parts)
 
 
-def _pool_scan(*, status: str) -> Optional[str]:
+def _pool_scan(*, status: str) -> str | None:
     """Shortens the scan line to e.g. "resilver Oct 8"."""
     for line in status.splitlines():
         if not line.strip().startswith("scan:"):
             continue
-        kind: Optional["re.Match[str]"] = re.search(r"\b(scrub|resilver)", line)
+        kind: re.Match[str] | None = re.search(r"\b(scrub|resilver)", line)
         if kind is None:
             return None
         label: str = kind.group(1).capitalize()
         if "in progress" in line:
             return f"{label} running"
-        when: Optional["re.Match[str]"] = re.search(r"\b(?:on|since) \w{3} (\w{3})\s+(\d+)", line)
+        when: re.Match[str] | None = re.search(r"\b(?:on|since) \w{3} (\w{3})\s+(\d+)", line)
         return label if when is None else f"{label} {when.group(1)} {when.group(2)}"
     return None
 
 
-def _as_count(*, value: object) -> Optional[int]:
-    text: Optional[str] = as_text(value=value)
+def _as_count(*, value: object) -> int | None:
+    text: str | None = as_text(value=value)
     return int(text) if text is not None and text.isdigit() else as_integer(value=value)
 
 
-def _parse_pool(*, row: object) -> Optional[Pool]:
+def _parse_pool(*, row: object) -> Pool | None:
     if not isinstance(row, Mapping):
         return None
-    name: Optional[str] = as_text(value=row.get("name"))
-    health: Optional[str] = as_text(value=row.get("health"))
+    name: str | None = as_text(value=row.get("name"))
+    health: str | None = as_text(value=row.get("health"))
     if name is None or health is None:
         return None
     capacity_text: str = (as_text(value=row.get("capacity")) or "").rstrip("%")
-    capacity: Optional[int] = int(capacity_text) if capacity_text.isdigit() else None
-    findings: List[_Finding] = []
+    capacity: int | None = int(capacity_text) if capacity_text.isdigit() else None
+    findings: list[_Finding] = []
     if health != "ONLINE":
         findings.append((HealthLevel.WARNING if health == "DEGRADED" else HealthLevel.CRITICAL, f"Pool is {health}"))
     if capacity is not None and capacity >= POOL_CAPACITY_LIMITS[0]:
@@ -227,10 +227,10 @@ def parse_storage(*, document: object) -> Storage:
         raise StatusSourceError("The storage probe returned an unexpected response.")
     disk_rows: object = document.get("disks")
     pool_rows: object = document.get("pools")
-    disks: Tuple[Disk, ...] = tuple(
+    disks: tuple[Disk, ...] = tuple(
         disk for disk in (_parse_disk(row=row) for row in (disk_rows if isinstance(disk_rows, list) else [])) if disk is not None
     )
-    pools: Tuple[Pool, ...] = tuple(
+    pools: tuple[Pool, ...] = tuple(
         pool for pool in (_parse_pool(row=row) for row in (pool_rows if isinstance(pool_rows, list) else [])) if pool is not None
     )
     return Storage(disks=disks, pools=pools, smart_available=isinstance(disk_rows, list), zfs_available=isinstance(pool_rows, list))

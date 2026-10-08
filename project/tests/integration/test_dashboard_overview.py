@@ -2,11 +2,13 @@ import json
 import os
 import subprocess
 import threading
+from collections.abc import Sequence
 from datetime import UTC, datetime
-from typing import Any, Dict, List, Optional, Sequence
+from typing import Any
 from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 
+import server
 from homelab_dashboard.activity_log import ActivityLog
 from homelab_dashboard.config import Settings
 from homelab_dashboard.models import ClusterSnapshot, Guest, GuestKind, GuestState, Node, NodeState, Resources
@@ -15,12 +17,11 @@ from homelab_dashboard.sources.base import StatusSourceError
 from homelab_dashboard.sources.openwrt_ssh import OpenWrtLeaseSource
 from homelab_dashboard.sources.proxmox_ssh import SshTarget
 from homelab_dashboard.ui.dashboard import build_dashboard_snapshot
-import server
 from server import create_server
 
 
 def test_dashboard_snapshot_includes_label_and_node_counts() -> None:
-    snapshot: Dict[str, Any] = build_dashboard_snapshot(
+    snapshot: dict[str, Any] = build_dashboard_snapshot(
         source_label="Mock data",
         nodes=[
             {
@@ -82,9 +83,9 @@ def test_dev_version_reports_web_asset_changes_without_server_restart(tmp_path: 
 
 
 def test_devices_endpoint_is_independent_of_pve_and_can_force_refresh() -> None:
-    calls: List[Sequence[str]] = []
+    calls: list[Sequence[str]] = []
 
-    def runner(command: Sequence[str], *, timeout: float, stdin: Optional[str] = None) -> "subprocess.CompletedProcess[str]":
+    def runner(command: Sequence[str], *, timeout: float, stdin: str | None = None) -> "subprocess.CompletedProcess[str]":
         calls.append(command)
         return subprocess.CompletedProcess(args=command, returncode=0, stdout="0 aa:bb:cc:dd:ee:ff 192.168.10.2 saru *", stderr="")
 
@@ -177,9 +178,9 @@ def test_activity_log_records_access_without_payload_and_can_be_cleared(tmp_path
 
 
 def test_reboot_endpoint_checks_origin_and_validates_commands_before_ssh() -> None:
-    calls: List[Sequence[str]] = []
+    calls: list[Sequence[str]] = []
 
-    def runner(command: Sequence[str], *, timeout: float, stdin: Optional[str] = None) -> "subprocess.CompletedProcess[str]":
+    def runner(command: Sequence[str], *, timeout: float, stdin: str | None = None) -> "subprocess.CompletedProcess[str]":
         calls.append(command)
         return subprocess.CompletedProcess(args=command, returncode=0, stdout="", stderr="")
 

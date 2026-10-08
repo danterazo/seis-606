@@ -1,10 +1,10 @@
-from typing import Any, Dict
+from typing import Any
 
 import pytest
 
 
 @pytest.fixture
-def sample_node_payload() -> Dict[str, Any]:
+def sample_node_payload() -> dict[str, Any]:
     return {
         "node_id": "node-a",
         "name": "Node A",

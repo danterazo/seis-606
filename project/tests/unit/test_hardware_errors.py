@@ -1,7 +1,8 @@
 import json
 import subprocess
+from collections.abc import Sequence
 from datetime import UTC, datetime
-from typing import Any, Dict, List, Optional, Sequence
+from typing import Any
 
 from homelab_dashboard.models import (
     ClusterSnapshot,
@@ -28,11 +29,11 @@ DIMM: str = "CPU_SrcID#0_Ha#0_Chan#0_DIMM#1"
 EDAC_LINE: str = f"EDAC MC0: 1 CE memory read error on {DIMM} (channel:0 slot:1 page:0x17c08ac offset:0xa80 grain:32 syndrome:0x0 - area:DRAM err_code:0001:0090 socket:0 ha:0 channel_mask:1 rank:1)"
 
 
-def event(message: str, *, minute: int = 0, boot_id: str = BOOT, source: str = "kernel") -> Dict[str, str]:
+def event(message: str, *, minute: int = 0, boot_id: str = BOOT, source: str = "kernel") -> dict[str, str]:
     return {"timestamp": f"2025-10-08T10:{minute:02d}:00+00:00", "boot_id": boot_id, "source": source, "message": message}
 
 
-def document(*events: Dict[str, str], **overrides: Any) -> Dict[str, Any]:
+def document(*events: dict[str, str], **overrides: Any) -> dict[str, Any]:
     return {"now": "2025-10-08T11:00:00+00:00", "boot_id": BOOT, "uptime_seconds": 3600.0, "edac": [], "events": list(events), "boots": [], "ras_summary": None, **overrides}
 
 
@@ -129,7 +130,7 @@ def test_perf_sample_rate_message_is_not_a_hardware_error() -> None:
 
 
 def test_edac_counters_and_persisted_rasdaemon_totals() -> None:
-    edac: List[Dict[str, Any]] = [{"controller": "mc0", "corrected": 15, "uncorrected": 0, "dimms": [{"label": DIMM, "corrected": 15, "uncorrected": 0}]}]
+    edac: list[dict[str, Any]] = [{"controller": "mc0", "corrected": 15, "uncorrected": 0, "dimms": [{"label": DIMM, "corrected": 15, "uncorrected": 0}]}]
     summary: str = f"Memory controller events summary:\n\tCorrected on DIMM Label(s): '{DIMM}' location: 0:0:0:1 errors: 20\nNo PCIe AER errors.\nMCE records summary:\n\t3 Internal parity errors\n"
     result: HardwareErrors = parse_hardware_errors(document=document(edac=edac, ras_summary=summary))
     assert (result.memory_counters[0].label, result.memory_counters[0].corrected) == (DIMM, 15)
@@ -145,9 +146,9 @@ def test_boot_and_uptime_are_recorded() -> None:
 
 
 def test_probe_sends_script_and_parses() -> None:
-    sent: List[Optional[str]] = []
+    sent: list[str | None] = []
 
-    def runner(command: Sequence[str], *, timeout: float, stdin: Optional[str] = None) -> "subprocess.CompletedProcess[str]":
+    def runner(command: Sequence[str], *, timeout: float, stdin: str | None = None) -> "subprocess.CompletedProcess[str]":
         sent.append(stdin)
         return subprocess.CompletedProcess(args=list(command), returncode=0, stdout=json.dumps(document(event(EDAC_LINE))), stderr="")
 
@@ -167,30 +168,30 @@ class ErrorStub:
 
 
 def test_monitor_keeps_last_known_state_marked_stale_and_flags_counter_resets() -> None:
-    now: List[float] = [0.0]
+    now: list[float] = [0.0]
     stub: ErrorStub = ErrorStub()
     monitor: HardwareErrorMonitor = HardwareErrorMonitor(probe=stub, ttl_seconds=60, clock=lambda: now[0])
     assert monitor.latest(node_name="kex", reachable=True) is None
     monitor.refresh(node_name="kex", address="10.0.0.1", force=False)
     monitor.wait()
-    first: Optional[HardwareErrors] = monitor.latest(node_name="kex", reachable=True)
+    first: HardwareErrors | None = monitor.latest(node_name="kex", reachable=True)
     assert first is not None and not first.stale and not first.counters_reset
 
     stub.fail = True
     now[0] = 61.0
     monitor.refresh(node_name="kex", address="10.0.0.1", force=False)
     monitor.wait()
-    kept: Optional[HardwareErrors] = monitor.latest(node_name="kex", reachable=True)
+    kept: HardwareErrors | None = monitor.latest(node_name="kex", reachable=True)
     assert kept is not None and kept.stale and kept.error == "ssh down" and kept.incidents == first.incidents
 
-    down: Optional[HardwareErrors] = monitor.latest(node_name="kex", reachable=False)
+    down: HardwareErrors | None = monitor.latest(node_name="kex", reachable=False)
     assert down is not None and down.stale and down.error == UNREACHABLE and down.incidents == first.incidents
 
     stub.fail, stub.boot = False, OLD_BOOT
     now[0] = 200.0
     monitor.refresh(node_name="kex", address="10.0.0.1", force=False)
     monitor.wait()
-    after: Optional[HardwareErrors] = monitor.latest(node_name="kex", reachable=True)
+    after: HardwareErrors | None = monitor.latest(node_name="kex", reachable=True)
     assert after is not None and not after.stale and after.counters_reset
 
 
@@ -221,8 +222,8 @@ def test_hardware_errors_survive_a_node_going_offline() -> None:
     )
     source.fetch()
     source.wait_for_storage_probes()
-    online: Optional[HardwareErrors] = source.fetch().nodes[0].hardware.hardware_errors
+    online: HardwareErrors | None = source.fetch().nodes[0].hardware.hardware_errors
     assert online is not None and online.incidents and not online.stale
     cluster.state = NodeState.OFFLINE
-    offline: Optional[HardwareErrors] = source.fetch().nodes[0].hardware.hardware_errors
+    offline: HardwareErrors | None = source.fetch().nodes[0].hardware.hardware_errors
     assert offline is not None and offline.stale and offline.incidents == online.incidents

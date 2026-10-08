@@ -1,8 +1,8 @@
 import subprocess
 import threading
 import time
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Callable, Dict, Optional, Tuple
 
 from homelab_dashboard.models import ClusterSnapshot, Guest, GuestKind, GuestState, Node, NodeState
 from homelab_dashboard.sources.base import RefreshableStatusSource, StatusSourceError
@@ -17,7 +17,7 @@ class GuestRebooter:
     runner: CommandRunner = run_command
     clock: Callable[[], float] = time.monotonic
     _lock: threading.Lock = field(default_factory=threading.Lock, init=False)
-    _attempted_at: Dict[int, float] = field(default_factory=dict, init=False)
+    _attempted_at: dict[int, float] = field(default_factory=dict, init=False)
 
     def reboot(self, *, vmid: object, node_name: object) -> None:
         if type(vmid) is not int or not 100 <= vmid <= 999999999:
@@ -27,11 +27,11 @@ class GuestRebooter:
         if not self._lock.acquire(blocking=False):
             raise StatusSourceError("Another guest reboot is already being submitted.")
         try:
-            previous: Optional[float] = self._attempted_at.get(vmid)
+            previous: float | None = self._attempted_at.get(vmid)
             if previous is not None and self.clock() - previous < 30:
                 raise StatusSourceError("A reboot was recently attempted for this guest. Check its status before retrying.")
             snapshot: ClusterSnapshot = self.source.fetch_fresh()
-            matches: Tuple[Tuple[Node, Guest], ...] = tuple(
+            matches: tuple[tuple[Node, Guest], ...] = tuple(
                 (node, guest) for node in snapshot.nodes for guest in node.guests if guest.vmid == vmid
             )
             if len(matches) != 1:
@@ -45,10 +45,10 @@ class GuestRebooter:
                 raise ValueError("The guest's node has no reported SSH address.")
             target: SshTarget = SshTarget(host=node.address, user=self.user)
             executable: str = "pct" if guest.kind is GuestKind.CONTAINER else "qm"
-            command: Tuple[str, ...] = ("ssh", *SSH_OPTIONS, target.destination, f"{executable} reboot {vmid}")
+            command: tuple[str, ...] = ("ssh", *SSH_OPTIONS, target.destination, f"{executable} reboot {vmid}")
             self._attempted_at[vmid] = self.clock()
             try:
-                completed: "subprocess.CompletedProcess[str]" = self.runner(command, timeout=self.timeout_seconds)
+                completed: subprocess.CompletedProcess[str] = self.runner(command, timeout=self.timeout_seconds)
             except FileNotFoundError as error:
                 raise StatusSourceError("The OpenSSH client is not installed in this environment.") from error
             except subprocess.TimeoutExpired as error:

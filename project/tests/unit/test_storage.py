@@ -1,10 +1,10 @@
 import json
 import subprocess
+from collections.abc import Sequence
 from datetime import UTC, datetime
-from typing import Any, Dict, List, Optional, Sequence
+from typing import Any
 
 import pytest
-
 from homelab_dashboard.models import ClusterSnapshot, Hardware, HardwareSource, HealthLevel, Node, NodeState, Resources, Storage
 from homelab_dashboard.node_profiles import expected_hardware_for
 from homelab_dashboard.sources.base import StatusSourceError
@@ -13,7 +13,7 @@ from homelab_dashboard.sources.storage_parser import parse_storage
 from homelab_dashboard.sources.storage_ssh import STORAGE_SCRIPT, SshStorageProbe
 
 
-def hdd(**overrides: Any) -> Dict[str, Any]:
+def hdd(**overrides: Any) -> dict[str, Any]:
     return {"device": "/dev/sda", "model": "WDC", "serial": "X1", "protocol": "ATA", "rotation_rate": 7200, "smart_passed": True, "temperature": 38, "attributes": [], **overrides}
 
 
@@ -30,12 +30,12 @@ def test_hdd_temperature_thresholds(celsius: int, level: HealthLevel) -> None:
 
 
 def test_ssd_tolerates_temperatures_that_are_hot_for_an_hdd() -> None:
-    disk: Dict[str, Any] = hdd(rotation_rate=0, temperature=55)
+    disk: dict[str, Any] = hdd(rotation_rate=0, temperature=55)
     assert parse_storage(document={"disks": [disk]}).disks[0].level is HealthLevel.OK
 
 
 def test_failed_smart_and_bad_attributes_are_reported_worst_first() -> None:
-    attributes: List[Dict[str, Any]] = [
+    attributes: list[dict[str, Any]] = [
         {"id": 5, "name": "Reallocated_Sector_Ct", "value": 100, "thresh": 10, "raw": 8, "when_failed": ""},
         {"id": 9, "name": "Power_On_Hours", "value": 90, "thresh": 0, "raw": 5000, "when_failed": ""},
         {"id": 3, "name": "Spin_Up_Time", "value": 5, "thresh": 21, "raw": 0, "when_failed": "FAILING_NOW"},
@@ -48,7 +48,7 @@ def test_failed_smart_and_bad_attributes_are_reported_worst_first() -> None:
 
 
 def test_nvme_health_log_is_judged() -> None:
-    nvme: Dict[str, Any] = {"device": "/dev/nvme0", "protocol": "NVMe", "smart_passed": True, "temperature": 40, "nvme": {"critical_warning": 0, "available_spare": 4, "available_spare_threshold": 10, "percentage_used": 95, "media_errors": 0}}
+    nvme: dict[str, Any] = {"device": "/dev/nvme0", "protocol": "NVMe", "smart_passed": True, "temperature": 40, "nvme": {"critical_warning": 0, "available_spare": 4, "available_spare_threshold": 10, "percentage_used": 95, "media_errors": 0}}
     disk = parse_storage(document={"disks": [nvme]}).disks[0]
     assert disk.kind == "nvme"
     assert disk.level is HealthLevel.CRITICAL
@@ -85,9 +85,9 @@ def test_missing_tools_are_distinguished_from_clean_results() -> None:
 
 
 def test_ssh_probe_sends_script_and_parses() -> None:
-    sent: List[Optional[str]] = []
+    sent: list[str | None] = []
 
-    def runner(command: Sequence[str], *, timeout: float, stdin: Optional[str] = None) -> "subprocess.CompletedProcess[str]":
+    def runner(command: Sequence[str], *, timeout: float, stdin: str | None = None) -> "subprocess.CompletedProcess[str]":
         sent.append(stdin)
         return subprocess.CompletedProcess(args=list(command), returncode=0, stdout=json.dumps({"disks": [hdd()], "pools": []}), stderr="")
 
@@ -121,7 +121,7 @@ class StorageStub:
 
 
 def test_storage_is_probed_in_the_background_cached_and_kept_when_a_probe_fails() -> None:
-    now: List[float] = [0.0]
+    now: list[float] = [0.0]
     stub: StorageStub = StorageStub()
     source: HardwareEnrichedSource = HardwareEnrichedSource(
         cluster=OneNode(), probe=HardwareStub(), expected_hardware=expected_hardware_for, ttl_seconds=3, storage_probe=stub, storage_ttl_seconds=300, clock=lambda: now[0]

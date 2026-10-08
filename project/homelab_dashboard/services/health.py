@@ -1,6 +1,6 @@
-from typing import Any, Dict, Final, Optional
+from typing import Any, Final
 
-_HEALTH_MAP: Final[Dict[str, str]] = {
+_HEALTH_MAP: Final[dict[str, str]] = {
     "running": "healthy",
     "online": "healthy",
     "ok": "healthy",
@@ -18,7 +18,7 @@ _HEALTH_MAP: Final[Dict[str, str]] = {
     "unavailable": "unknown",
 }
 
-_MESSAGES: Final[Dict[str, str]] = {
+_MESSAGES: Final[dict[str, str]] = {
     "failed": "{name} ({workload_id}) failed",
     "degraded": "{name} ({workload_id}) is degraded",
     "healthy": "{name} ({workload_id}) is healthy",
@@ -26,7 +26,7 @@ _MESSAGES: Final[Dict[str, str]] = {
 }
 
 
-def classify_health_state(*, state: Optional[str]) -> str:
+def classify_health_state(*, state: str | None) -> str:
     if state is None:
         return "unknown"
     return _HEALTH_MAP.get(str(state).strip().lower(), "unknown")
@@ -37,11 +37,11 @@ def workload_health_finding(
     workload_id: str,
     name: str,
     reported_state: str,
-    reason: Optional[str] = None,
+    reason: str | None = None,
     restart_count: int = 0,
-    architecture: Optional[str] = None,
-    node_id: Optional[str] = None,
-) -> Dict[str, Any]:
+    architecture: str | None = None,
+    node_id: str | None = None,
+) -> dict[str, Any]:
     category: str = classify_health_state(state=reported_state)
     template: str = _MESSAGES.get(category, "{name} ({workload_id}) is " + reported_state)
 

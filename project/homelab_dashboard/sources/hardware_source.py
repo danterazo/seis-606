@@ -1,9 +1,10 @@
 import threading
 import time
+from collections.abc import Callable
 from concurrent.futures import Future, ThreadPoolExecutor
 from dataclasses import dataclass, field, replace
 from datetime import UTC, datetime
-from typing import Callable, Dict, List, Optional, Protocol, Tuple
+from typing import Protocol
 
 from homelab_dashboard.models import ClusterSnapshot, Hardware, HardwareErrors, Node, NodeState, Storage
 from homelab_dashboard.sources.base import RefreshableStatusSource, StatusSourceError
@@ -41,17 +42,17 @@ class HardwareEnrichedSource:
     probe: HardwareProbe
     expected_hardware: ExpectedHardware
     ttl_seconds: float
-    storage_probe: Optional[StorageProbe] = None
+    storage_probe: StorageProbe | None = None
     storage_ttl_seconds: float = 300.0
-    errors: Optional[HardwareErrorMonitor] = None
+    errors: HardwareErrorMonitor | None = None
     clock: Callable[[], float] = time.monotonic
     now: Callable[[], datetime] = _utc_now
     _lock: threading.Lock = field(default_factory=threading.Lock, init=False)
-    _entries: Dict[str, _Entry] = field(default_factory=dict, init=False)
+    _entries: dict[str, _Entry] = field(default_factory=dict, init=False)
     _storage_lock: threading.Lock = field(default_factory=threading.Lock, init=False)
-    _storage: Dict[str, Storage] = field(default_factory=dict, init=False)
-    _storage_checked: Dict[str, float] = field(default_factory=dict, init=False)
-    _storage_running: Dict[str, "Future[None]"] = field(default_factory=dict, init=False)
+    _storage: dict[str, Storage] = field(default_factory=dict, init=False)
+    _storage_checked: dict[str, float] = field(default_factory=dict, init=False)
+    _storage_running: dict[str, "Future[None]"] = field(default_factory=dict, init=False)
     _storage_pool: ThreadPoolExecutor = field(default_factory=lambda: ThreadPoolExecutor(max_workers=4), init=False)
 
     def fetch(self) -> ClusterSnapshot:
@@ -62,7 +63,7 @@ class HardwareEnrichedSource:
 
     def _enrich(self, *, snapshot: ClusterSnapshot, force: bool) -> ClusterSnapshot:
         with self._lock:
-            stale: List[Node] = [node for node in snapshot.nodes if self._is_probeable(node=node) and (force or self._is_stale(node=node))]
+            stale: list[Node] = [node for node in snapshot.nodes if self._is_probeable(node=node) and (force or self._is_stale(node=node))]
             if stale:
                 with ThreadPoolExecutor(max_workers=len(stale)) as pool:
                     for node, entry in zip(stale, pool.map(self._probe_one, stale)):
@@ -72,13 +73,13 @@ class HardwareEnrichedSource:
                     self._refresh_storage(node=node, force=force)
                     if self.errors is not None:
                         self.errors.refresh(node_name=node.name, address=str(node.address), force=force)
-            nodes: Tuple[Node, ...] = tuple(self._with_hardware(node=node) for node in snapshot.nodes)
-            checked: List[datetime] = [self._entries[node.name].checked_at for node in snapshot.nodes if self._is_probeable(node=node)]
+            nodes: tuple[Node, ...] = tuple(self._with_hardware(node=node) for node in snapshot.nodes)
+            checked: list[datetime] = [self._entries[node.name].checked_at for node in snapshot.nodes if self._is_probeable(node=node)]
         return replace(snapshot, nodes=nodes, fetched_at=max([snapshot.fetched_at, *checked]))
 
     def wait_for_storage_probes(self) -> None:
         with self._storage_lock:
-            running: List["Future[None]"] = list(self._storage_running.values())
+            running: list[Future[None]] = list(self._storage_running.values())
         for future in running:
             future.result()
         if self.errors is not None:
@@ -89,7 +90,7 @@ class HardwareEnrichedSource:
         if self.storage_probe is None:
             return
         with self._storage_lock:
-            checked: Optional[float] = self._storage_checked.get(node.name)
+            checked: float | None = self._storage_checked.get(node.name)
             fresh: bool = checked is not None and self.clock() - checked < self.storage_ttl_seconds
             if node.name in self._storage_running or (fresh and not force):
                 return
@@ -97,7 +98,7 @@ class HardwareEnrichedSource:
 
     def _probe_storage(self, node_name: str, address: str) -> None:
         assert self.storage_probe is not None
-        result: Optional[Storage] = None
+        result: Storage | None = None
         try:
             result = self.storage_probe.probe(node_name=node_name, address=address)
         except StatusSourceError:
@@ -113,7 +114,7 @@ class HardwareEnrichedSource:
         return node.state is NodeState.ONLINE and node.address is not None
 
     def _is_stale(self, *, node: Node) -> bool:
-        entry: Optional[_Entry] = self._entries.get(node.name)
+        entry: _Entry | None = self._entries.get(node.name)
         return entry is None or self.clock() - entry.stored_at >= self.ttl_seconds
 
     def _probe_one(self, node: Node) -> _Entry:
@@ -125,11 +126,11 @@ class HardwareEnrichedSource:
 
     def _with_hardware(self, *, node: Node) -> Node:
         # Hardware error history is kept even while the node is down; that is when it matters most.
-        hardware_errors: Optional[HardwareErrors] = None
+        hardware_errors: HardwareErrors | None = None
         if self.errors is not None:
             hardware_errors = self.errors.latest(node_name=node.name, reachable=self._is_probeable(node=node))
         if self._is_probeable(node=node) and node.name in self._entries:
             with self._storage_lock:
-                storage: Optional[Storage] = self._storage.get(node.name)
+                storage: Storage | None = self._storage.get(node.name)
             return replace(node, hardware=replace(self._entries[node.name].hardware, storage=storage, hardware_errors=hardware_errors))
         return replace(node, hardware=replace(self.expected_hardware(node_name=node.name), hardware_errors=hardware_errors))

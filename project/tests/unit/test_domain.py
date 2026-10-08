@@ -1,4 +1,3 @@
-from typing import List
 
 from homelab_dashboard.domain import Node, Workload, workload_counts_for
 
@@ -22,7 +21,7 @@ def test_workload_counts_are_derived_from_returned_workloads() -> None:
 
 
 def test_duplicate_names_are_kept_distinct_by_node() -> None:
-    nodes: List[Node] = [
+    nodes: list[Node] = [
         Node(
             node_id="node-a",
             name="Node A",

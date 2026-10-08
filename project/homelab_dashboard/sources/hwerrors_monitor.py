@@ -1,8 +1,8 @@
 import threading
 import time
+from collections.abc import Callable
 from concurrent.futures import Future, ThreadPoolExecutor
 from dataclasses import dataclass, field, replace
-from typing import Callable, Dict, List, Optional
 
 from homelab_dashboard.models import HardwareErrors, HealthLevel
 from homelab_dashboard.sources.base import StatusSourceError
@@ -23,15 +23,15 @@ class HardwareErrorMonitor:
     ttl_seconds: float
     clock: Callable[[], float] = time.monotonic
     _lock: threading.Lock = field(default_factory=threading.Lock, init=False)
-    _good: Dict[str, HardwareErrors] = field(default_factory=dict, init=False)
-    _failure: Dict[str, str] = field(default_factory=dict, init=False)
-    _checked: Dict[str, float] = field(default_factory=dict, init=False)
-    _running: Dict[str, "Future[None]"] = field(default_factory=dict, init=False)
+    _good: dict[str, HardwareErrors] = field(default_factory=dict, init=False)
+    _failure: dict[str, str] = field(default_factory=dict, init=False)
+    _checked: dict[str, float] = field(default_factory=dict, init=False)
+    _running: dict[str, "Future[None]"] = field(default_factory=dict, init=False)
     _pool: ThreadPoolExecutor = field(default_factory=lambda: ThreadPoolExecutor(max_workers=4), init=False)
 
     def refresh(self, *, node_name: str, address: str, force: bool) -> None:
         with self._lock:
-            checked: Optional[float] = self._checked.get(node_name)
+            checked: float | None = self._checked.get(node_name)
             fresh: bool = checked is not None and self.clock() - checked < self.ttl_seconds
             if node_name in self._running or (fresh and not force):
                 return
@@ -39,14 +39,14 @@ class HardwareErrorMonitor:
 
     def wait(self) -> None:
         with self._lock:
-            running: List["Future[None]"] = list(self._running.values())
+            running: list[Future[None]] = list(self._running.values())
         for future in running:
             future.result()
 
-    def latest(self, *, node_name: str, reachable: bool) -> Optional[HardwareErrors]:
+    def latest(self, *, node_name: str, reachable: bool) -> HardwareErrors | None:
         with self._lock:
-            good: Optional[HardwareErrors] = self._good.get(node_name)
-            failure: Optional[str] = self._failure.get(node_name)
+            good: HardwareErrors | None = self._good.get(node_name)
+            failure: str | None = self._failure.get(node_name)
         if not reachable:
             failure = UNREACHABLE
         if good is None:
@@ -56,15 +56,15 @@ class HardwareErrorMonitor:
         return good if failure is None else replace(good, stale=True, error=failure)
 
     def _probe(self, node_name: str, address: str) -> None:
-        result: Optional[HardwareErrors] = None
-        failure: Optional[str] = None
+        result: HardwareErrors | None = None
+        failure: str | None = None
         try:
             result = self.probe.probe(node_name=node_name, address=address)
         except StatusSourceError as error:
             failure = str(error)
         with self._lock:
             if result is not None:
-                previous: Optional[HardwareErrors] = self._good.get(node_name)
+                previous: HardwareErrors | None = self._good.get(node_name)
                 rebooted: bool = previous is not None and previous.boot_id != result.boot_id
                 carried: bool = previous is not None and previous.counters_reset and not rebooted
                 self._good[node_name] = replace(result, counters_reset=rebooted or carried)

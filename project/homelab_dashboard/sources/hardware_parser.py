@@ -1,6 +1,6 @@
 import re
 from collections.abc import Mapping
-from typing import Final, List, Optional, Tuple
+from typing import Final
 
 from homelab_dashboard.models import Gpu, GpuState, Hardware, HardwareSource
 from homelab_dashboard.sources.base import StatusSourceError
@@ -10,11 +10,11 @@ JsonObject = Mapping[str, object]
 
 PASSTHROUGH_DRIVER: Final[str] = "vfio-pci"
 # Drivers whose utilization the probe knows how to read.
-MONITORED_DRIVERS: Final[Tuple[str, ...]] = ("amdgpu", "nvidia", "i915", "xe")
+MONITORED_DRIVERS: Final[tuple[str, ...]] = ("amdgpu", "nvidia", "i915", "xe")
 
 # Marketing noise that adds length but no information to a CPU name.
-_CPU_NOISE: Final[Tuple[str, ...]] = (r"\(R\)", r"\(TM\)", r"@\s*[\d.]+\s*[GM]Hz")
-_CPU_FILLER: Final[Tuple[str, ...]] = (r"\bCPU\b", r"\bProcessor\b", r"\b\d+-Cores?\b")
+_CPU_NOISE: Final[tuple[str, ...]] = (r"\(R\)", r"\(TM\)", r"@\s*[\d.]+\s*[GM]Hz")
+_CPU_FILLER: Final[tuple[str, ...]] = (r"\bCPU\b", r"\bProcessor\b", r"\b\d+-Cores?\b")
 
 
 def tidy_cpu_model(*, model: str) -> str:
@@ -27,7 +27,7 @@ def tidy_cpu_model(*, model: str) -> str:
     return re.sub(r"\s+", " ", tidied).strip()
 
 
-def _gpu_state(*, driver: Optional[str]) -> GpuState:
+def _gpu_state(*, driver: str | None) -> GpuState:
     if driver == PASSTHROUGH_DRIVER:
         return GpuState.PASSTHROUGH
     if driver in MONITORED_DRIVERS:
@@ -35,10 +35,10 @@ def _gpu_state(*, driver: Optional[str]) -> GpuState:
     return GpuState.NO_DRIVER
 
 
-def _parse_gpu(*, row: object) -> Optional[Gpu]:
+def _parse_gpu(*, row: object) -> Gpu | None:
     if not isinstance(row, Mapping):
         return None
-    name: Optional[str] = as_text(value=row.get("name"))
+    name: str | None = as_text(value=row.get("name"))
     if name is None:
         return None
     state: GpuState = _gpu_state(driver=as_text(value=row.get("driver")))
@@ -57,12 +57,12 @@ def _parse_gpu(*, row: object) -> Optional[Gpu]:
 def parse_hardware(*, document: object) -> Hardware:
     if not isinstance(document, Mapping):
         raise StatusSourceError("The hardware probe returned an unexpected response.")
-    model: Optional[str] = as_text(value=document.get("cpu_model"))
+    model: str | None = as_text(value=document.get("cpu_model"))
     ecc: object = document.get("ecc_supported")
     rows: object = document.get("gpus")
-    gpus: List[Gpu] = []
+    gpus: list[Gpu] = []
     for row in rows if isinstance(rows, list) else []:
-        parsed: Optional[Gpu] = _parse_gpu(row=row)
+        parsed: Gpu | None = _parse_gpu(row=row)
         if parsed is not None:
             gpus.append(parsed)
     return Hardware(

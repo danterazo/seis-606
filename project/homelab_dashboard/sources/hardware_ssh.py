@@ -2,7 +2,7 @@ import json
 import subprocess
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Final, Protocol, Tuple
+from typing import Final, Protocol
 
 from homelab_dashboard.models import Hardware
 from homelab_dashboard.sources.base import StatusSourceError
@@ -33,9 +33,9 @@ class SshHardwareProbe:
 
     def probe(self, *, node_name: str, address: str) -> Hardware:
         destination: str = SshTarget(host=address, user=self.user).destination
-        command: Tuple[str, ...] = ("ssh", *SSH_OPTIONS, destination, REMOTE_COMMAND)
+        command: tuple[str, ...] = ("ssh", *SSH_OPTIONS, destination, REMOTE_COMMAND)
         try:
-            completed: "subprocess.CompletedProcess[str]" = self.runner(
+            completed: subprocess.CompletedProcess[str] = self.runner(
                 command, timeout=self.timeout_seconds, stdin=PROBE_SCRIPT
             )
         except FileNotFoundError as error:

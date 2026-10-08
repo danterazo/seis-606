@@ -2,7 +2,7 @@ import json
 import threading
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any
 
 
 class ActivityLog:
@@ -11,7 +11,7 @@ class ActivityLog:
         self._lock: threading.Lock = threading.Lock()
 
     def record(self, *, method: str, path: str, status: int, client: str) -> None:
-        entry: Dict[str, Any] = {
+        entry: dict[str, Any] = {
             "timestamp": datetime.now(UTC).isoformat(timespec="seconds"),
             "method": method,
             "path": path,
@@ -23,13 +23,13 @@ class ActivityLog:
             with self.path.open("a", encoding="utf-8") as log_file:
                 log_file.write(json.dumps(entry, ensure_ascii=True) + "\n")
 
-    def read(self, *, limit: int = 500) -> List[Dict[str, Any]]:
+    def read(self, *, limit: int = 500) -> list[dict[str, Any]]:
         with self._lock:
             if not self.path.exists():
                 return []
             with self.path.open("r", encoding="utf-8") as log_file:
-                lines: List[str] = log_file.readlines()[-limit:]
-        entries: List[Dict[str, Any]] = []
+                lines: list[str] = log_file.readlines()[-limit:]
+        entries: list[dict[str, Any]] = []
         for line in lines:
             try:
                 entry: object = json.loads(line)

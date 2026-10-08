@@ -3,14 +3,14 @@ import re
 import subprocess
 import threading
 import time
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
-from typing import Any, Callable, Dict, Final, List, Optional, Tuple
+from typing import Any, Final
 
 from homelab_dashboard.node_profiles import display_name_for
 from homelab_dashboard.sources.base import StatusSourceError
 from homelab_dashboard.sources.proxmox_ssh import SSH_OPTIONS, CommandRunner, SshTarget, explain_ssh_failure, run_command
-
 
 LAN_NETWORK: Final[ipaddress.IPv4Network] = ipaddress.IPv4Network("192.168.0.0/16")
 REMOTE_COMMAND: Final[str] = "cat /tmp/dhcp.leases"
@@ -20,10 +20,10 @@ REMOTE_COMMAND: Final[str] = "cat /tmp/dhcp.leases"
 class DhcpLease:
     address: str
     mac: str
-    hostname: Optional[str]
-    expires_at: Optional[datetime]
+    hostname: str | None
+    expires_at: datetime | None
 
-    def to_payload(self) -> Dict[str, Any]:
+    def to_payload(self) -> dict[str, Any]:
         return {
             "address": self.address,
             "mac": self.mac.upper(),
@@ -34,12 +34,12 @@ class DhcpLease:
         }
 
 
-def parse_leases(*, text: str) -> Tuple[DhcpLease, ...]:
-    leases: List[DhcpLease] = []
+def parse_leases(*, text: str) -> tuple[DhcpLease, ...]:
+    leases: list[DhcpLease] = []
     for line in text.splitlines():
         if not line.strip():
             continue
-        fields: List[str] = line.split()
+        fields: list[str] = line.split()
         if len(fields) != 5:
             raise StatusSourceError("OpenWRT returned an unexpected DHCP lease record.")
         expiry, mac, address, hostname, _client_id = fields
@@ -48,7 +48,7 @@ def parse_leases(*, text: str) -> Tuple[DhcpLease, ...]:
             if seconds < 0 or not re.fullmatch(r"(?:[0-9a-fA-F]{2}:){5}[0-9a-fA-F]{2}", mac):
                 raise ValueError("Invalid lease")
             parsed_address: ipaddress.IPv4Address = ipaddress.IPv4Address(address)
-            expires_at: Optional[datetime] = datetime.fromtimestamp(seconds, UTC) if seconds else None
+            expires_at: datetime | None = datetime.fromtimestamp(seconds, UTC) if seconds else None
         except (ValueError, OverflowError, OSError) as error:
             raise StatusSourceError("OpenWRT returned an invalid DHCP lease record.") from error
         leases.append(DhcpLease(address=str(parsed_address), mac=mac.lower(), hostname=None if hostname == "*" else hostname, expires_at=expires_at))
@@ -60,16 +60,16 @@ class Ipv6Record:
     address: str
     interface: str
     identity: str
-    mac: Optional[str] = None
-    hostname: Optional[str] = None
-    expires_at: Optional[datetime] = None
+    mac: str | None = None
+    hostname: str | None = None
+    expires_at: datetime | None = None
 
 
-def _mac_address(value: object) -> Optional[str]:
+def _mac_address(value: object) -> str | None:
     return value.lower() if isinstance(value, str) and re.fullmatch(r"(?:[0-9a-fA-F]{2}:){5}[0-9a-fA-F]{2}", value) else None
 
 
-def _duid_mac(value: object) -> Optional[str]:
+def _duid_mac(value: object) -> str | None:
     if not isinstance(value, str):
         return None
     try:
@@ -81,15 +81,15 @@ def _duid_mac(value: object) -> Optional[str]:
     return None
 
 
-def parse_ipv6_records(*, leases: object, neighbors: object, now: datetime) -> Tuple[Ipv6Record, ...]:
+def parse_ipv6_records(*, leases: object, neighbors: object, now: datetime) -> tuple[Ipv6Record, ...]:
     if not isinstance(leases, dict) or not isinstance(leases.get("device"), dict) or not isinstance(neighbors, list):
         raise StatusSourceError("OpenWRT returned an unexpected IPv6 discovery response.")
-    records: List[Ipv6Record] = []
-    neighbor_macs: Dict[Tuple[str, str], str] = {}
+    records: list[Ipv6Record] = []
+    neighbor_macs: dict[tuple[str, str], str] = {}
     for row in neighbors:
         if not isinstance(row, dict) or not isinstance(row.get("dev"), str) or not row["dev"].startswith("br-"):
             continue
-        mac: Optional[str] = _mac_address(row.get("lladdr"))
+        mac: str | None = _mac_address(row.get("lladdr"))
         states: object = row.get("state", [])
         if mac is None or not isinstance(states, list) or any(state in ("FAILED", "INCOMPLETE") for state in states):
             continue
@@ -108,9 +108,9 @@ def parse_ipv6_records(*, leases: object, neighbors: object, now: datetime) -> T
             if not isinstance(lease, dict) or not isinstance(lease.get("ipv6-addr"), list):
                 continue
             duid_value: object = lease.get("duid")
-            duid_text: Optional[str] = duid_value.casefold() if isinstance(duid_value, str) and duid_value else None
+            duid_text: str | None = duid_value.casefold() if isinstance(duid_value, str) and duid_value else None
             hostname_value: object = lease.get("hostname")
-            hostname: Optional[str] = hostname_value if isinstance(hostname_value, str) and hostname_value not in ("", "*") else None
+            hostname: str | None = hostname_value if isinstance(hostname_value, str) and hostname_value not in ("", "*") else None
             for reading in lease["ipv6-addr"]:
                 if not isinstance(reading, dict):
                     continue
@@ -123,7 +123,7 @@ def parse_ipv6_records(*, leases: object, neighbors: object, now: datetime) -> T
                     continue
                 if parsed_address.is_multicast or parsed_address.is_unspecified:
                     continue
-                lease_mac: Optional[str] = neighbor_macs.get((interface, str(parsed_address))) or _duid_mac(duid_value)
+                lease_mac: str | None = neighbor_macs.get((interface, str(parsed_address))) or _duid_mac(duid_value)
                 identity: str = f"mac:{lease_mac}" if lease_mac is not None else f"duid:{duid_text}" if duid_text is not None else f"address:{parsed_address}"
                 records.append(Ipv6Record(
                     address=str(parsed_address), interface=interface, identity=identity, mac=lease_mac, hostname=hostname,
@@ -132,8 +132,8 @@ def parse_ipv6_records(*, leases: object, neighbors: object, now: datetime) -> T
     return tuple(records)
 
 
-def _device_sort_key(device: Dict[str, Any]) -> Tuple[bool, bool, int, int, str]:
-    hostname: Optional[str] = device["hostname"]
+def _device_sort_key(device: dict[str, Any]) -> tuple[bool, bool, int, int, str]:
+    hostname: str | None = device["hostname"]
     unnamed: bool = hostname is None
     if hostname is not None:
         try:
@@ -147,19 +147,19 @@ def _device_sort_key(device: Dict[str, Any]) -> Tuple[bool, bool, int, int, str]
     return (outside_lan, unnamed, address.version, int(address), device["mac"] or "")
 
 
-def build_device_payloads(*, leases: Tuple[DhcpLease, ...], ipv6: Tuple[Ipv6Record, ...], now: datetime) -> List[Dict[str, Any]]:
-    devices: List[Dict[str, Any]] = [lease.to_payload() for lease in leases if lease.expires_at is None or lease.expires_at > now]
-    by_mac: Dict[str, List[Dict[str, Any]]] = {}
+def build_device_payloads(*, leases: tuple[DhcpLease, ...], ipv6: tuple[Ipv6Record, ...], now: datetime) -> list[dict[str, Any]]:
+    devices: list[dict[str, Any]] = [lease.to_payload() for lease in leases if lease.expires_at is None or lease.expires_at > now]
+    by_mac: dict[str, list[dict[str, Any]]] = {}
     for device in devices:
         device["ipv6_addresses"] = []
         by_mac.setdefault(device["mac"].lower(), []).append(device)
-    ipv6_only: Dict[Tuple[str, str], Dict[str, Any]] = {}
+    ipv6_only: dict[tuple[str, str], dict[str, Any]] = {}
     for record in ipv6:
         if record.expires_at is not None and record.expires_at <= now:
             continue
-        targets: List[Dict[str, Any]] = by_mac.get(record.mac, []) if record.mac is not None else []
+        targets: list[dict[str, Any]] = by_mac.get(record.mac, []) if record.mac is not None else []
         if not targets:
-            key: Tuple[str, str] = (record.interface, record.identity)
+            key: tuple[str, str] = (record.interface, record.identity)
             if key not in ipv6_only:
                 ipv6_only[key] = {
                     "address": None, "mac": record.mac.upper() if record.mac is not None else None,
@@ -193,15 +193,15 @@ class OpenWrtLeaseSource:
     clock: Callable[[], float] = time.monotonic
     now: Callable[[], datetime] = _utc_now
     _lock: threading.Lock = field(default_factory=threading.Lock, init=False)
-    _stored_at: Optional[float] = field(default=None, init=False)
-    _fetched_at: Optional[datetime] = field(default=None, init=False)
-    _leases: Tuple[DhcpLease, ...] = field(default=(), init=False)
-    _error: Optional[str] = field(default=None, init=False)
+    _stored_at: float | None = field(default=None, init=False)
+    _fetched_at: datetime | None = field(default=None, init=False)
+    _leases: tuple[DhcpLease, ...] = field(default=(), init=False)
+    _error: str | None = field(default=None, init=False)
 
-    def _read(self) -> Tuple[DhcpLease, ...]:
-        command: Tuple[str, ...] = ("ssh", *SSH_OPTIONS, self.target.destination, REMOTE_COMMAND)
+    def _read(self) -> tuple[DhcpLease, ...]:
+        command: tuple[str, ...] = ("ssh", *SSH_OPTIONS, self.target.destination, REMOTE_COMMAND)
         try:
-            completed: "subprocess.CompletedProcess[str]" = self.runner(command, timeout=self.timeout_seconds)
+            completed: subprocess.CompletedProcess[str] = self.runner(command, timeout=self.timeout_seconds)
         except FileNotFoundError as error:
             raise StatusSourceError("The OpenSSH client is not installed in this environment.") from error
         except subprocess.TimeoutExpired as error:
@@ -210,7 +210,7 @@ class OpenWrtLeaseSource:
             raise StatusSourceError(explain_ssh_failure(stderr=completed.stderr, destination=self.target.destination, action="Reading DHCP leases"))
         return parse_leases(text=completed.stdout)
 
-    def fetch(self, *, force: bool = False) -> Dict[str, Any]:
+    def fetch(self, *, force: bool = False) -> dict[str, Any]:
         with self._lock:
             if force or self._stored_at is None or self.clock() - self._stored_at >= self.ttl_seconds:
                 try:

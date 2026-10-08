@@ -1,10 +1,10 @@
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any
 
 from homelab_dashboard.presentation import present_payload
 
 
-def make_payload(*, nodes: List[Dict[str, Any]]) -> Dict[str, Any]:
+def make_payload(*, nodes: list[dict[str, Any]]) -> dict[str, Any]:
     return {"source": "test", "fetched_at": "2026-10-07T00:00:00+00:00", "nodes": nodes}
 
 

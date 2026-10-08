@@ -9,7 +9,7 @@ from functools import partial
 from http import HTTPStatus
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from typing import Any, Dict, Final, Optional, Tuple, Union
+from typing import Any, Final, Union
 from urllib.parse import parse_qs, urlparse
 
 from homelab_dashboard.activity_log import ActivityLog
@@ -23,9 +23,9 @@ from homelab_dashboard.sources.hardware_source import HardwareEnrichedSource
 from homelab_dashboard.sources.hardware_ssh import SshHardwareProbe
 from homelab_dashboard.sources.hwerrors_monitor import HardwareErrorMonitor
 from homelab_dashboard.sources.hwerrors_ssh import SshHardwareErrorProbe
-from homelab_dashboard.sources.storage_ssh import SshStorageProbe
 from homelab_dashboard.sources.openwrt_ssh import OpenWrtLeaseSource
 from homelab_dashboard.sources.proxmox_ssh import ProxmoxSshSource, SshTarget
+from homelab_dashboard.sources.storage_ssh import SshStorageProbe
 
 WEB_ROOT: Final[Path] = Path(__file__).resolve().parent / "web"
 NODE_IMAGE_DIR: Final[Path] = WEB_ROOT / "images" / "nodes"
@@ -38,7 +38,7 @@ BOOT_ID: Final[str] = str(time.time_ns())
 CLEAR_LOGS_PATH: Final[str] = "/api/logs/clear"
 LOG_PATH: Final[Path] = Path(__file__).resolve().parent / "logs" / "access.jsonl"
 
-RequestSocket = Union[socket.socket, Tuple[bytes, socket.socket]]
+RequestSocket = Union[socket.socket, tuple[bytes, socket.socket]]
 
 
 class DashboardHandler(SimpleHTTPRequestHandler):
@@ -50,19 +50,19 @@ class DashboardHandler(SimpleHTTPRequestHandler):
         *,
         source: RefreshableStatusSource,
         activity_log: ActivityLog,
-        devices: Optional[OpenWrtLeaseSource] = None,
-        rebooter: Optional[GuestRebooter] = None,
+        devices: OpenWrtLeaseSource | None = None,
+        rebooter: GuestRebooter | None = None,
     ) -> None:
         self.source: RefreshableStatusSource = source
         self.activity_log: ActivityLog = activity_log
-        self.devices: Optional[OpenWrtLeaseSource] = devices
-        self.rebooter: Optional[GuestRebooter] = rebooter
+        self.devices: OpenWrtLeaseSource | None = devices
+        self.rebooter: GuestRebooter | None = rebooter
         super().__init__(request, client_address, server, directory=str(WEB_ROOT))
 
     def do_GET(self) -> None:
         url = urlparse(self.path)
         if url.path == DEV_VERSION_PATH and os.environ.get("DASHBOARD_DEV") == "1":
-            assets: Dict[str, int] = {
+            assets: dict[str, int] = {
                 f"/{path.relative_to(WEB_ROOT).as_posix()}": path.stat().st_mtime_ns
                 for path in sorted(WEB_ROOT.rglob("*"))
                 if path.is_file()
@@ -137,7 +137,7 @@ class DashboardHandler(SimpleHTTPRequestHandler):
             or self.headers.get("X-Homelab-Action") != action
         )
 
-    def log_request(self, code: Union[int, str] = "-", size: Union[int, str] = "-") -> None:
+    def log_request(self, code: int | str = "-", size: int | str = "-") -> None:
         request_path: str = urlparse(self.path).path[:512]
         try:
             self.activity_log.record(
@@ -149,7 +149,7 @@ class DashboardHandler(SimpleHTTPRequestHandler):
         except OSError as error:
             self.log_message("Could not write activity log: %s", error)
 
-    def _status_payload(self, *, force_refresh: bool) -> Dict[str, Any]:
+    def _status_payload(self, *, force_refresh: bool) -> dict[str, Any]:
         snapshot = self.source.fetch_fresh() if force_refresh else self.source.fetch()
         return present_payload(payload=snapshot.to_payload(), image_dir=NODE_IMAGE_DIR)
 
@@ -157,7 +157,7 @@ class DashboardHandler(SimpleHTTPRequestHandler):
         self.send_header("Cache-Control", "no-store")
         super().end_headers()
 
-    def _send_json(self, *, status: HTTPStatus, payload: Dict[str, Any]) -> None:
+    def _send_json(self, *, status: HTTPStatus, payload: dict[str, Any]) -> None:
         body: bytes = json.dumps(payload).encode("utf-8")
         self.send_response(status)
         self.send_header("Content-Type", "application/json; charset=utf-8")
@@ -171,8 +171,8 @@ class DashboardHandler(SimpleHTTPRequestHandler):
 
 
 def create_server(
-    *, settings: Settings, source: RefreshableStatusSource, activity_log: Optional[ActivityLog] = None, devices: Optional[OpenWrtLeaseSource] = None,
-    rebooter: Optional[GuestRebooter] = None,
+    *, settings: Settings, source: RefreshableStatusSource, activity_log: ActivityLog | None = None, devices: OpenWrtLeaseSource | None = None,
+    rebooter: GuestRebooter | None = None,
 ) -> ThreadingHTTPServer:
     log_store: ActivityLog = activity_log if activity_log is not None else ActivityLog(LOG_PATH)
     return ThreadingHTTPServer(
