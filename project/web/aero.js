@@ -4,7 +4,7 @@
  * @typedef {{ cpu_ratio: number | null, cpu_cores: number | null, memory_used_bytes: number | null, memory_total_bytes: number | null }} Resources
  * @typedef {"running" | "stopped" | "paused" | "unknown"} GuestState
  * @typedef {{ vmid: number, name: string, display_name?: string, node: string, kind: "vm" | "container", state: GuestState, resources: Resources }} Guest
- * @typedef {{ cpu_model: string | null, ecc_supported?: boolean | null, zfs_arc_bytes?: number | null, zfs_arc_max_bytes?: number | null, storage?: StorageHealth | null, hardware_errors?: HardwareErrors | null, source: "live" | "expected" | "unknown" }} Hardware
+ * @typedef {{ cpu_model: string | null, cpu_cores: number | null, cpu_threads: number | null, ecc_supported?: boolean | null, zfs_arc_bytes?: number | null, zfs_arc_max_bytes?: number | null, storage?: StorageHealth | null, hardware_errors?: HardwareErrors | null, source: "live" | "expected" | "unknown" }} Hardware
  * @typedef {{ timestamp: string, boot_id: string, source: string, message: string }} RawEvent
  * @typedef {{ category: "ecc_memory" | "cpu_mce" | "page_offline" | "pcie" | "storage_path", classification: "corrected" | "uncorrected" | "unspecified", title: string, level: HealthLevel, count: number, first_seen: string, last_seen: string, last_hour: number, last_day: number, boot_id: string, current_boot: boolean, boots_seen: number, recurrence: string[], fields: [string, string][], raw: RawEvent[] }} ErrorIncident
  * @typedef {{ boot_id: string, first_seen: string | null, last_seen: string | null, current: boolean }} BootRecord
@@ -585,7 +585,7 @@ function renderOverview(nodes) {
     const arcMax = node.hardware.zfs_arc_max_bytes ?? null;
     const ramTitle = arcBytes === null ? undefined : `ZFS ARC (amber): ${formatBytes(arcBytes)}`;
     const gauges = [gauge({ label: "CPU", value: cpuPercent(node.resources), tone: "cpu" }), gauge({ label: "RAM", value: memoryPercent(node.resources), tone: "memory", arcValue: arcPercent(node), title: ramTitle })];
-    const modelLine = cpuModelLine(node.hardware, node.resources);
+    const modelLine = cpuModelLine(node.hardware);
     const { memory_used_bytes: used, memory_total_bytes: total } = node.resources;
     const memoryText = used !== null && total !== null ? formatMemoryPair({ used, total }) : formatRam(node.resources);
     const hardwareDetails =
