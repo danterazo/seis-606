@@ -25,6 +25,7 @@
         <button class="aqua-button" id="refresh-button" type="button">
           <span class="refresh-icon" aria-hidden="true">↻</span> Refresh
         </button>
+        <button class="aqua-button log-button" id="logs-button" type="button">Logs</button>
       </div>
     </header>
 
@@ -89,5 +90,17 @@
                 ||----w |
                 ||     ||</pre></div>
     </footer>
+
+    <dialog class="logs-dialog" id="logs-dialog" aria-labelledby="logs-heading">
+      <div class="logs-header">
+        <h2 id="logs-heading">Activity log</h2>
+        <button class="log-icon-button" id="close-logs-button" type="button" aria-label="Close activity log" title="Close">×</button>
+      </div>
+      <div class="logs-toolbar">
+        <p id="logs-status" role="status" aria-live="polite">Loading…</p>
+        <button class="log-action-button" id="clear-logs-button" type="button">Clear log</button>
+      </div>
+      <ol class="logs-list" id="logs-list"></ol>
+    </dialog>
   </body>
 </html>

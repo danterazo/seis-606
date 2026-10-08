@@ -10,9 +10,10 @@ from pathlib import Path
 from typing import Any, Dict, Final, Optional, Tuple, Union
 from urllib.parse import parse_qs, urlparse
 
+from homelab_dashboard.activity_log import ActivityLog
 from homelab_dashboard.config import Settings
-from homelab_dashboard.presentation import present_payload
 from homelab_dashboard.node_profiles import expected_hardware_for
+from homelab_dashboard.presentation import present_payload
 from homelab_dashboard.services.guests import GuestRebooter
 from homelab_dashboard.sources.base import RefreshableStatusSource, StatusSource, StatusSourceError
 from homelab_dashboard.sources.cache import CachedStatusSource
@@ -26,6 +27,9 @@ NODE_IMAGE_DIR: Final[Path] = WEB_ROOT / "images" / "nodes"
 STATUS_PATH: Final[str] = "/api/status"
 DEVICES_PATH: Final[str] = "/api/devices"
 REBOOT_PATH: Final[str] = "/api/guests/reboot"
+LOGS_PATH: Final[str] = "/api/logs"
+CLEAR_LOGS_PATH: Final[str] = "/api/logs/clear"
+LOG_PATH: Final[Path] = Path(__file__).resolve().parent / "logs" / "access.jsonl"
 
 RequestSocket = Union[socket.socket, Tuple[bytes, socket.socket]]
 
@@ -38,16 +42,21 @@ class DashboardHandler(SimpleHTTPRequestHandler):
         server: socketserver.BaseServer,
         *,
         source: RefreshableStatusSource,
+        activity_log: ActivityLog,
         devices: Optional[OpenWrtLeaseSource] = None,
         rebooter: Optional[GuestRebooter] = None,
     ) -> None:
         self.source: RefreshableStatusSource = source
+        self.activity_log: ActivityLog = activity_log
         self.devices: Optional[OpenWrtLeaseSource] = devices
         self.rebooter: Optional[GuestRebooter] = rebooter
         super().__init__(request, client_address, server, directory=str(WEB_ROOT))
 
     def do_GET(self) -> None:
         url = urlparse(self.path)
+        if url.path == LOGS_PATH:
+            self._send_json(status=HTTPStatus.OK, payload={"entries": self.activity_log.read()})
+            return
         if url.path == DEVICES_PATH:
             if self.devices is None:
                 self._send_json(status=HTTPStatus.SERVICE_UNAVAILABLE, payload={"error": "OpenWRT lease source is not configured."})
@@ -64,18 +73,18 @@ class DashboardHandler(SimpleHTTPRequestHandler):
             self._send_json(status=HTTPStatus.SERVICE_UNAVAILABLE, payload={"error": str(error)})
 
     def do_POST(self) -> None:
-        if urlparse(self.path).path != REBOOT_PATH:
+        request_path: str = urlparse(self.path).path
+        if request_path == CLEAR_LOGS_PATH:
+            if not self._is_local_same_origin_request(action="clear-logs"):
+                self._send_json(status=HTTPStatus.FORBIDDEN, payload={"error": "Log controls require a same-origin localhost request."})
+                return
+            self.activity_log.clear()
+            self._send_json(status=HTTPStatus.OK, payload={"message": "Activity log cleared."})
+            return
+        if request_path != REBOOT_PATH:
             self._send_json(status=HTTPStatus.NOT_FOUND, payload={"error": "Unknown action."})
             return
-        host: str = self.headers.get("Host", "")
-        origin = urlparse(self.headers.get("Origin", ""))
-        if (
-            not ipaddress.ip_address(self.client_address[0]).is_loopback
-            or urlparse(f"//{host}").hostname not in ("localhost", "127.0.0.1", "::1")
-            or origin.scheme not in ("http", "https")
-            or origin.netloc != host
-            or self.headers.get("X-Homelab-Action") != "reboot"
-        ):
+        if not self._is_local_same_origin_request(action="reboot"):
             self._send_json(status=HTTPStatus.FORBIDDEN, payload={"error": "Guest controls require a same-origin localhost request."})
             return
         if self.headers.get("Content-Type", "").split(";", 1)[0].strip() != "application/json":
@@ -102,6 +111,29 @@ class DashboardHandler(SimpleHTTPRequestHandler):
         else:
             self._send_json(status=HTTPStatus.OK, payload={"message": "Reboot command submitted."})
 
+    def _is_local_same_origin_request(self, *, action: str) -> bool:
+        host: str = self.headers.get("Host", "")
+        origin = urlparse(self.headers.get("Origin", ""))
+        return not (
+            not ipaddress.ip_address(self.client_address[0]).is_loopback
+            or urlparse(f"//{host}").hostname not in ("localhost", "127.0.0.1", "::1")
+            or origin.scheme not in ("http", "https")
+            or origin.netloc != host
+            or self.headers.get("X-Homelab-Action") != action
+        )
+
+    def log_request(self, code: Union[int, str] = "-", size: Union[int, str] = "-") -> None:
+        request_path: str = urlparse(self.path).path[:512]
+        try:
+            self.activity_log.record(
+                method=self.command,
+                path=request_path,
+                status=int(code),
+                client=self.client_address[0],
+            )
+        except OSError as error:
+            self.log_message("Could not write activity log: %s", error)
+
     def _status_payload(self, *, force_refresh: bool) -> Dict[str, Any]:
         snapshot = self.source.fetch_fresh() if force_refresh else self.source.fetch()
         return present_payload(payload=snapshot.to_payload(), image_dir=NODE_IMAGE_DIR)
@@ -124,10 +156,20 @@ class DashboardHandler(SimpleHTTPRequestHandler):
 
 
 def create_server(
-    *, settings: Settings, source: RefreshableStatusSource, devices: Optional[OpenWrtLeaseSource] = None,
+    *, settings: Settings, source: RefreshableStatusSource, activity_log: Optional[ActivityLog] = None, devices: Optional[OpenWrtLeaseSource] = None,
     rebooter: Optional[GuestRebooter] = None,
 ) -> ThreadingHTTPServer:
-    return ThreadingHTTPServer((settings.host, settings.port), partial(DashboardHandler, source=source, devices=devices, rebooter=rebooter))
+    log_store: ActivityLog = activity_log if activity_log is not None else ActivityLog(LOG_PATH)
+    return ThreadingHTTPServer(
+        (settings.host, settings.port),
+        partial(
+            DashboardHandler,
+            source=source,
+            activity_log=log_store,
+            devices=devices,
+            rebooter=rebooter,
+        ),
+    )
 
 
 def main() -> None:

@@ -13,11 +13,14 @@
  * @typedef {{ address: string, mac: string, hostname: string | null, display_name: string, network_group: "lan" | "guest_iot", expires_at: string | null }} DhcpLease
  * @typedef {{ source: string, router: string, fetched_at: string | null, stale: boolean, error: string | null, leases: DhcpLease[] }} DevicesSnapshot
  * @typedef {{ pending: boolean, message: string, error: boolean, retryAt: number }} GuestActionState
+ * @typedef {{ timestamp: string, method: string, path: string, status: number, client: string }} ActivityLogEntry
  */
 
 const STATUS_URL = "/api/status";
 const DEVICES_URL = "/api/devices";
 const REBOOT_URL = "/api/guests/reboot";
+const LOGS_URL = "/api/logs";
+const CLEAR_LOGS_URL = "/api/logs/clear";
 const DEVICES_INTERVAL_MS = 10_000;
 const REFRESH_INTERVAL_MS = 1_000;
 const MAX_TOPOLOGY_GUESTS = 12;
@@ -543,6 +546,52 @@ async function refreshDevices({ force = false } = {}) {
   }
 }
 
+async function loadActivityLog() {
+  const status = required("#logs-status");
+  status.textContent = "Loading…";
+  try {
+    const response = await fetch(LOGS_URL, { cache: "no-store" });
+    /** @type {unknown} */
+    const payload = await response.json();
+    if (!response.ok) throw new Error(errorMessage(payload));
+    const entries = payload && typeof payload === "object" && "entries" in payload && Array.isArray(payload.entries)
+      ? /** @type {ActivityLogEntry[]} */ (payload.entries)
+      : [];
+    const rows = entries.map((entry) => el("li", { className: "log-entry" }, [
+      el("span", { className: `log-status log-status-${Math.floor(entry.status / 100)}`, text: String(entry.status) }),
+      el("div", { className: "log-detail" }, [
+        el("code", { className: "log-path", text: `${entry.method} ${entry.path}` }),
+        el("span", { className: "log-meta", text: `${new Date(entry.timestamp).toLocaleString()} · ${entry.client}` }),
+      ]),
+    ]));
+    required("#logs-list").replaceChildren(...rows);
+    status.textContent = `${entries.length} ${entries.length === 1 ? "record" : "records"} · newest 500`;
+  } catch (error) {
+    required("#logs-list").replaceChildren();
+    status.textContent = error instanceof Error ? error.message : "Activity log is unavailable.";
+  }
+}
+
+async function clearActivityLog() {
+  if (!window.confirm("Clear the activity log? This cannot be undone.")) return;
+  const button = required("#clear-logs-button");
+  button.setAttribute("disabled", "");
+  try {
+    const response = await fetch(CLEAR_LOGS_URL, {
+      method: "POST",
+      headers: { "X-Homelab-Action": "clear-logs" },
+    });
+    /** @type {unknown} */
+    const payload = await response.json();
+    if (!response.ok) throw new Error(errorMessage(payload));
+    await loadActivityLog();
+  } catch (error) {
+    required("#logs-status").textContent = error instanceof Error ? error.message : "Could not clear the activity log.";
+  } finally {
+    button.removeAttribute("disabled");
+  }
+}
+
 function render() {
   const nodes = state.snapshot?.nodes ?? [];
   renderBanner();
@@ -635,6 +684,16 @@ required("#refresh-button").addEventListener("click", () => {
   void refresh({ force: true });
   void refreshDevices({ force: true });
 });
+required("#logs-button").addEventListener("click", () => {
+  const dialog = required("#logs-dialog");
+  if (dialog instanceof HTMLDialogElement) dialog.showModal();
+  void loadActivityLog();
+});
+required("#close-logs-button").addEventListener("click", () => {
+  const dialog = required("#logs-dialog");
+  if (dialog instanceof HTMLDialogElement) dialog.close();
+});
+required("#clear-logs-button").addEventListener("click", () => void clearActivityLog());
 
 const selectedHaiku = HEADER_HAIKUS[Math.floor(Math.random() * HEADER_HAIKUS.length)];
 required("#haiku").replaceChildren(...selectedHaiku.map((line, index) => el("span", { text: index < selectedHaiku.length - 1 ? `${line} /` : line })));

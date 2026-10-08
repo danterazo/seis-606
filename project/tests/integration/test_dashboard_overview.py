@@ -6,6 +6,7 @@ from typing import Any, Dict, List, Optional, Sequence
 from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 
+from homelab_dashboard.activity_log import ActivityLog
 from homelab_dashboard.config import Settings
 from homelab_dashboard.models import ClusterSnapshot, Guest, GuestKind, GuestState, Node, NodeState, Resources
 from homelab_dashboard.services.guests import GuestRebooter
@@ -75,6 +76,60 @@ def test_devices_endpoint_is_independent_of_pve_and_can_force_refresh() -> None:
             assert json.load(error)["error"] == "PVE unavailable"
         else:
             raise AssertionError("Expected PVE to be unavailable")
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=5)
+
+
+def test_activity_log_records_access_without_payload_and_can_be_cleared(tmp_path: Any) -> None:
+    class UnavailablePve:
+        def fetch(self) -> ClusterSnapshot:
+            raise StatusSourceError("PVE unavailable")
+
+        def fetch_fresh(self) -> ClusterSnapshot:
+            return self.fetch()
+
+    activity_log = ActivityLog(tmp_path / "logs" / "access.jsonl")
+    server = create_server(settings=Settings.from_env(environ={"PORT": "0"}), source=UnavailablePve(), activity_log=activity_log)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    base = f"http://127.0.0.1:{server.server_port}"
+    try:
+        try:
+            with urlopen(f"{base}/api/status?refresh=1", timeout=5):
+                raise AssertionError("Expected the unavailable PVE source to return an error")
+        except HTTPError as error:
+            assert error.code == 503
+        with urlopen(f"{base}/api/logs", timeout=5) as response:
+            entries = json.load(response)["entries"]
+        status_entry = next(entry for entry in entries if entry["path"] == "/api/status")
+        assert status_entry["method"] == "GET"
+        assert status_entry["status"] == 503
+        assert set(status_entry) == {"timestamp", "method", "path", "status", "client"}
+        assert "refresh" not in status_entry["path"]
+        assert "PVE unavailable" not in json.dumps(entries)
+
+        unauthorized = Request(f"{base}/api/logs/clear", data=b"", method="POST", headers={
+            "Origin": "http://evil.example", "X-Homelab-Action": "clear-logs",
+        })
+        try:
+            urlopen(unauthorized, timeout=5)
+        except HTTPError as error:
+            assert error.code == 403
+        else:
+            raise AssertionError("Expected a cross-origin clear request to be rejected")
+        assert any(entry["path"] == "/api/status" for entry in activity_log.read())
+
+        request = Request(f"{base}/api/logs/clear", data=b"", method="POST", headers={
+            "Origin": base, "X-Homelab-Action": "clear-logs",
+        })
+        with urlopen(request, timeout=5) as response:
+            assert response.status == 200
+        cleared_entries = activity_log.read()
+        assert len(cleared_entries) == 1
+        assert cleared_entries[0]["path"] == "/api/logs/clear"
+        assert cleared_entries[0]["status"] == 200
     finally:
         server.shutdown()
         server.server_close()
