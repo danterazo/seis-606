@@ -4,11 +4,11 @@
  * @typedef {{ cpu_ratio: number | null, cpu_cores: number | null, memory_used_bytes: number | null, memory_total_bytes: number | null }} Resources
  * @typedef {"running" | "stopped" | "paused" | "unknown"} GuestState
  * @typedef {{ vmid: number, name: string, display_name?: string, node: string, kind: "vm" | "container", state: GuestState, resources: Resources }} Guest
- * @typedef {{ cpu_model: string | null, ecc_supported?: boolean | null, zfs_arc_bytes?: number | null, zfs_arc_max_bytes?: number | null, storage?: Storage | null, source: "live" | "expected" | "unknown" }} Hardware
+ * @typedef {{ cpu_model: string | null, ecc_supported?: boolean | null, zfs_arc_bytes?: number | null, zfs_arc_max_bytes?: number | null, storage?: StorageHealth | null, source: "live" | "expected" | "unknown" }} Hardware
  * @typedef {"ok" | "warning" | "critical" | "unknown"} HealthLevel
  * @typedef {{ device: string, model: string | null, serial: string | null, kind: string, level: HealthLevel, standby: boolean, temperature_celsius: number | null, power_on_hours: number | null, findings: string[] }} Disk
  * @typedef {{ name: string, state: string, level: HealthLevel, capacity_percent: number | null, findings: string[] }} Pool
- * @typedef {{ disks: Disk[], pools: Pool[], smart_available: boolean, zfs_available: boolean }} Storage
+ * @typedef {{ disks: Disk[], pools: Pool[], smart_available: boolean, zfs_available: boolean }} StorageHealth
  * @typedef {{ name: string, display_name: string, state: "online" | "offline" | "unknown", address: string | null, image: string | null, initial: string, color: string, memory_description?: string | null, memory_ecc?: boolean | null, resources: Resources, guests: Guest[], hardware: Hardware }} PveNode
  * @typedef {{ source: string, fetched_at: string, nodes: PveNode[] }} Snapshot
  * @typedef {"all" | "running" | "vm" | "container"} GuestFilter
@@ -326,18 +326,20 @@ function storageBadges(node) {
   /** @type {HTMLElement[]} */
   const badges = [];
   if (!storage.smart_available) {
-    badges.push(healthBadge(node.name, "na", "SMART n/a", "smartctl is not installed on this node"));
+    badges.push(healthBadge(node.name, "na", "SMART N/A", "smartctl is not installed on this node"));
   } else if (storage.disks.length > 0) {
     const level = worstLevel(storage.disks.map((disk) => disk.level));
     const flagged = storage.disks.filter((disk) => disk.level !== "ok");
     const hottest = Math.max(...storage.disks.map((disk) => disk.temperature_celsius ?? -Infinity));
-    const text = flagged.length === 0 ? "SMART OK" : `SMART ${flagged.length} ${level === "unknown" ? "unreadable" : level === "warning" ? "warn" : "critical"}`;
+    const text = flagged.length === 0 ? "SMART OK" : `SMART ${flagged.length} ${level === "unknown" ? "UNREADABLE" : level === "warning" ? "WARN" : "CRITICAL"}`;
     const lines = flagged.length === 0 ? [`All ${plural(storage.disks.length, "disk")} healthy${Number.isFinite(hottest) ? `, hottest ${hottest} °C` : ""}`] : flagged.map((disk) => `${disk.device}: ${disk.findings.join("; ")}`);
-    badges.push(healthBadge(node.name, level, text, lines.join("\n")));
+    // Warnings and criticals both go red so a flagged disk stands out.
+    badges.push(healthBadge(node.name, level === "warning" ? "critical" : level, text, lines.join("\n")));
   }
   if (storage.zfs_available) {
     for (const pool of storage.pools) {
-      const text = pool.level === "ok" ? `${pool.name} ${pool.state}` : `${pool.name} ${pool.state}${pool.findings.length > 1 ? ` +${pool.findings.length - 1}` : ""}`;
+      const reason = (pool.state !== "ONLINE" ? pool.state : pool.findings[0] ?? pool.state).toUpperCase();
+      const text = pool.level === "ok" ? `${pool.name} ${pool.state}` : `${pool.name} ${reason}${pool.findings.length > 1 ? ` +${pool.findings.length - 1}` : ""}`;
       badges.push(healthBadge(node.name, pool.level, text, pool.findings.length === 0 ? `${pool.name} is healthy${pool.capacity_percent === null ? "" : `, ${pool.capacity_percent}% full`}` : `${pool.name}: ${pool.findings.join("; ")}`));
     }
   }
@@ -429,8 +431,8 @@ function renderOverview(nodes) {
       ...(online
         ? [el("div", { className: "tile-readings" }, [
             el("div", { className: "gauges" }, gauges),
-            el("div", { className: "tile-details" }, [el("div", { className: "facts" }, [fact("RAM", memoryText), ...(arcBytes === null ? [] : [fact("ZFS ARC", arcMax ? formatMemoryPair({ used: arcBytes, total: arcMax }) : formatBytes(arcBytes))])]), ...hardwareDetails, ...storageBadges(node)]),
-          ])]
+            el("div", { className: "tile-details" }, [el("div", { className: "facts" }, [fact("RAM", memoryText), ...(arcBytes === null ? [] : [fact("ZFS ARC", arcMax ? formatMemoryPair({ used: arcBytes, total: arcMax }) : formatBytes(arcBytes))])])]),
+          ]), el("div", { className: "tile-footer" }, [...hardwareDetails, ...storageBadges(node)])]
         : [el("p", { className: "offline-note", text: "No live readings." }), ...hardwareDetails]),
     ]);
   });

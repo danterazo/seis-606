@@ -75,7 +75,8 @@ def collect_disks() -> Optional[List[Dict[str, Any]]]:
         if not isinstance(name, str):
             continue
         command = ["smartctl", "-a", "-j", "-n", "standby", name]
-        if isinstance(entry.get("type"), str):
+        # Forcing `-d scsi` on a SATA disk behind an HBA hides its ATA data; auto-detection handles it.
+        if isinstance(entry.get("type"), str) and entry["type"] != "scsi":
             command[1:1] = ["-d", entry["type"]]
         disks.append(describe_disk(name=name, report=run_json(command=command)))
     return disks

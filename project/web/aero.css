@@ -110,6 +110,8 @@ button { cursor: pointer; }
 .log-path { overflow-wrap: anywhere; font-size: 12px; }
 .log-meta { color: var(--ink-soft); font-size: 11px; overflow-wrap: anywhere; }
 .storage-badges { display: flex; flex-wrap: wrap; gap: 4px; min-width: 0; }
+.tile-footer { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; min-width: 0; }
+.tile-footer > div { display: contents; }
 .health-badge { display: inline-flex; align-items: center; min-height: 16px; padding: 1px 6px; border: 1px solid rgba(60,85,100,.3); border-radius: 4px; font-size: 10px; font-weight: 700; line-height: 1.2; white-space: nowrap; }
 span.health-badge[role="button"] { cursor: pointer; }
 .health-ok { color: #245c42; background: rgba(220,244,227,.9); border-color: rgba(36,92,66,.3); }
