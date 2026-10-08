@@ -288,7 +288,7 @@ function renderBanner() {
     content =
       down === 0
         ? { tone: "ok", title: "All Systems Operational", detail: `${plural(snapshot.nodes.length, "node")} online` }
-        : { tone: "warn", title: `${down} of ${plural(snapshot.nodes.length, "Node")} Unavailable`, detail: "Check the node list for details." };
+        : { tone: "warn", title: `${down} of ${plural(snapshot.nodes.length, "Node")} Unavailable!`, detail: "Check the node list for details." };
   }
   banner.className = `banner banner-${content.tone}`;
   banner.replaceChildren(el("i", { className: "banner-icon", attrs: { "aria-hidden": "true" } }), el("strong", { text: content.title }), el("span", { text: content.detail }));
