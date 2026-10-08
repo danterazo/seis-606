@@ -54,6 +54,36 @@ def cpu_model() -> Optional[str]:
     return None
 
 
+def cpu_topology() -> Tuple[Optional[int], Optional[int]]:
+    records: List[Dict[str, str]] = []
+    for line in (read_text(path="/proc/cpuinfo") or "").splitlines():
+        if not line.strip():
+            if records and records[-1]:
+                records.append({})
+            continue
+        if ":" not in line:
+            continue
+        key, value = line.split(":", 1)
+        if not records:
+            records.append({})
+        records[-1][key.strip()] = value.strip()
+
+    records = [record for record in records if record]
+    threads: Optional[int] = sum("processor" in record for record in records) or None
+    core_pairs = {
+        (record.get("physical id", "0"), record["core id"])
+        for record in records
+        if "core id" in record
+    }
+    if core_pairs:
+        cores: Optional[int] = len(core_pairs)
+    else:
+        core_counts = {int(record["cpu cores"]) for record in records if record.get("cpu cores", "").isdigit()}
+        sockets = {record.get("physical id", "0") for record in records}
+        cores = next(iter(core_counts)) * len(sockets) if core_counts and sockets else None
+    return cores, threads
+
+
 def pretty_gpu_name(*, device: str, vendor: str) -> str:
     """Prefer the marketing name in brackets and make sure the vendor is named."""
     match = re.search(r"^(.*?)\s*\[([^\]]+)\]\s*$", device)
@@ -190,8 +220,9 @@ def zfs_arc_stat(*, name: str) -> Optional[int]:
 
 
 def main() -> None:
+    cores, threads = cpu_topology()
     arc = {"zfs_arc_bytes": zfs_arc_stat(name="size"), "zfs_arc_max_bytes": zfs_arc_stat(name="c_max")}
-    print(json.dumps({"cpu_model": cpu_model(), "ecc_supported": ecc_supported(), **arc, "gpus": []}))
+    print(json.dumps({"cpu_model": cpu_model(), "cpu_cores": cores, "cpu_threads": threads, "ecc_supported": ecc_supported(), **arc, "gpus": []}))
 
 
 if __name__ == "__main__":

@@ -129,8 +129,9 @@ python3 -m mypy --strict project/server.py project/homelab_dashboard
 
 ## Hardware details
 
-Each online node is probed for its CPU model and SMBIOS memory-array error correction
-using `dmidecode --type 16`. Missing tools, insufficient permissions, and unknown firmware
+Each online node is probed for its CPU model, physical-core/logical-thread counts from
+`/proc/cpuinfo`, and SMBIOS memory-array error correction using `dmidecode --type 16`.
+CPU readings use the hardware-probe cache. Missing tools, insufficient permissions, and unknown firmware
 values yield an unknown ECC reading, not a negative one. A firmware ECC report is not
 proof that ECC is enabled or correcting errors; kernel EDAC data is needed for that.
 With multiple memory arrays, a positive result means at least one reports ECC.

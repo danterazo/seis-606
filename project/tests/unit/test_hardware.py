@@ -67,7 +67,7 @@ class Ticker:
         return self.value
 
 
-LIVE: Hardware = Hardware(cpu_model="Intel N150", source=HardwareSource.LIVE)
+LIVE: Hardware = Hardware(cpu_model="Intel N150", cpu_cores=6, cpu_threads=12, source=HardwareSource.LIVE)
 
 
 def test_tidy_cpu_model_strips_marketing_noise() -> None:
@@ -91,6 +91,7 @@ def test_parse_hardware_distinguishes_active_passthrough_and_driverless_gpus() -
     )
     assert hardware.source is HardwareSource.LIVE
     assert hardware.cpu_model == "Intel N150"
+    assert (hardware.cpu_cores, hardware.cpu_threads) == (None, None)
     active, passthrough, driverless = hardware.gpus
     assert (active.state, active.utilization_percent, active.memory_used_bytes, active.memory_total_bytes) == (GpuState.ACTIVE, 12.5, 100, 400)
     assert passthrough == Gpu(name="NVIDIA GeForce RTX 5060 Ti", state=GpuState.PASSTHROUGH)
@@ -101,6 +102,12 @@ def test_parse_hardware_keeps_unknown_readings_as_none() -> None:
     hardware: Hardware = parse_hardware(document={"gpus": [{"name": "Intel Graphics", "driver": "i915"}]})
     assert hardware.cpu_model is None
     assert hardware.gpus[0].utilization_percent is None
+
+
+def test_parse_hardware_reads_cpu_topology() -> None:
+    hardware: Hardware = parse_hardware(document={"cpu_cores": 12, "cpu_threads": 24})
+
+    assert (hardware.cpu_cores, hardware.cpu_threads) == (12, 24)
 
 
 def test_parse_hardware_rejects_non_objects() -> None:
@@ -121,6 +128,16 @@ def test_probe_reads_busiest_engine_of_last_complete_sample_from_unclosed_stream
     )
     assert remote_probe.parse_intel_busy(output=stream) == 40.5
     assert remote_probe.parse_intel_busy(output="no json") is None
+
+
+def test_probe_counts_physical_cores_and_logical_threads(monkeypatch: pytest.MonkeyPatch) -> None:
+    cpuinfo: str = "\n\n".join(
+        f"processor : {thread}\nphysical id : 0\ncore id : {thread // 2}"
+        for thread in range(4)
+    )
+    monkeypatch.setattr(remote_probe, "read_text", lambda *, path: cpuinfo if path == "/proc/cpuinfo" else None)
+
+    assert remote_probe.cpu_topology() == (2, 4)
 
 
 def test_probe_names_gpus_with_vendor_and_marketing_name() -> None:
@@ -170,6 +187,7 @@ def test_parser_accepts_only_boolean_ecc_readings(value: object) -> None:
 
 def test_probe_does_not_collect_gpus(monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]) -> None:
     monkeypatch.setattr(remote_probe, "cpu_model", lambda: "Intel N150")
+    monkeypatch.setattr(remote_probe, "cpu_topology", lambda: (4, 8))
     monkeypatch.setattr(remote_probe, "ecc_supported", lambda: None)
     monkeypatch.setattr(remote_probe, "zfs_arc_stat", lambda *, name: 1024 if name == "size" else 2048)
 
@@ -178,7 +196,7 @@ def test_probe_does_not_collect_gpus(monkeypatch: pytest.MonkeyPatch, capsys: py
 
     monkeypatch.setattr(remote_probe, "collect_gpus", forbidden_collection)
     remote_probe.main()
-    assert json.loads(capsys.readouterr().out) == {"cpu_model": "Intel N150", "ecc_supported": None, "zfs_arc_bytes": 1024, "zfs_arc_max_bytes": 2048, "gpus": []}
+    assert json.loads(capsys.readouterr().out) == {"cpu_model": "Intel N150", "cpu_cores": 4, "cpu_threads": 8, "ecc_supported": None, "zfs_arc_bytes": 1024, "zfs_arc_max_bytes": 2048, "gpus": []}
 
 
 def test_only_online_nodes_are_probed_and_others_use_expected_hardware() -> None:
@@ -215,9 +233,9 @@ def test_probe_results_are_cached_until_the_ttl_or_a_forced_refresh() -> None:
         ttl_seconds=3,
         clock=ticker,
     )
-    source.fetch()
+    assert source.fetch().nodes[0].hardware == LIVE
     ticker.value = 2.9
-    source.fetch()
+    assert source.fetch().nodes[0].hardware.cpu_cores == 6
     assert probe.calls == ["cerulean"]
     ticker.value = 3.0
     source.fetch()

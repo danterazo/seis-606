@@ -110,6 +110,8 @@ class Hardware:
     """`source` says whether this was read from the node (live) or taken from the configured profile (expected)."""
 
     cpu_model: Optional[str] = None
+    cpu_cores: Optional[int] = None
+    cpu_threads: Optional[int] = None
     gpus: Tuple[Gpu, ...] = ()
     source: HardwareSource = HardwareSource.UNKNOWN
     ecc_supported: Optional[bool] = None

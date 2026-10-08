@@ -67,6 +67,8 @@ def parse_hardware(*, document: object) -> Hardware:
             gpus.append(parsed)
     return Hardware(
         cpu_model=None if model is None else tidy_cpu_model(model=model),
+        cpu_cores=as_integer(value=document.get("cpu_cores")),
+        cpu_threads=as_integer(value=document.get("cpu_threads")),
         gpus=tuple(gpus),
         source=HardwareSource.LIVE,
         ecc_supported=ecc if isinstance(ecc, bool) else None,

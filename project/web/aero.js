@@ -299,13 +299,13 @@ function renderNodeList(nodes) {
 /** @param {string} label @param {string} value */
 const fact = (label, value) => el("div", { className: "fact" }, [el("span", { className: "fact-label", text: label }), el("span", { className: "fact-value", text: value })]);
 
-/** The CPU model is a quiet subtitle; italics mark it as configured rather than read from the node. @param {Hardware} hardware @param {Resources} resources */
-function cpuModelLine({ cpu_model: model, source }, { cpu_cores: cores }) {
-  if (model === null) return null;
+/** CPU topology is polled and cached with the per-node hardware probe. @param {Hardware} hardware */
+function cpuModelLine({ cpu_model: model, cpu_cores: cores, cpu_threads: threads, source }) {
   const expected = source !== "live";
-  const displayModel = model.replace(" Threadripper PRO ", " Threadripper ");
-  const coreText = cores === null ? "" : ` (${cores}c)`;
-  return el("small", { className: `cpu-model${expected ? " is-expected" : ""}`, text: `${displayModel}${coreText}`, attrs: { title: `${model}${coreText} · ${expected ? "Expected hardware (node not probed)" : "Read from the node"}` } });
+  const displayModel = model?.replace("Ryzen Threadripper PRO", "Threadripper").replace("Ryzen Threadripper", "Threadripper") ?? "CPU";
+  const topology = `${cores ?? "?"}c/${threads ?? "?"}t`;
+  const title = `${model ?? "CPU model unknown"} · ${cores ?? "Unknown"} cores / ${threads ?? "Unknown"} threads · ${expected ? "Expected hardware (CPU stats unavailable)" : "Read from the node"}`;
+  return el("small", { className: `cpu-model${expected ? " is-expected" : ""}`, text: `${displayModel} (${topology})`, attrs: { title } });
 }
 
 /** @type {ReadonlyArray<HealthLevel>} */
