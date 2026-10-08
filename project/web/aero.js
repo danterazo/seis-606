@@ -314,16 +314,14 @@ function renderOverview(nodes) {
     const modelLine = cpuModelLine(node.hardware);
     const { memory_used_bytes: used, memory_total_bytes: total } = node.resources;
     const memoryText = used !== null && total !== null ? formatMemoryPair({ used, total }) : formatRam(node.resources);
-    const hardwareDetails = [
-      ...(node.memory_description || node.memory_ecc != null ? [el("div", { className: "memory-inventory" }, [
-        ...(node.memory_description ? [el("small", { className: "memory-description", text: node.memory_description })] : []),
-        ...(node.memory_ecc == null ? [] : [el("span", {
-          className: `memory-ecc ${node.memory_ecc ? "ecc-memory" : "non-ecc-memory"}`,
-          text: node.memory_ecc ? "ECC" : "Non-ECC",
-          attrs: { title: node.memory_ecc ? "ECC memory inventory; active error correction is not verified" : "Non-ECC memory inventory" },
-        })]),
-      ])] : []),
-    ];
+    const hardwareDetails =
+      node.memory_ecc == null && !node.memory_description
+        ? []
+        : [el("div", { className: "memory-inventory" }, [el("span", {
+            className: `memory-ecc ${node.memory_ecc ? "ecc-memory" : "non-ecc-memory"}`,
+            text: [node.memory_description, node.memory_ecc == null ? null : node.memory_ecc ? "ECC" : "Non-ECC"].filter(Boolean).join(" "),
+            attrs: { title: node.memory_ecc ? "ECC memory inventory; active error correction is not verified" : "Memory inventory" },
+          })])];
     return el("button", { className: `tile tile-${node.state}`, attrs: { type: "button", style: colorStyle(node.color), "data-node": node.name, "aria-pressed": String(state.selectedNode === node.name) } }, [
       el("span", { className: "tile-head" }, [
         el("span", { className: "server-glyph", attrs: { "aria-hidden": "true" } }),

@@ -43,7 +43,7 @@ NODE_PROFILES: Final[Dict[str, NodeProfile]] = {
         color="#c62839",
         address="192.168.20.42",
         expected_cpu="Intel Xeon E5-1650 v4",
-        memory_description="DDR4 RDIMM: 8 x 32 GB",
+        memory_description="DDR4 RDIMM",
         memory_ecc=True,
     ),
     "cerulean": NodeProfile(
@@ -51,7 +51,7 @@ NODE_PROFILES: Final[Dict[str, NodeProfile]] = {
         initial="C",
         color="#0b7fc7",
         expected_cpu="Intel N150",
-        memory_description="DDR4 SODIMM: 1 x 32 GB",
+        memory_description="DDR4 SODIMM",
         memory_ecc=False,
     ),
     "kveikur": NodeProfile(
@@ -60,7 +60,7 @@ NODE_PROFILES: Final[Dict[str, NodeProfile]] = {
         color="#f28c1b",
         address="192.168.20.46",
         expected_cpu="AMD Ryzen Threadripper PRO 3945WX",
-        memory_description="DDR4 RDIMM: 8 x 4 GB",
+        memory_description="DDR4 RDIMM",
         memory_ecc=True,
     ),
 }
