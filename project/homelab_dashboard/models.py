@@ -72,6 +72,7 @@ class Hardware:
     gpus: Tuple[Gpu, ...] = ()
     source: HardwareSource = HardwareSource.UNKNOWN
     ecc_supported: Optional[bool] = None
+    zfs_arc_bytes: Optional[int] = None
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)

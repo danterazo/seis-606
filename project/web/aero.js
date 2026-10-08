@@ -4,7 +4,7 @@
  * @typedef {{ cpu_ratio: number | null, cpu_cores: number | null, memory_used_bytes: number | null, memory_total_bytes: number | null }} Resources
  * @typedef {"running" | "stopped" | "paused" | "unknown"} GuestState
  * @typedef {{ vmid: number, name: string, display_name?: string, node: string, kind: "vm" | "container", state: GuestState, resources: Resources }} Guest
- * @typedef {{ cpu_model: string | null, ecc_supported?: boolean | null, source: "live" | "expected" | "unknown" }} Hardware
+ * @typedef {{ cpu_model: string | null, ecc_supported?: boolean | null, zfs_arc_bytes?: number | null, source: "live" | "expected" | "unknown" }} Hardware
  * @typedef {{ name: string, display_name: string, state: "online" | "offline" | "unknown", address: string | null, image: string | null, initial: string, color: string, memory_description?: string | null, memory_ecc?: boolean | null, resources: Resources, guests: Guest[], hardware: Hardware }} PveNode
  * @typedef {{ source: string, fetched_at: string, nodes: PveNode[] }} Snapshot
  * @typedef {"all" | "running" | "vm" | "container"} GuestFilter
@@ -213,20 +213,32 @@ function statePill(state, label = stateLabel(state)) {
   return el("span", { className: `pill pill-${state}` }, [el("i", { className: "orb", attrs: { "aria-hidden": "true" } }), label]);
 }
 
-/** @param {{ label: string, value: number | null, tone: "cpu" | "memory" }} args */
-function gauge({ label, value, tone }) {
+/** Percent of total memory held by ZFS ARC, capped at what is in use; Proxmox counts ARC as used, not cached. @param {PveNode} node @returns {number | null} */
+function arcPercent(node) {
+  const { memory_used_bytes: used, memory_total_bytes: total } = node.resources;
+  const arc = node.hardware.zfs_arc_bytes;
+  if (arc == null || used === null || total === null || total <= 0) return null;
+  return clamp((Math.min(arc, used) / total) * 100);
+}
+
+/** @param {{ label: string, value: number | null, tone: "cpu" | "memory", arcValue?: number | null, title?: string }} args */
+function gauge({ label, value, tone, arcValue = null, title }) {
   const radius = 22;
   const circumference = 2 * Math.PI * radius;
-  const arc = svg("circle", {
-    class: `gauge-arc gauge-${tone}`,
-    cx: 28,
-    cy: 28,
-    r: radius,
-    "stroke-dasharray": `${(circumference * (value ?? 0)) / 100} ${circumference}`,
-    transform: "rotate(-90 28 28)",
-  });
-  const ring = svg("svg", { viewBox: "0 0 56 56", "aria-hidden": "true" }, [svg("circle", { class: "gauge-track", cx: 28, cy: 28, r: radius }), arc]);
-  return el("div", { className: "gauge" }, [ring, el("span", { className: "gauge-value", text: formatPercent(value) }), el("span", { className: "gauge-label", text: label })]);
+  /** @param {string} cls @param {number | null} percent */
+  const ringArc = (cls, percent) =>
+    svg("circle", {
+      class: cls,
+      cx: 28,
+      cy: 28,
+      r: radius,
+      "stroke-dasharray": `${(circumference * (percent ?? 0)) / 100} ${circumference}`,
+      transform: "rotate(-90 28 28)",
+    });
+  // The ARC arc sits underneath and spans all used memory; the green arc covers the non-ARC part.
+  const arcs = arcValue === null || value === null ? [ringArc(`gauge-arc gauge-${tone}`, value)] : [ringArc("gauge-arc gauge-arc-zfs", value), ringArc(`gauge-arc gauge-${tone}`, value - arcValue)];
+  const ring = svg("svg", { viewBox: "0 0 56 56", "aria-hidden": "true" }, [svg("circle", { class: "gauge-track", cx: 28, cy: 28, r: radius }), ...arcs]);
+  return el("div", { className: "gauge", attrs: title ? { title } : {} }, [ring, el("span", { className: "gauge-value", text: formatPercent(value) }), el("span", { className: "gauge-label", text: label })]);
 }
 
 /** @param {{ label: string, metric: GuestMetric, tone: "cpu" | "memory" }} args */
@@ -295,7 +307,9 @@ function cpuModelLine({ cpu_model: model, source }) {
 function renderOverview(nodes) {
   const tiles = nodes.map((node) => {
     const online = node.state === "online";
-    const gauges = [gauge({ label: "CPU", value: cpuPercent(node.resources), tone: "cpu" }), gauge({ label: "RAM", value: memoryPercent(node.resources), tone: "memory" })];
+    const arcBytes = node.hardware.zfs_arc_bytes ?? null;
+    const ramTitle = arcBytes === null ? undefined : `ZFS ARC (amber): ${formatBytes(arcBytes)}`;
+    const gauges = [gauge({ label: "CPU", value: cpuPercent(node.resources), tone: "cpu" }), gauge({ label: "RAM", value: memoryPercent(node.resources), tone: "memory", arcValue: arcPercent(node), title: ramTitle })];
     const modelLine = cpuModelLine(node.hardware);
     const { memory_used_bytes: used, memory_total_bytes: total } = node.resources;
     const memoryText = used !== null && total !== null ? formatMemoryPair({ used, total }) : formatRam(node.resources);
@@ -318,7 +332,7 @@ function renderOverview(nodes) {
       ...(online
         ? [el("div", { className: "tile-readings" }, [
             el("div", { className: "gauges" }, gauges),
-            el("div", { className: "tile-details" }, [el("div", { className: "facts" }, [fact("CPU", formatCores(node.resources)), fact("RAM", memoryText)]), ...hardwareDetails]),
+            el("div", { className: "tile-details" }, [el("div", { className: "facts" }, [fact("CPU", formatCores(node.resources)), fact("RAM", memoryText), ...(arcBytes === null ? [] : [fact("ZFS ARC", formatBytes(arcBytes))])]), ...hardwareDetails]),
           ])]
         : [el("p", { className: "offline-note", text: "No live readings." }), ...hardwareDetails]),
     ]);

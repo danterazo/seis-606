@@ -171,13 +171,14 @@ def test_parser_accepts_only_boolean_ecc_readings(value: object) -> None:
 def test_probe_does_not_collect_gpus(monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]) -> None:
     monkeypatch.setattr(remote_probe, "cpu_model", lambda: "Intel N150")
     monkeypatch.setattr(remote_probe, "ecc_supported", lambda: None)
+    monkeypatch.setattr(remote_probe, "zfs_arc_bytes", lambda: 1024)
 
     def forbidden_collection() -> None:
         pytest.fail("GPU collection is deferred")
 
     monkeypatch.setattr(remote_probe, "collect_gpus", forbidden_collection)
     remote_probe.main()
-    assert json.loads(capsys.readouterr().out) == {"cpu_model": "Intel N150", "ecc_supported": None, "gpus": []}
+    assert json.loads(capsys.readouterr().out) == {"cpu_model": "Intel N150", "ecc_supported": None, "zfs_arc_bytes": 1024, "gpus": []}
 
 
 def test_only_online_nodes_are_probed_and_others_use_expected_hardware() -> None:

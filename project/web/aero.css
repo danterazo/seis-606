@@ -231,6 +231,7 @@ button { cursor: pointer; }
 .gauge-arc { fill: none; stroke-width: 7; stroke-linecap: round; }
 .gauge-cpu { stroke: var(--aqua); filter: drop-shadow(0 0 3px rgba(31,163,236,.7)); }
 .gauge-memory { stroke: var(--green); filter: drop-shadow(0 0 3px rgba(76,194,58,.7)); }
+.gauge-arc-zfs { stroke: #f2a93b; filter: drop-shadow(0 0 3px rgba(242,169,59,.7)); }
 .gauge-value { position: absolute; top: 19px; font-size: 13px; font-weight: 700; }
 .gauge-label { font-size: 11px; font-weight: 600; color: var(--ink-soft); }
 .tile-readings .gauge { width: 48px; }

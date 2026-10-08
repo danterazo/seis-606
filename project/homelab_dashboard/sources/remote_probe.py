@@ -181,8 +181,16 @@ def ecc_supported() -> Optional[bool]:
     return False if all(value == "none" for value in corrections) else None
 
 
+def zfs_arc_bytes() -> Optional[int]:
+    for line in (read_text(path="/proc/spl/kstat/zfs/arcstats") or "").splitlines():
+        fields = line.split()
+        if len(fields) == 3 and fields[0] == "size" and fields[2].isdigit():
+            return int(fields[2])
+    return None
+
+
 def main() -> None:
-    print(json.dumps({"cpu_model": cpu_model(), "ecc_supported": ecc_supported(), "gpus": []}))
+    print(json.dumps({"cpu_model": cpu_model(), "ecc_supported": ecc_supported(), "zfs_arc_bytes": zfs_arc_bytes(), "gpus": []}))
 
 
 if __name__ == "__main__":
