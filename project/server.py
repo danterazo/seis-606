@@ -1,8 +1,10 @@
 import ipaddress
 import json
+import os
 import socket
 import socketserver
 import sys
+import time
 from functools import partial
 from http import HTTPStatus
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
@@ -28,6 +30,8 @@ STATUS_PATH: Final[str] = "/api/status"
 DEVICES_PATH: Final[str] = "/api/devices"
 REBOOT_PATH: Final[str] = "/api/guests/reboot"
 LOGS_PATH: Final[str] = "/api/logs"
+DEV_VERSION_PATH: Final[str] = "/__dev/version"
+BOOT_ID: Final[str] = str(time.time_ns())
 CLEAR_LOGS_PATH: Final[str] = "/api/logs/clear"
 LOG_PATH: Final[Path] = Path(__file__).resolve().parent / "logs" / "access.jsonl"
 
@@ -54,6 +58,10 @@ class DashboardHandler(SimpleHTTPRequestHandler):
 
     def do_GET(self) -> None:
         url = urlparse(self.path)
+        if url.path == DEV_VERSION_PATH and os.environ.get("DASHBOARD_DEV") == "1":
+            newest: int = max((path.stat().st_mtime_ns for path in WEB_ROOT.glob("*") if path.is_file()), default=0)
+            self._send_json(status=HTTPStatus.OK, payload={"version": f"{BOOT_ID}:{newest}"})
+            return
         if url.path == LOGS_PATH:
             self._send_json(status=HTTPStatus.OK, payload={"entries": self.activity_log.read()})
             return
@@ -198,3 +206,4 @@ def main() -> None:
         print("\nStopping homelab dashboard.")
     finally:
         server.server_close()
+

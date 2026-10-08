@@ -727,3 +727,22 @@ void refresh();
 void refreshDevices();
 window.setInterval(() => void refresh(), REFRESH_INTERVAL_MS);
 window.setInterval(() => void refreshDevices(), DEVICES_INTERVAL_MS);
+
+// Dev only: the server exposes this endpoint when DASHBOARD_DEV=1; a changed version means code or assets were edited.
+void (async () => {
+  /** @returns {Promise<string | null>} */
+  const readVersion = async () => {
+    try {
+      const response = await fetch("/__dev/version", { cache: "no-store" });
+      return response.ok ? String((await response.json()).version) : null;
+    } catch {
+      return null;
+    }
+  };
+  const initial = await readVersion();
+  if (initial === null) return;
+  setInterval(async () => {
+    const current = await readVersion();
+    if (current !== null && current !== initial) location.reload();
+  }, 1000);
+})();
