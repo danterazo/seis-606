@@ -1393,14 +1393,14 @@ files = [
 
 [[package]]
 name = "jsonpointer"
-version = "3.1.1"
+version = "3.2.0"
 description = "Identify specific nodes in a JSON document (RFC 6901) "
 optional = false
 python-versions = ">=3.10"
 groups = ["main"]
 files = [
-    {file = "jsonpointer-3.1.1-py3-none-any.whl", hash = "sha256:8ff8b95779d071ba472cf5bc913028df06031797532f08a7d5b602d8b2a488ca"},
-    {file = "jsonpointer-3.1.1.tar.gz", hash = "sha256:0b801c7db33a904024f6004d526dcc53bbb8a4a0f4e32bfd10beadf60adf1900"},
+    {file = "jsonpointer-3.2.0-py3-none-any.whl", hash = "sha256:3e25c9bcadf5ae20c3420922234eaba1ae36ab9bef64cd72454aeaceb0b29aad"},
+    {file = "jsonpointer-3.2.0.tar.gz", hash = "sha256:807db557622fbe07a0d49e19cf4795a269d55eee5ba345fb9959d148eba5ef94"},
 ]
 
 [[package]]
@@ -2168,14 +2168,14 @@ test = ["packaging", "pre-commit", "pytest", "testpath"]
 
 [[package]]
 name = "nest-asyncio2"
-version = "1.7.3"
+version = "1.7.4"
 description = "Patch asyncio to allow nested event loops"
 optional = false
 python-versions = ">=3.5"
 groups = ["main"]
 files = [
-    {file = "nest_asyncio2-1.7.3-py3-none-any.whl", hash = "sha256:2bc87bdca654e719425145f5e84eaeb0080b013fdd47d65729a7d66243f4987c"},
-    {file = "nest_asyncio2-1.7.3.tar.gz", hash = "sha256:2e9a84d5d1efe6d020c72988d21aec569bac42d98af2ff6b9de24640c5d22a34"},
+    {file = "nest_asyncio2-1.7.4-py3-none-any.whl", hash = "sha256:86e77b52c3d1496b294af3c944b44213b9b82a12a5ee590c0acc4ca4692ef6c7"},
+    {file = "nest_asyncio2-1.7.4.tar.gz", hash = "sha256:995b1409d926ec55e0876ea39a69bffdd8852cf1db3652c177e8c8ffdbcaf3cc"},
 ]
 
 [[package]]
@@ -2823,14 +2823,14 @@ xmp = ["defusedxml"]
 
 [[package]]
 name = "platformdirs"
-version = "4.12.3"
+version = "4.12.4"
 description = "A small Python package for determining appropriate platform-specific dirs, e.g. a `user data dir`."
 optional = false
 python-versions = ">=3.10"
 groups = ["main"]
 files = [
-    {file = "platformdirs-4.12.3-py3-none-any.whl", hash = "sha256:080f3b39423b5abfca9a23d84c4e9795f54d395cd8459867a8ded44084fcd5f8"},
-    {file = "platformdirs-4.12.3.tar.gz", hash = "sha256:427fc0bb321ae0c5b037fa03238ca74820437be162e78b4848c4d4055b9b766c"},
+    {file = "platformdirs-4.12.4-py3-none-any.whl", hash = "sha256:78bfb9db2a8471ed7eebe3c3c932da413911042994e699b384fbb4493fa872d7"},
+    {file = "platformdirs-4.12.4.tar.gz", hash = "sha256:63743c02414e755de4e31b8f68125c1407495b86c5a006e203c01ff8b9924250"},
 ]
 
 [[package]]
@@ -3213,18 +3213,18 @@ crypto = ["cryptography (>=3.4.0)"]
 
 [[package]]
 name = "pylance"
-version = "12.0.0"
+version = "13.0.0"
 description = "python wrapper for Lance columnar format"
 optional = false
 python-versions = ">=3.10"
 groups = ["main"]
 files = [
-    {file = "pylance-12.0.0-cp310-abi3-macosx_11_0_arm64.whl", hash = "sha256:58583827b01ae14da220dcea2ea258b008e8d2d20915cf462dee18ddcea068a5"},
-    {file = "pylance-12.0.0-cp310-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:ca5af2bf6e489b76768b56848b8e9c692ad42d7eedb31a8097fcb57e3146a211"},
-    {file = "pylance-12.0.0-cp310-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:bac18e8f6fecb9c998c2a7301d782281bac075cf06bb0df5d89fc6fc4e8768e1"},
-    {file = "pylance-12.0.0-cp310-abi3-manylinux_2_28_aarch64.whl", hash = "sha256:df80a7991fbeab9ca206da4c0110e611696e29fc7b79bc9a88309b1b42c5849f"},
-    {file = "pylance-12.0.0-cp310-abi3-manylinux_2_28_x86_64.whl", hash = "sha256:d002980aa548336682f1445427ea89cf39e71a452297741ca97627192e4a1678"},
-    {file = "pylance-12.0.0-cp310-abi3-win_amd64.whl", hash = "sha256:0cd59044927c5ee5a6811ea28b6f4860b2d21932828e770d9e5b39522afcf19d"},
+    {file = "pylance-13.0.0-cp310-abi3-macosx_11_0_arm64.whl", hash = "sha256:38cbe8d204785e697909e8faca91adb3b00a2f6a865c425987cb232d0865c010"},
+    {file = "pylance-13.0.0-cp310-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:22a37a0af446964e79cfd6046f9ea2735fcb42f8020eab63947b2bdca04989c2"},
+    {file = "pylance-13.0.0-cp310-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:2c94649a35161c6100ed822ac022756bfefb840b7e01cf491505c5245186f7b4"},
+    {file = "pylance-13.0.0-cp310-abi3-manylinux_2_28_aarch64.whl", hash = "sha256:22e47adcc2c7300ff876fb398ee9c625973932163ec055adae14871f8a09d7b0"},
+    {file = "pylance-13.0.0-cp310-abi3-manylinux_2_28_x86_64.whl", hash = "sha256:a54496c4e6c01a8c3d49479fce98474c95a265515091d173aa9e16df271d837d"},
+    {file = "pylance-13.0.0-cp310-abi3-win_amd64.whl", hash = "sha256:8a340dcf750171dd6386db0b6ed303bb22594e1c1b266b7fe149ea1684bf4a9a"},
 ]
 
 [package.dependencies]
@@ -4093,14 +4093,14 @@ files = [
 
 [[package]]
 name = "specify-cli"
-version = "1.1.1"
+version = "1.1.2"
 description = "Specify CLI, part of GitHub Spec Kit. A tool to bootstrap your projects for Spec-Driven Development (SDD)."
 optional = false
 python-versions = ">=3.11"
 groups = ["main"]
 files = [
-    {file = "specify_cli-1.1.1-py3-none-any.whl", hash = "sha256:55b45272dac287bf270763647a29bd5aa6484068a8e61776e5da19a56eada5b0"},
-    {file = "specify_cli-1.1.1.tar.gz", hash = "sha256:beba12ac65f6a5b6eeeb8943a2edf5445b99e2a039411e7eba3052e9aa6ac40c"},
+    {file = "specify_cli-1.1.2-py3-none-any.whl", hash = "sha256:810e9ea3746fb92b1dcb6583831c7113a9a9e5548efa87b7cffa41bc5fc0248c"},
+    {file = "specify_cli-1.1.2.tar.gz", hash = "sha256:55bfa71fc2b60fe5347ad6bc0480f19ec4baff44af570780e1641c9717975310"},
 ]
 
 [package.dependencies]
