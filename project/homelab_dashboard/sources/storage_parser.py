@@ -140,7 +140,7 @@ def _pool_status_findings(*, name: str, status: str) -> List[_Finding]:
 
 
 def _pool_layout(*, name: str, status: str) -> Optional[str]:
-    """Summarises the top-level vdevs, e.g. "2 × raidz1 (6 disks)"."""
+    """Summarises the top-level vdevs, e.g. "2 × Mirror (2 Disks per Mirror)"."""
     groups: List[Tuple[str, int]] = []
     pool_indent: Optional[int] = None
     for line in status.splitlines():
@@ -163,8 +163,8 @@ def _pool_layout(*, name: str, status: str) -> Optional[str]:
         kinds.setdefault(kind, []).append(disks)
     parts: List[str] = []
     for kind, counts in kinds.items():
-        is_group: bool = counts[0] > 0
-        parts.append(f"{len(counts)} × {kind} ({counts[0]} disks)" if is_group else f"{len(counts)} × disk (stripe)")
+        label: str = kind.capitalize()
+        parts.append(f"{len(counts)} × {label} ({counts[0]} Disks per {label})" if counts[0] > 0 else f"{len(counts)} × Disk (Stripe)")
     return ", ".join(parts)
 
 

@@ -343,7 +343,7 @@ function storageBadges(node) {
     const flagged = storage.disks.filter((disk) => disk.level !== "ok");
     const hottest = Math.max(...storage.disks.map((disk) => disk.temperature_celsius ?? -Infinity));
     const text = flagged.length === 0 ? "SMART OK" : `SMART ${flagged.length} ${level === "unknown" ? "UNREADABLE" : level === "warning" ? "WARN" : "CRITICAL"}`;
-    const lines = flagged.length === 0 ? [`All ${plural(storage.disks.length, "disk")} healthy${Number.isFinite(hottest) ? `, hottest ${hottest} °C` : ""}`] : flagged.map((disk) => `${disk.device}: ${disk.findings.join("; ")}`);
+    const lines = flagged.length === 0 ? [`All ${plural(storage.disks.length, "disk")} healthy${Number.isFinite(hottest) ? `, Hottest ${hottest} °C` : ""}`] : flagged.map((disk) => `${disk.device}: ${disk.findings.join("; ")}`);
     // Warnings and criticals both go red so a flagged disk stands out.
     badges.push(healthBadge(node.name, level === "warning" ? "critical" : level, text, lines.join("\n")));
   }
@@ -355,8 +355,8 @@ function storageBadges(node) {
       // Only tank carries the extra stats on its badge for now.
       const extras = pool.name === "tank" ? [pool.fragmentation_percent === null ? null : `${pool.fragmentation_percent}% Frag`, pool.free_bytes === null ? null : `${formatPoolBytes(pool.free_bytes)} Free`, pool.scan].filter(Boolean) : [];
       const text = [headline, ...extras].join(" · ");
-      const details = [usage === null ? null : `${usage} used`, pool.fragmentation_percent === null ? null : `${pool.fragmentation_percent}% fragmented`, pool.layout, pool.scan === null ? null : `Scan: ${pool.scan}`].filter(Boolean);
-      badges.push(healthBadge(node.name, pool.level, text, [pool.findings.length === 0 ? `${pool.name} is healthy${pool.capacity_percent === null ? "" : `, ${pool.capacity_percent}% full`}` : `${pool.name}: ${pool.findings.join("; ")}`, ...details].join("\n")));
+      const details = [usage === null ? null : `Used: ${usage}`, pool.fragmentation_percent === null ? null : `${pool.fragmentation_percent}% Fragmented`, pool.layout, pool.scan === null ? null : `Last Scan: ${pool.scan}`].filter(Boolean);
+      badges.push(healthBadge(node.name, pool.level, text, [pool.findings.length === 0 ? `${pool.name} is healthy${pool.capacity_percent === null ? "" : `, ${pool.capacity_percent}% Full`}` : `${pool.name}: ${pool.findings.join("; ")}`, ...details].join("\n")));
     }
   }
   return badges.length === 0 ? [] : [el("div", { className: "storage-badges" }, badges)];
@@ -390,7 +390,7 @@ function renderStorageDialog(node) {
     el("tr", {}, [
       el("td", {}, [levelCell(pool.level, pool.state)]),
       el("td", {}, [el("code", { text: pool.name })]),
-      el("td", { text: pool.capacity_percent === null ? "—" : `${pool.capacity_percent}% full` }),
+      el("td", { text: pool.capacity_percent === null ? "—" : `${pool.capacity_percent}% Full` }),
       el("td", { text: poolUsage(pool) ?? "—" }),
       el("td", { text: formatPoolBytes(pool.free_bytes) }),
       el("td", { text: pool.fragmentation_percent === null ? "—" : `${pool.fragmentation_percent}%` }),
@@ -406,7 +406,7 @@ function renderStorageDialog(node) {
     el("h3", { text: "Disks (SMART)" }),
     table(["Status", "Device", "Model", "Serial #", "Type", "Temp", "Age", "Findings"], diskRows, storage?.smart_available ? "No disks reported." : "smartctl is not installed on this node."),
     el("h3", { text: "ZFS Pools" }),
-    table(["Status", "Pool", "Capacity", "Used / Size", "Free", "Frag", "Layout", "Last scan", "Findings"], poolRows, storage?.zfs_available ? "No pools reported." : "ZFS tools are not installed on this node."),
+    table(["Status", "Pool", "Capacity", "Used / Size", "Free", "Frag", "Layout", "Last Scan", "Findings"], poolRows, storage?.zfs_available ? "No pools reported." : "ZFS tools are not installed on this node."),
   );
 }
 
