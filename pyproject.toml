@@ -26,11 +26,11 @@
     specify-cli = "*"
 
     # project
-    proxmoxer = ">=2.0.0"
-    pydantic = ">=2.9.0"
-    pytest = ">=8.0.0"
-    ruff = ">=0.6.0"
-    watchfiles = "^1.3.0"
+    proxmoxer = "*"
+    pydantic = "*"
+    pytest = "*"
+    ruff = "*"
+    watchfiles = "*"
 
 
 [[tool.poetry.source]]
