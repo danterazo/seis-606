@@ -4,7 +4,12 @@
  * @typedef {{ cpu_ratio: number | null, cpu_cores: number | null, memory_used_bytes: number | null, memory_total_bytes: number | null }} Resources
  * @typedef {"running" | "stopped" | "paused" | "unknown"} GuestState
  * @typedef {{ vmid: number, name: string, display_name?: string, node: string, kind: "vm" | "container", state: GuestState, resources: Resources }} Guest
- * @typedef {{ cpu_model: string | null, ecc_supported?: boolean | null, zfs_arc_bytes?: number | null, zfs_arc_max_bytes?: number | null, storage?: StorageHealth | null, source: "live" | "expected" | "unknown" }} Hardware
+ * @typedef {{ cpu_model: string | null, ecc_supported?: boolean | null, zfs_arc_bytes?: number | null, zfs_arc_max_bytes?: number | null, storage?: StorageHealth | null, hardware_errors?: HardwareErrors | null, source: "live" | "expected" | "unknown" }} Hardware
+ * @typedef {{ timestamp: string, boot_id: string, source: string, message: string }} RawEvent
+ * @typedef {{ category: "ecc_memory" | "cpu_mce" | "page_offline" | "pcie" | "storage_path", classification: "corrected" | "uncorrected" | "unspecified", title: string, level: HealthLevel, count: number, first_seen: string, last_seen: string, last_hour: number, last_day: number, boot_id: string, current_boot: boolean, boots_seen: number, recurrence: string[], fields: [string, string][], raw: RawEvent[] }} ErrorIncident
+ * @typedef {{ boot_id: string, first_seen: string | null, last_seen: string | null, current: boolean }} BootRecord
+ * @typedef {{ controller: string, label: string | null, corrected: number, uncorrected: number }} MemoryCounter
+ * @typedef {{ level: HealthLevel, findings: string[], incidents: ErrorIncident[], boots: BootRecord[], memory_counters: MemoryCounter[], edac_available: boolean, journal_available: boolean, persisted_corrected: number | null, persisted_uncorrected: number | null, persisted_mce: number | null, boot_id: string | null, boot_started: string | null, collected_at: string | null, stale: boolean, error: string | null, last_success: string | null, counters_reset: boolean }} HardwareErrors
  * @typedef {"ok" | "warning" | "critical" | "unknown"} HealthLevel
  * @typedef {{ device: string, model: string | null, serial: string | null, kind: string, level: HealthLevel, standby: boolean, temperature_celsius: number | null, power_on_hours: number | null, findings: string[] }} Disk
  * @typedef {{ name: string, state: string, level: HealthLevel, capacity_percent: number | null, size_bytes: number | null, allocated_bytes: number | null, free_bytes: number | null, fragmentation_percent: number | null, layout: string | null, scan: string | null, findings: string[] }} Pool
@@ -362,6 +367,140 @@ function storageBadges(node) {
   return badges.length === 0 ? [] : [el("div", { className: "storage-badges" }, badges)];
 }
 
+/** One badge for hardware error evidence, kept apart from the CPU and RAM utilization gauges. @param {PveNode} node */
+function hardwareErrorBadges(node) {
+  const errors = node.hardware.hardware_errors;
+  if (!errors) return [];
+  const current = errors.incidents.filter((incident) => incident.current_boot && incident.level !== "ok");
+  const history = errors.incidents.filter((incident) => !incident.current_boot).length;
+  const headline = errors.level === "unknown" ? "HW Errors N/A" : errors.level === "ok" ? "HW Errors: None" : current.length > 0 ? `HW Errors: ${plural(current.length, "Incident")}` : errors.incidents.length === 0 ? "HW Errors: Counters" : `HW Errors: ${plural(history, "Past Incident")}`;
+  const staleness = errors.stale ? " · Stale" : "";
+  const lines = [errors.findings.length === 0 ? "No hardware errors reported since the last check" : errors.findings.join("\n"), errors.stale ? errors.error ?? "Data is stale" : null].filter(Boolean);
+  const badge = healthBadge(node.name, errors.level, headline + staleness, lines.join("\n"));
+  badge.removeAttribute("data-storage-node");
+  badge.setAttribute("data-hwerrors-node", node.name);
+  return [el("div", { className: "storage-badges" }, [badge])];
+}
+
+/** @param {string | null} iso */
+const formatTime = (iso) => (iso === null ? "—" : new Date(iso).toLocaleString());
+
+/** @param {ErrorIncident["category"]} category */
+const categoryLabel = (category) => ({ ecc_memory: "ECC memory", cpu_mce: "CPU machine check", page_offline: "Page soft-offline", pcie: "PCIe", storage_path: "Storage path" })[category];
+
+/** Hardware errors, boots and currently flagged storage in one time-ordered list; nothing here asserts a cause. @param {PveNode} node @param {HardwareErrors} errors */
+function timelineEntries(node, errors) {
+  /** @type {{ time: string | null, label: string, detail: string, level: HealthLevel | "info", historical: boolean }[]} */
+  const entries = [];
+  for (const boot of errors.boots) {
+    entries.push({ time: boot.first_seen, label: "Boot started (uptime reset)", detail: boot.current ? "Current boot" : "Earlier boot", level: "info", historical: !boot.current });
+  }
+  for (const incident of errors.incidents) {
+    entries.push({ time: incident.first_seen, label: `${categoryLabel(incident.category)}: ${incident.title}`, detail: `${plural(incident.count, "event")}, last ${formatTime(incident.last_seen)}`, level: incident.level, historical: !incident.current_boot });
+  }
+  const storage = node.hardware.storage;
+  const flagged = [...(storage?.disks ?? []), ...(storage?.pools ?? [])].filter((item) => item.level !== "ok");
+  for (const item of flagged) {
+    const name = "device" in item ? item.device : item.name;
+    entries.push({ time: errors.collected_at, label: `Storage currently flagged: ${name}`, detail: item.findings.join("; "), level: item.level, historical: false });
+  }
+  return entries.sort((a, b) => (b.time ?? "").localeCompare(a.time ?? ""));
+}
+
+/** @param {PveNode} node */
+function renderHardwareErrorsDialog(node) {
+  const errors = node.hardware.hardware_errors;
+  required("#hwerrors-heading").textContent = `Hardware Errors · ${nodeLabel(node)}`;
+  if (!errors) {
+    required("#hwerrors-body").replaceChildren(el("p", { className: "empty", text: "Hardware errors are not monitored for this node." }));
+    return;
+  }
+  /** @param {HealthLevel} level @param {string} text */
+  const levelCell = (level, text) => el("span", { className: `health-badge health-${level}`, text });
+  /** @param {string[]} headers @param {HTMLElement[]} rows @param {string} empty */
+  const table = (headers, rows, empty) =>
+    rows.length === 0 ? el("p", { className: "empty", text: empty }) : el("table", { className: "storage-table" }, [el("thead", {}, [el("tr", {}, headers.map((header) => el("th", { text: header })))]), el("tbody", {}, rows)]);
+  const monitoring = [
+    errors.stale ? `Stale: ${errors.error ?? "no recent reading"}. Last successful check ${formatTime(errors.last_success)}.` : `Checked ${formatTime(errors.collected_at)}.`,
+    errors.boot_started === null ? null : `Current boot began ${formatTime(errors.boot_started)}; counters since boot restart from zero at each reboot.`,
+    errors.counters_reset ? "A reboot was observed, so since-boot counters were reset; earlier events come from the journal and rasdaemon history." : null,
+    errors.edac_available ? null : "EDAC counters are not available on this node.",
+    errors.journal_available ? null : "The kernel journal could not be read.",
+  ].filter(Boolean);
+  const persisted = errors.persisted_corrected === null ? "rasdaemon is not installed or has no history" : `${errors.persisted_corrected} corrected / ${errors.persisted_uncorrected ?? 0} uncorrected${errors.persisted_mce === null ? "" : `, ${errors.persisted_mce} MCE records`}`;
+  const counterRows = errors.memory_counters.map((counter) =>
+    el("tr", {}, [
+      el("td", {}, [el("code", { text: counter.label ?? counter.controller })]),
+      el("td", { text: String(counter.corrected) }),
+      el("td", { text: String(counter.uncorrected) }),
+    ]),
+  );
+  const incidentRows = errors.incidents.map((incident) =>
+    el("tr", { className: incident.current_boot ? "" : "is-historical" }, [
+      el("td", {}, [levelCell(incident.level, incident.current_boot ? "This boot" : "Earlier boot")]),
+      el("td", { text: `${categoryLabel(incident.category)} · ${incident.classification}` }),
+      el("td", {}, [
+        el("div", { text: incident.title }),
+        el("small", { text: [...incident.recurrence, ...incident.fields.map(([name, value]) => `${name}=${value}`)].join(" · ") }),
+        el("details", {}, [el("summary", { text: `Raw records (latest ${incident.raw.length} of ${incident.count})` }), el("pre", { className: "raw-events", text: incident.raw.map((raw) => `${raw.timestamp} boot ${raw.boot_id.slice(0, 8)} ${raw.source}: ${raw.message}`).join("\n") })]),
+      ]),
+      el("td", { text: `${incident.count} (${incident.last_hour} in 1 h, ${incident.last_day} in 24 h)` }),
+      el("td", { text: formatTime(incident.first_seen) }),
+      el("td", { text: formatTime(incident.last_seen) }),
+    ]),
+  );
+  const timelineRows = timelineEntries(node, errors).map((entry) =>
+    el("tr", { className: entry.historical ? "is-historical" : "" }, [
+      el("td", { text: formatTime(entry.time) }),
+      el("td", {}, [entry.level === "info" ? el("span", { className: "health-badge health-na", text: "Info" }) : levelCell(entry.level, stateLabel(entry.level))]),
+      el("td", { text: entry.historical ? "Earlier boot" : "Current" }),
+      el("td", { text: entry.label }),
+      el("td", {}, [el("small", { text: entry.detail })]),
+    ]),
+  );
+  required("#hwerrors-body").replaceChildren(
+    el("p", { className: "hw-status", text: monitoring.join(" ") }),
+    el("h3", { text: "Findings" }),
+    errors.findings.length === 0 ? el("p", { className: "empty", text: "No hardware errors reported." }) : el("ul", { className: "hw-findings" }, errors.findings.map((finding) => el("li", { text: finding }))),
+    el("h3", { text: "ECC Counters" }),
+    el("p", { className: "hw-status", text: `Persisted history (survives reboots): ${persisted}` }),
+    table(["DIMM / Controller (since boot)", "Corrected", "Uncorrected"], counterRows, "No EDAC counters on this node."),
+    el("h3", { text: "Incidents" }),
+    table(["Scope", "Class", "Evidence", "Events", "First seen", "Last seen"], incidentRows, errors.journal_available ? "No hardware error events in the last 14 days." : "Event history unavailable."),
+    el("h3", { text: "Timeline" }),
+    el("p", { className: "hw-status", text: "Entries are listed together by time only; being close in time does not mean one caused another." }),
+    table(["Time", "Level", "Scope", "Event", "Detail"], timelineRows, "Nothing to show."),
+    el("p", { className: "hw-status", text: "This view only reads. Offlining CPUs, rebooting, clearing counters, or running scrubs and stress tests are manual operator actions." }),
+  );
+}
+
+/** @type {string | null} */
+let hwErrorsDialogNode = null;
+let hwErrorsRendered = "";
+
+/** @param {string | null} nodeName */
+function openHardwareErrorsDialog(nodeName) {
+  hwErrorsDialogNode = nodeName;
+  syncHardwareErrorsDialog();
+}
+
+/** Keeps an open dialog current as new snapshots arrive. */
+function syncHardwareErrorsDialog() {
+  const dialog = required("#hwerrors-dialog");
+  if (!(dialog instanceof HTMLDialogElement) || hwErrorsDialogNode === null) return;
+  const node = state.snapshot?.nodes.find((candidate) => candidate.name === hwErrorsDialogNode);
+  if (node === undefined) {
+    dialog.close();
+    return;
+  }
+  // Re-rendering would collapse any raw-record sections the user has open.
+  const signature = JSON.stringify([node.hardware.hardware_errors, node.hardware.storage]);
+  if (dialog.open && signature === hwErrorsRendered) return;
+  hwErrorsRendered = signature;
+  renderHardwareErrorsDialog(node);
+  if (!dialog.open) dialog.showModal();
+}
+
 /** @param {PveNode} node */
 function renderStorageDialog(node) {
   const storage = node.hardware.storage;
@@ -461,8 +600,8 @@ function renderOverview(nodes) {
         ? [el("div", { className: "tile-readings" }, [
             el("div", { className: "gauges" }, gauges),
             el("div", { className: "tile-details" }, [el("div", { className: "facts" }, [fact("RAM", memoryText), ...(arcBytes === null ? [] : [fact("ZFS ARC", arcMax ? formatMemoryPair({ used: arcBytes, total: arcMax }) : formatBytes(arcBytes))])])]),
-          ]), el("div", { className: "tile-footer" }, [...hardwareDetails, ...storageBadges(node)])]
-        : [el("p", { className: "offline-note", text: "No live readings." }), ...hardwareDetails]),
+          ]), el("div", { className: "tile-footer" }, [...hardwareDetails, ...hardwareErrorBadges(node), ...storageBadges(node)])]
+        : [el("p", { className: "offline-note", text: "No live readings." }), ...hardwareDetails, el("div", { className: "tile-footer" }, hardwareErrorBadges(node))]),
     ]);
   });
   const host = required("#overview");
@@ -743,6 +882,7 @@ function render() {
   renderTopology(nodes);
   renderGuests(nodes);
   syncStorageDialog();
+  syncHardwareErrorsDialog();
   required("#source-label").textContent = state.snapshot?.source ?? "No data source connected";
   const lastUpdate = state.snapshot ? new Date(state.snapshot.fetched_at).toLocaleTimeString() : null;
   required("#updated").textContent =
@@ -802,6 +942,11 @@ document.addEventListener("click", (event) => {
     void rebootGuest(Number(rebootTarget.getAttribute("data-reboot-vmid")), rebootTarget.getAttribute("data-reboot-node") ?? "");
     return;
   }
+  const hwErrorsBadge = event.target.closest("[data-hwerrors-node]");
+  if (hwErrorsBadge instanceof Element) {
+    openHardwareErrorsDialog(hwErrorsBadge.getAttribute("data-hwerrors-node"));
+    return;
+  }
   const storageBadge = event.target.closest("[data-storage-node]");
   if (storageBadge instanceof Element) {
     openStorageDialog(storageBadge.getAttribute("data-storage-node"));
@@ -850,8 +995,21 @@ required("#close-storage-button").addEventListener("click", () => {
 required("#storage-dialog").addEventListener("close", () => {
   storageDialogNode = null;
 });
+required("#close-hwerrors-button").addEventListener("click", () => {
+  const dialog = required("#hwerrors-dialog");
+  if (dialog instanceof HTMLDialogElement) dialog.close();
+});
+required("#hwerrors-dialog").addEventListener("close", () => {
+  hwErrorsDialogNode = null;
+});
 document.addEventListener("keydown", (event) => {
   if ((event.key !== "Enter" && event.key !== " ") || !(event.target instanceof Element)) return;
+  const hwErrorsBadge = event.target.closest("[data-hwerrors-node]");
+  if (hwErrorsBadge instanceof Element) {
+    event.preventDefault();
+    openHardwareErrorsDialog(hwErrorsBadge.getAttribute("data-hwerrors-node"));
+    return;
+  }
   const storageBadge = event.target.closest("[data-storage-node]");
   if (!(storageBadge instanceof Element)) return;
   event.preventDefault();

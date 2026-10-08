@@ -119,6 +119,12 @@ span.health-badge[role="button"] { cursor: pointer; }
 .health-critical { color: #8f1d14; background: rgba(255,221,215,.95); border-color: rgba(156,29,20,.55); }
 .health-unknown, .health-na { color: #4d5d67; background: rgba(236,244,248,.9); }
 #storage-dialog { width: min(1100px, calc(100vw - 28px)); }
+#hwerrors-dialog { width: min(1200px, calc(100vw - 28px)); }
+.hw-status { margin: 4px 0; color: var(--ink-soft); font-size: 12px; }
+.hw-findings { margin: 4px 0; padding-left: 18px; font-size: 12px; }
+.storage-table tr.is-historical { opacity: .72; }
+.storage-table details { margin-top: 4px; font-size: 11px; }
+.raw-events { max-height: 160px; overflow: auto; margin: 4px 0 0; padding: 6px; border-radius: 4px; background: rgba(15,90,150,.08); font: 11px/1.4 "Cascadia Mono", "DejaVu Sans Mono", monospace; white-space: pre-wrap; overflow-wrap: anywhere; }
 .storage-body { padding: 4px 18px 16px; overflow: auto; max-height: min(620px, calc(100dvh - 110px)); }
 .storage-body h3 { margin: 14px 0 6px; font-size: 14px; }
 .storage-table { width: 100%; border-collapse: collapse; font-size: 12px; }

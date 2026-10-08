@@ -21,6 +21,8 @@ from homelab_dashboard.sources.base import RefreshableStatusSource, StatusSource
 from homelab_dashboard.sources.cache import CachedStatusSource
 from homelab_dashboard.sources.hardware_source import HardwareEnrichedSource
 from homelab_dashboard.sources.hardware_ssh import SshHardwareProbe
+from homelab_dashboard.sources.hwerrors_monitor import HardwareErrorMonitor
+from homelab_dashboard.sources.hwerrors_ssh import SshHardwareErrorProbe
 from homelab_dashboard.sources.storage_ssh import SshStorageProbe
 from homelab_dashboard.sources.openwrt_ssh import OpenWrtLeaseSource
 from homelab_dashboard.sources.proxmox_ssh import ProxmoxSshSource, SshTarget
@@ -60,8 +62,7 @@ class DashboardHandler(SimpleHTTPRequestHandler):
     def do_GET(self) -> None:
         url = urlparse(self.path)
         if url.path == DEV_VERSION_PATH and os.environ.get("DASHBOARD_DEV") == "1":
-            newest: int = max((path.stat().st_mtime_ns for path in WEB_ROOT.glob("*") if path.is_file()), default=0)
-            self._send_json(status=HTTPStatus.OK, payload={"version": f"{BOOT_ID}:{newest}"})
+            self._send_json(status=HTTPStatus.OK, payload={"version": BOOT_ID})
             return
         if url.path == LOGS_PATH:
             self._send_json(status=HTTPStatus.OK, payload={"entries": self.activity_log.read()})
@@ -198,6 +199,7 @@ def main() -> None:
         ttl_seconds=settings.hardware_cache_seconds,
         storage_probe=SshStorageProbe(user=settings.ssh_user),
         storage_ttl_seconds=settings.storage_cache_seconds,
+        errors=HardwareErrorMonitor(probe=SshHardwareErrorProbe(user=settings.ssh_user), ttl_seconds=settings.hardware_errors_cache_seconds),
     )
     devices: OpenWrtLeaseSource = OpenWrtLeaseSource(target=router_target, ttl_seconds=settings.router_cache_seconds)
     rebooter: GuestRebooter = GuestRebooter(source=enriched, user=settings.ssh_user)

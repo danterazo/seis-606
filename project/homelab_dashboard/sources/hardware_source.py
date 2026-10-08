@@ -5,9 +5,10 @@ from dataclasses import dataclass, field, replace
 from datetime import UTC, datetime
 from typing import Callable, Dict, List, Optional, Protocol, Tuple
 
-from homelab_dashboard.models import ClusterSnapshot, Hardware, Node, NodeState, Storage
+from homelab_dashboard.models import ClusterSnapshot, Hardware, HardwareErrors, Node, NodeState, Storage
 from homelab_dashboard.sources.base import RefreshableStatusSource, StatusSourceError
 from homelab_dashboard.sources.hardware_ssh import HardwareProbe
+from homelab_dashboard.sources.hwerrors_monitor import HardwareErrorMonitor
 from homelab_dashboard.sources.storage_ssh import StorageProbe
 
 
@@ -42,6 +43,7 @@ class HardwareEnrichedSource:
     ttl_seconds: float
     storage_probe: Optional[StorageProbe] = None
     storage_ttl_seconds: float = 300.0
+    errors: Optional[HardwareErrorMonitor] = None
     clock: Callable[[], float] = time.monotonic
     now: Callable[[], datetime] = _utc_now
     _lock: threading.Lock = field(default_factory=threading.Lock, init=False)
@@ -68,6 +70,8 @@ class HardwareEnrichedSource:
             for node in snapshot.nodes:
                 if self._is_probeable(node=node):
                     self._refresh_storage(node=node, force=force)
+                    if self.errors is not None:
+                        self.errors.refresh(node_name=node.name, address=str(node.address), force=force)
             nodes: Tuple[Node, ...] = tuple(self._with_hardware(node=node) for node in snapshot.nodes)
             checked: List[datetime] = [self._entries[node.name].checked_at for node in snapshot.nodes if self._is_probeable(node=node)]
         return replace(snapshot, nodes=nodes, fetched_at=max([snapshot.fetched_at, *checked]))
@@ -77,6 +81,8 @@ class HardwareEnrichedSource:
             running: List["Future[None]"] = list(self._storage_running.values())
         for future in running:
             future.result()
+        if self.errors is not None:
+            self.errors.wait()
 
     def _refresh_storage(self, *, node: Node, force: bool) -> None:
         """SMART reads take seconds, so they run in the background and the page keeps the last result meanwhile."""
@@ -118,8 +124,12 @@ class HardwareEnrichedSource:
         return _Entry(hardware=hardware, stored_at=self.clock(), checked_at=self.now())
 
     def _with_hardware(self, *, node: Node) -> Node:
+        # Hardware error history is kept even while the node is down; that is when it matters most.
+        hardware_errors: Optional[HardwareErrors] = None
+        if self.errors is not None:
+            hardware_errors = self.errors.latest(node_name=node.name, reachable=self._is_probeable(node=node))
         if self._is_probeable(node=node) and node.name in self._entries:
             with self._storage_lock:
                 storage: Optional[Storage] = self._storage.get(node.name)
-            return replace(node, hardware=replace(self._entries[node.name].hardware, storage=storage))
-        return replace(node, hardware=self.expected_hardware(node_name=node.name))
+            return replace(node, hardware=replace(self._entries[node.name].hardware, storage=storage, hardware_errors=hardware_errors))
+        return replace(node, hardware=replace(self.expected_hardware(node_name=node.name), hardware_errors=hardware_errors))

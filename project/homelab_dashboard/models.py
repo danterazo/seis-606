@@ -111,6 +111,95 @@ class Storage:
     zfs_available: bool = False
 
 
+class ErrorCategory(StrEnum):
+    ECC_MEMORY = "ecc_memory"
+    CPU_MCE = "cpu_mce"
+    PAGE_OFFLINE = "page_offline"
+    PCIE = "pcie"
+    STORAGE_PATH = "storage_path"
+
+
+class ErrorClass(StrEnum):
+    CORRECTED = "corrected"
+    UNCORRECTED = "uncorrected"
+    UNSPECIFIED = "unspecified"
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class RawEvent:
+    """The original log line, kept verbatim next to whatever was decoded from it."""
+
+    timestamp: str
+    boot_id: str
+    source: str
+    message: str
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class ErrorIncident:
+    """Identical repeated events on one boot, folded together; `fields` are the most frequent decoded values."""
+
+    category: ErrorCategory
+    classification: ErrorClass
+    title: str
+    level: HealthLevel
+    count: int
+    first_seen: str
+    last_seen: str
+    last_hour: int
+    last_day: int
+    boot_id: str
+    current_boot: bool
+    boots_seen: int
+    recurrence: Tuple[str, ...] = ()
+    fields: Tuple[Tuple[str, str], ...] = ()
+    raw: Tuple[RawEvent, ...] = ()
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class BootRecord:
+    boot_id: str
+    first_seen: Optional[str]
+    last_seen: Optional[str]
+    current: bool
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class MemoryCounter:
+    """EDAC counters; they restart from zero at every boot."""
+
+    controller: str
+    label: Optional[str]
+    corrected: int
+    uncorrected: int
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class HardwareErrors:
+    """Hardware error evidence for a node, deliberately separate from utilization.
+
+    `stale` means the figures are the last known ones because the node or the probe did not answer.
+    """
+
+    level: HealthLevel
+    findings: Tuple[str, ...] = ()
+    incidents: Tuple[ErrorIncident, ...] = ()
+    boots: Tuple[BootRecord, ...] = ()
+    memory_counters: Tuple[MemoryCounter, ...] = ()
+    edac_available: bool = False
+    journal_available: bool = False
+    persisted_corrected: Optional[int] = None
+    persisted_uncorrected: Optional[int] = None
+    persisted_mce: Optional[int] = None
+    boot_id: Optional[str] = None
+    boot_started: Optional[str] = None
+    collected_at: Optional[str] = None
+    stale: bool = False
+    error: Optional[str] = None
+    last_success: Optional[str] = None
+    counters_reset: bool = False
+
+
 @dataclass(frozen=True, slots=True, kw_only=True)
 class Hardware:
     """`source` says whether this was read from the node (live) or taken from the configured profile (expected)."""
@@ -124,6 +213,7 @@ class Hardware:
     zfs_arc_bytes: Optional[int] = None
     zfs_arc_max_bytes: Optional[int] = None
     storage: Optional[Storage] = None
+    hardware_errors: Optional[HardwareErrors] = None
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)

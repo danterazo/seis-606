@@ -20,6 +20,7 @@ class Settings:
     router_ssh_user: str = "root"
     router_cache_seconds: float = 60.0
     storage_cache_seconds: float = 300.0
+    hardware_errors_cache_seconds: float = 120.0
 
     @classmethod
     def from_env(cls, *, environ: Mapping[str, str] = os.environ) -> "Settings":
@@ -35,4 +36,5 @@ class Settings:
             router_ssh_user=environ.get("HOMELAB_ROUTER_SSH_USER", "root"),
             router_cache_seconds=float(environ.get("HOMELAB_ROUTER_CACHE_SECONDS", "60")),
             storage_cache_seconds=float(environ.get("HOMELAB_STORAGE_CACHE_SECONDS", "300")),
+            hardware_errors_cache_seconds=float(environ.get("HOMELAB_HW_ERRORS_CACHE_SECONDS", "120")),
         )

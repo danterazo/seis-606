@@ -23,6 +23,7 @@ standard library and an OpenSSH client.
 | `HOMELAB_HARDWARE_CACHE_SECONDS` | `3` | Minimum seconds between CPU/firmware ECC probes of each online node (a tiny read-only Python script sent over the same SSH connection settings; nothing is installed or written on the node) |
 | `HOMELAB_ROUTER_SSH_HOST` | `192.168.10.1` | OpenWRT router for DHCPv4 leases |
 | `HOMELAB_STORAGE_CACHE_SECONDS` | `300` | Minimum seconds between SMART / `zpool` reads of each online node, run in the background (needs `smartctl`; disks in standby are not woken). Thresholds live in `sources/storage_parser.py` (HDD warn 45 °C / critical 50 °C) |
+| `HOMELAB_HW_ERRORS_CACHE_SECONDS` | `120` | Minimum seconds between hardware-error reads (EDAC counters, 14 days of kernel/rasdaemon journal, `ras-mc-ctl --summary`) of each online node, run in the background. Read-only; the last reading is kept and marked stale when a node is unreachable. Recurrence threshold lives in `sources/hwerrors_parser.py` |
 | `HOMELAB_ROUTER_SSH_USER` | `root` | Router SSH account (key authentication only) |
 | `HOMELAB_ROUTER_CACHE_SECONDS` | `60` | Router lease cache TTL, including failures; independent of PVE |
 | `HOMELAB_HOST` / `PORT` | `127.0.0.1` / `8765` | Where the dashboard listens                |

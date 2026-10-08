@@ -1,4 +1,5 @@
 import json
+import os
 import subprocess
 import threading
 from datetime import UTC, datetime
@@ -14,6 +15,7 @@ from homelab_dashboard.sources.base import StatusSourceError
 from homelab_dashboard.sources.openwrt_ssh import OpenWrtLeaseSource
 from homelab_dashboard.sources.proxmox_ssh import SshTarget
 from homelab_dashboard.ui.dashboard import build_dashboard_snapshot
+import server
 from server import create_server
 
 
@@ -39,6 +41,42 @@ def test_dashboard_snapshot_includes_label_and_node_counts() -> None:
     assert snapshot["nodes"][0]["name"] == "Node A"
     assert snapshot["nodes"][1]["reported_state"] == "degraded"
     assert snapshot["nodes"][0]["workload_count"] == 2
+
+
+def test_dev_version_ignores_web_asset_changes(tmp_path: Any, monkeypatch: Any) -> None:
+    class UnavailablePve:
+        def fetch(self) -> ClusterSnapshot:
+            raise StatusSourceError("PVE unavailable")
+
+        def fetch_fresh(self) -> ClusterSnapshot:
+            return self.fetch()
+
+    web_root = tmp_path / "web"
+    web_root.mkdir()
+    asset = web_root / "aero.css"
+    asset.write_text("body { color: black; }")
+    monkeypatch.setattr(server, "WEB_ROOT", web_root)
+    monkeypatch.setenv("DASHBOARD_DEV", "1")
+    activity_log = ActivityLog(tmp_path / "logs" / "access.jsonl")
+    http_server = create_server(
+        settings=Settings.from_env(environ={"PORT": "0"}),
+        source=UnavailablePve(),
+        activity_log=activity_log,
+    )
+    thread = threading.Thread(target=http_server.serve_forever, daemon=True)
+    thread.start()
+    base = f"http://127.0.0.1:{http_server.server_port}"
+    try:
+        with urlopen(f"{base}/__dev/version", timeout=5) as response:
+            initial_version = json.load(response)["version"]
+        current_mtime = asset.stat().st_mtime_ns
+        os.utime(asset, ns=(current_mtime + 1_000_000_000, current_mtime + 1_000_000_000))
+        with urlopen(f"{base}/__dev/version", timeout=5) as response:
+            assert json.load(response)["version"] == initial_version
+    finally:
+        http_server.shutdown()
+        http_server.server_close()
+        thread.join(timeout=5)
 
 
 def test_devices_endpoint_is_independent_of_pve_and_can_force_refresh() -> None:
