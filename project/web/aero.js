@@ -250,11 +250,11 @@ function zfsTotals(pools) {
   if (known.length === 0) return null;
   const size = known.reduce((sum, pool) => sum + (pool.size_bytes ?? 0), 0);
   const used = known.reduce((sum, pool) => sum + (pool.size_bytes ?? 0) - (pool.dataset_available_bytes ?? 0), 0);
-  return { size, used, names: known.map((pool) => pool.name) };
+  return { size, used, names: known.map((pool) => pool.name), usedByPool: known.map((pool) => (pool.size_bytes ?? 0) - (pool.dataset_available_bytes ?? 0)) };
 }
 
-/** @param {{ label: string, value: number | null, tone: "cpu" | "memory" | "storage", arcValue?: number | null, title?: string }} args */
-function gauge({ label, value, tone, arcValue = null, title }) {
+/** @param {{ label: string, value: number | null, tone: "cpu" | "memory" | "storage", arcValue?: number | null, arcClass?: string, title?: string }} args */
+function gauge({ label, value, tone, arcValue = null, arcClass = "gauge-arc-zfs", title }) {
   const radius = 22;
   const circumference = 2 * Math.PI * radius;
   /** @param {string} cls @param {number | null} percent */
@@ -271,7 +271,7 @@ function gauge({ label, value, tone, arcValue = null, title }) {
   const arcs =
     arcValue === null || value === null
       ? [ringArc(`gauge-arc gauge-${tone}`, value)]
-      : [ringArc("gauge-arc gauge-arc-zfs", value), ringArc(`gauge-arc gauge-${tone}`, value - arcValue)];
+      : [ringArc(`gauge-arc ${arcClass}`, value), ringArc(`gauge-arc gauge-${tone}`, value - arcValue)];
   const ring = svg("svg", { viewBox: "0 0 56 56", "aria-hidden": "true" }, [
     svg("circle", { class: "gauge-track", cx: 28, cy: 28, r: radius }),
     ...arcs,
@@ -761,7 +761,21 @@ function renderOverview(nodes) {
     if (zfs !== null) {
       const value = clamp((zfs.used / zfs.size) * 100);
       const title = `ZFS: ${formatPercent(value)} used · ${formatPoolBytes(zfs.used)} of ${formatPoolBytes(zfs.size)} across ${zfs.names.join(", ")}`;
-      gauges.push(gauge({ label: "ZFS", value, tone: "storage", title }));
+      // Purple is the data pools, orange the rpool tacked on at the end; the split only shows with several pools.
+      const rpoolIndex = zfs.names.indexOf("rpool");
+      const rpoolPercent = zfs.names.length < 2 || rpoolIndex < 0 ? null : (zfs.usedByPool[rpoolIndex] / zfs.size) * 100;
+      const detail = zfs.names.map((name, index) => `${name}: ${formatPoolBytes(zfs.usedByPool[index])}`).join(" · ");
+      gauges.push(
+        gauge({
+          label: "ZFS",
+          value,
+          tone: "storage",
+          // The purple arc spans everything; the orange rpool arc sits on top from the start, widened so a tiny rpool still shows.
+          arcValue: rpoolPercent === null ? null : value - Math.min(Math.max(rpoolPercent, 5), value),
+          arcClass: "gauge-arc-pool",
+          title: rpoolPercent === null ? title : `${title}\n${detail}`,
+        }),
+      );
     }
     const modelLine = cpuModelLine(node.hardware);
     const { memory_used_bytes: used, memory_total_bytes: total } = node.resources;

@@ -985,6 +985,10 @@ span.health-badge[role="button"] {
   stroke: #d66b3f;
   filter: drop-shadow(0 0 3px rgba(214, 107, 63, 0.65));
 }
+.gauge-arc-pool {
+  stroke: #8e5bd0;
+  filter: drop-shadow(0 0 3px rgba(142, 91, 208, 0.65));
+}
 .gauge-arc-zfs {
   stroke: #f2a93b;
   filter: drop-shadow(0 0 3px rgba(242, 169, 59, 0.7));
