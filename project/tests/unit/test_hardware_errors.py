@@ -34,7 +34,16 @@ def event(message: str, *, minute: int = 0, boot_id: str = BOOT, source: str = "
 
 
 def document(*events: dict[str, str], **overrides: Any) -> dict[str, Any]:
-    return {"now": "2025-10-08T11:00:00+00:00", "boot_id": BOOT, "uptime_seconds": 3600.0, "edac": [], "events": list(events), "boots": [], "ras_summary": None, **overrides}
+    return {
+        "now": "2025-10-08T11:00:00+00:00",
+        "boot_id": BOOT,
+        "uptime_seconds": 3600.0,
+        "edac": [],
+        "events": list(events),
+        "boots": [],
+        "ras_summary": None,
+        **overrides,
+    }
 
 
 def test_clean_node_is_ok_and_distinct_from_unreadable() -> None:
@@ -130,7 +139,9 @@ def test_perf_sample_rate_message_is_not_a_hardware_error() -> None:
 
 
 def test_edac_counters_and_persisted_rasdaemon_totals() -> None:
-    edac: list[dict[str, Any]] = [{"controller": "mc0", "corrected": 15, "uncorrected": 0, "dimms": [{"label": DIMM, "corrected": 15, "uncorrected": 0}]}]
+    edac: list[dict[str, Any]] = [
+        {"controller": "mc0", "corrected": 15, "uncorrected": 0, "dimms": [{"label": DIMM, "corrected": 15, "uncorrected": 0}]}
+    ]
     summary: str = f"Memory controller events summary:\n\tCorrected on DIMM Label(s): '{DIMM}' location: 0:0:0:1 errors: 20\nNo PCIe AER errors.\nMCE records summary:\n\t3 Internal parity errors\n"
     result: HardwareErrors = parse_hardware_errors(document=document(edac=edac, ras_summary=summary))
     assert (result.memory_counters[0].label, result.memory_counters[0].corrected) == (DIMM, 15)

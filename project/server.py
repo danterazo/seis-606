@@ -9,7 +9,7 @@ from functools import partial
 from http import HTTPStatus
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from typing import Any, Final, Union
+from typing import Any, Final
 from urllib.parse import parse_qs, urlparse
 
 from homelab_dashboard.activity_log import ActivityLog
@@ -38,7 +38,7 @@ BOOT_ID: Final[str] = str(time.time_ns())
 CLEAR_LOGS_PATH: Final[str] = "/api/logs/clear"
 LOG_PATH: Final[Path] = Path(__file__).resolve().parent / "logs" / "access.jsonl"
 
-RequestSocket = Union[socket.socket, tuple[bytes, socket.socket]]
+RequestSocket = socket.socket | tuple[bytes, socket.socket]
 
 
 class DashboardHandler(SimpleHTTPRequestHandler):
@@ -63,9 +63,7 @@ class DashboardHandler(SimpleHTTPRequestHandler):
         url = urlparse(self.path)
         if url.path == DEV_VERSION_PATH and os.environ.get("DASHBOARD_DEV") == "1":
             assets: dict[str, int] = {
-                f"/{path.relative_to(WEB_ROOT).as_posix()}": path.stat().st_mtime_ns
-                for path in sorted(WEB_ROOT.rglob("*"))
-                if path.is_file()
+                f"/{path.relative_to(WEB_ROOT).as_posix()}": path.stat().st_mtime_ns for path in sorted(WEB_ROOT.rglob("*")) if path.is_file()
             }
             self._send_json(status=HTTPStatus.OK, payload={"version": BOOT_ID, "assets": assets})
             return
@@ -171,7 +169,11 @@ class DashboardHandler(SimpleHTTPRequestHandler):
 
 
 def create_server(
-    *, settings: Settings, source: RefreshableStatusSource, activity_log: ActivityLog | None = None, devices: OpenWrtLeaseSource | None = None,
+    *,
+    settings: Settings,
+    source: RefreshableStatusSource,
+    activity_log: ActivityLog | None = None,
+    devices: OpenWrtLeaseSource | None = None,
     rebooter: GuestRebooter | None = None,
 ) -> ThreadingHTTPServer:
     log_store: ActivityLog = activity_log if activity_log is not None else ActivityLog(LOG_PATH)
@@ -216,4 +218,3 @@ def main() -> None:
         print("\nStopping homelab dashboard.")
     finally:
         server.server_close()
-

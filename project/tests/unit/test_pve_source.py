@@ -120,7 +120,10 @@ def test_ssh_command_never_prompts_or_relaxes_host_checking() -> None:
 
 
 def test_reachable_node_stays_online_and_keeps_its_figures_without_quorum() -> None:
-    resources: list[dict[str, Any]] = [{"type": "node", "node": "cerulean", "status": "unknown"}, {"type": "node", "node": "kex", "status": "unknown"}]
+    resources: list[dict[str, Any]] = [
+        {"type": "node", "node": "cerulean", "status": "unknown"},
+        {"type": "node", "node": "kex", "status": "unknown"},
+    ]
     cluster_status: list[dict[str, Any]] = [
         {"type": "node", "name": "cerulean", "ip": "10.0.0.2", "online": 1, "local": 1},
         {"type": "node", "name": "kex", "ip": "10.0.0.1", "online": 0, "local": 0},

@@ -44,9 +44,7 @@ def _parse_guest(*, row: JsonObject) -> Guest | None:
     )
 
 
-def _parse_node(
-    *, row: JsonObject, address: str | None, guests: Sequence[Guest], online: bool, local_resources: Resources | None
-) -> Node | None:
+def _parse_node(*, row: JsonObject, address: str | None, guests: Sequence[Guest], online: bool, local_resources: Resources | None) -> Node | None:
     name: str | None = as_text(value=row.get("node"))
     if name is None:
         return None
@@ -56,9 +54,7 @@ def _parse_node(
         reported = local_resources
     # An unreachable node's cached usage figures are stale, so only its capacity is kept.
     resources: Resources = (
-        reported
-        if state is NodeState.ONLINE
-        else Resources(cpu_cores=reported.cpu_cores, memory_total_bytes=reported.memory_total_bytes)
+        reported if state is NodeState.ONLINE else Resources(cpu_cores=reported.cpu_cores, memory_total_bytes=reported.memory_total_bytes)
     )
     return Node(
         name=name,

@@ -121,19 +121,14 @@ def test_probe_parses_nvidia_csv_by_pci_slot() -> None:
 
 def test_probe_reads_busiest_engine_of_last_complete_sample_from_unclosed_stream() -> None:
     stream: str = (
-        '[\n{"engines": {"Render/3D": {"busy": 1.0}}},\n'
-        '{"engines": {"Render/3D": {"busy": 40.5}, "Video": {"busy": 12.0}}},\n'
-        '{"engines": {"Render/3'
+        '[\n{"engines": {"Render/3D": {"busy": 1.0}}},\n{"engines": {"Render/3D": {"busy": 40.5}, "Video": {"busy": 12.0}}},\n{"engines": {"Render/3'
     )
     assert remote_probe.parse_intel_busy(output=stream) == 40.5
     assert remote_probe.parse_intel_busy(output="no json") is None
 
 
 def test_probe_counts_physical_cores_and_logical_threads(monkeypatch: pytest.MonkeyPatch) -> None:
-    cpuinfo: str = "\n\n".join(
-        f"processor : {thread}\nphysical id : 0\ncore id : {thread // 2}"
-        for thread in range(4)
-    )
+    cpuinfo: str = "\n\n".join(f"processor : {thread}\nphysical id : 0\ncore id : {thread // 2}" for thread in range(4))
     monkeypatch.setattr(remote_probe, "read_text", lambda *, path: cpuinfo if path == "/proc/cpuinfo" else None)
 
     assert remote_probe.cpu_topology() == (2, 4)
@@ -167,9 +162,7 @@ def test_expected_hardware_matches_the_configured_machines() -> None:
         ("Error Correction Type: None\nError Correction Type: Multi-bit ECC", True),
     ],
 )
-def test_probe_reports_firmware_ecc_without_guessing(
-    monkeypatch: pytest.MonkeyPatch, output: str, expected: bool | None
-) -> None:
+def test_probe_reports_firmware_ecc_without_guessing(monkeypatch: pytest.MonkeyPatch, output: str, expected: bool | None) -> None:
     def fake_run(*, command: list[str], timeout: float = 4.0) -> str:
         assert command == ["dmidecode", "--type", "16"]
         return output
@@ -195,7 +188,15 @@ def test_probe_does_not_collect_gpus(monkeypatch: pytest.MonkeyPatch, capsys: py
 
     monkeypatch.setattr(remote_probe, "collect_gpus", forbidden_collection)
     remote_probe.main()
-    assert json.loads(capsys.readouterr().out) == {"cpu_model": "Intel N150", "cpu_cores": 4, "cpu_threads": 8, "ecc_supported": None, "zfs_arc_bytes": 1024, "zfs_arc_max_bytes": 2048, "gpus": []}
+    assert json.loads(capsys.readouterr().out) == {
+        "cpu_model": "Intel N150",
+        "cpu_cores": 4,
+        "cpu_threads": 8,
+        "ecc_supported": None,
+        "zfs_arc_bytes": 1024,
+        "zfs_arc_max_bytes": 2048,
+        "gpus": [],
+    }
 
 
 def test_only_online_nodes_are_probed_and_others_use_expected_hardware() -> None:
@@ -276,6 +277,8 @@ def test_ssh_probe_sends_the_script_on_stdin_with_strict_host_keys() -> None:
 
 def test_ssh_probe_reports_failures_and_malformed_output() -> None:
     with pytest.raises(StatusSourceError, match="refused"):
-        SshHardwareProbe(runner=make_runner(stderr="Permission denied (publickey)", returncode=255, calls=[])).probe(node_name="x", address="10.0.0.1")
+        SshHardwareProbe(runner=make_runner(stderr="Permission denied (publickey)", returncode=255, calls=[])).probe(
+            node_name="x", address="10.0.0.1"
+        )
     with pytest.raises(StatusSourceError, match="malformed"):
         SshHardwareProbe(runner=make_runner(stdout="not json", calls=[])).probe(node_name="x", address="10.0.0.1")

@@ -31,7 +31,16 @@ def test_dnsmasq_leases_preserve_identity_and_use_shared_names() -> None:
     assert parse_leases(text="\n") == ()
 
 
-@pytest.mark.parametrize("text", ["bad row", "x aa:bb:cc:dd:ee:ff 192.168.10.2 suika *", "0 bad 192.168.10.2 suika *", "0 aa:bb:cc:dd:ee:ff bad suika *", "-1 aa:bb:cc:dd:ee:ff 192.168.10.2 suika *"])
+@pytest.mark.parametrize(
+    "text",
+    [
+        "bad row",
+        "x aa:bb:cc:dd:ee:ff 192.168.10.2 suika *",
+        "0 bad 192.168.10.2 suika *",
+        "0 aa:bb:cc:dd:ee:ff bad suika *",
+        "-1 aa:bb:cc:dd:ee:ff 192.168.10.2 suika *",
+    ],
+)
 def test_malformed_leases_are_not_presented_as_empty_inventory(text: str) -> None:
     with pytest.raises(StatusSourceError):
         parse_leases(text=text)
@@ -120,22 +129,25 @@ def test_network_groups_include_all_non_lan_devices_in_the_second_panel(address:
 
 def test_named_devices_precede_ip_only_devices_in_both_panels() -> None:
     runner = FakeRunner()
-    runner.stdout = "\n".join([
-        "0 aa:bb:cc:dd:ee:01 172.16.0.2 * *",
-        "0 aa:bb:cc:dd:ee:02 172.16.0.3 172.16.0.3 *",
-        "0 aa:bb:cc:dd:ee:03 172.16.10.170 creality-k1c-wifi *",
-        "0 aa:bb:cc:dd:ee:04 172.16.0.238 ecoflow *",
-        "0 aa:bb:cc:dd:ee:05 192.168.10.10 lan-node *",
-        "0 aa:bb:cc:dd:ee:06 192.168.10.2 * *",
-        "0 aa:bb:cc:dd:ee:07 172.16.0.112 KP125M *",
-        "0 aa:bb:cc:dd:ee:08 192.168.10.3 192.168.10.3 *",
-    ])
+    runner.stdout = """0 aa:bb:cc:dd:ee:01 172.16.0.2 * *
+0 aa:bb:cc:dd:ee:02 172.16.0.3 172.16.0.3 *
+0 aa:bb:cc:dd:ee:03 172.16.10.170 creality-k1c-wifi *
+0 aa:bb:cc:dd:ee:04 172.16.0.238 ecoflow *
+0 aa:bb:cc:dd:ee:05 192.168.10.10 lan-node *
+0 aa:bb:cc:dd:ee:06 192.168.10.2 * *
+0 aa:bb:cc:dd:ee:07 172.16.0.112 KP125M *
+0 aa:bb:cc:dd:ee:08 192.168.10.3 192.168.10.3 *"""
     source = OpenWrtLeaseSource(target=SshTarget(host="router"), runner=runner)
     addresses = [lease["address"] for lease in source.fetch()["leases"]]
     assert addresses == [
-        "192.168.10.10", "192.168.10.2", "192.168.10.3",
-        "172.16.0.112", "172.16.0.238", "172.16.10.170",
-        "172.16.0.2", "172.16.0.3",
+        "192.168.10.10",
+        "192.168.10.2",
+        "192.168.10.3",
+        "172.16.0.112",
+        "172.16.0.238",
+        "172.16.10.170",
+        "172.16.0.2",
+        "172.16.0.3",
     ]
 
 
@@ -149,12 +161,22 @@ def test_transport_errors_stay_local_to_the_devices_payload(error: Exception) ->
 
 
 def test_ipv6_neighbors_and_ethernet_duids_match_ipv4_by_mac_not_hostname() -> None:
-    document = {"device": {"br-lan": {"leases": [
-        {"duid": "000100012d24bd02aabbccddeeff", "hostname": "different-name", "ipv6-addr": [
-            {"address": "fdda:beef:1::30", "valid-lifetime": 60},
-            {"address": "fdda:beef:1::31", "valid-lifetime": 0},
-        ]},
-    ]}}}
+    document = {
+        "device": {
+            "br-lan": {
+                "leases": [
+                    {
+                        "duid": "000100012d24bd02aabbccddeeff",
+                        "hostname": "different-name",
+                        "ipv6-addr": [
+                            {"address": "fdda:beef:1::30", "valid-lifetime": 60},
+                            {"address": "fdda:beef:1::31", "valid-lifetime": 0},
+                        ],
+                    },
+                ]
+            }
+        }
+    }
     neighbors = [{"dst": "fe80::1234", "dev": "br-lan", "lladdr": "aa:bb:cc:dd:ee:ff", "state": ["STALE"]}]
     records = parse_ipv6_records(leases=document, neighbors=neighbors, now=NOW)
     devices = build_device_payloads(leases=parse_leases(text=LEASES), ipv6=records, now=NOW)
@@ -165,11 +187,21 @@ def test_ipv6_neighbors_and_ethernet_duids_match_ipv4_by_mac_not_hostname() -> N
 
 
 def test_enterprise_duid_does_not_get_guessed_as_a_mac_and_remains_ipv6_only() -> None:
-    document = {"device": {"br-lan": {"leases": [
-        {"duid": "00020000ab115ef9d56e9c45ec09", "hostname": "ringom4-wifi", "ipv6-addr": [
-            {"address": "fdda:beef:1::18b", "valid-lifetime": 60},
-        ]},
-    ]}}}
+    document = {
+        "device": {
+            "br-lan": {
+                "leases": [
+                    {
+                        "duid": "00020000ab115ef9d56e9c45ec09",
+                        "hostname": "ringom4-wifi",
+                        "ipv6-addr": [
+                            {"address": "fdda:beef:1::18b", "valid-lifetime": 60},
+                        ],
+                    },
+                ]
+            }
+        }
+    }
     records = parse_ipv6_records(leases=document, neighbors=[], now=NOW)
     devices = build_device_payloads(leases=parse_leases(text=LEASES), ipv6=records, now=NOW)
     unmatched = next(device for device in devices if device["address"] is None)
@@ -180,11 +212,21 @@ def test_enterprise_duid_does_not_get_guessed_as_a_mac_and_remains_ipv6_only() -
 
 
 def test_exact_neighbor_address_links_an_enterprise_duid_and_deduplicates_addresses() -> None:
-    document = {"device": {"br-lan": {"leases": [
-        {"duid": "00020000ab115ef9d56e9c45ec09", "hostname": "test", "ipv6-addr": [
-            {"address": "fdda:beef:1::30", "valid-lifetime": 60},
-        ]},
-    ]}}}
+    document = {
+        "device": {
+            "br-lan": {
+                "leases": [
+                    {
+                        "duid": "00020000ab115ef9d56e9c45ec09",
+                        "hostname": "test",
+                        "ipv6-addr": [
+                            {"address": "fdda:beef:1::30", "valid-lifetime": 60},
+                        ],
+                    },
+                ]
+            }
+        }
+    }
     neighbors = [{"dst": "fdda:beef:1::30", "dev": "br-lan", "lladdr": "aa:bb:cc:dd:ee:ff", "state": ["REACHABLE"]}]
     devices = build_device_payloads(leases=parse_leases(text=LEASES), ipv6=parse_ipv6_records(leases=document, neighbors=neighbors, now=NOW), now=NOW)
     assert len(devices) == 2
@@ -192,12 +234,22 @@ def test_exact_neighbor_address_links_an_enterprise_duid_and_deduplicates_addres
 
 
 def test_ipv6_records_expire_and_failed_or_wan_neighbors_are_not_inventory() -> None:
-    document = {"device": {"br-iot": {"leases": [
-        {"duid": "00030001aabbccddeeff", "hostname": "test", "ipv6-addr": [
-            {"address": "fdda:beef:2::1", "valid-lifetime": 1},
-            {"address": "invalid", "valid-lifetime": 60},
-        ]},
-    ]}}}
+    document = {
+        "device": {
+            "br-iot": {
+                "leases": [
+                    {
+                        "duid": "00030001aabbccddeeff",
+                        "hostname": "test",
+                        "ipv6-addr": [
+                            {"address": "fdda:beef:2::1", "valid-lifetime": 1},
+                            {"address": "invalid", "valid-lifetime": 60},
+                        ],
+                    },
+                ]
+            }
+        }
+    }
     neighbors = [
         {"dst": "fe80::1", "dev": "eth1", "lladdr": "aa:bb:cc:dd:ee:ff", "state": ["STALE"]},
         {"dst": "fe80::2", "dev": "br-iot", "lladdr": "aa:bb:cc:dd:ee:ff", "state": ["FAILED"]},
@@ -226,10 +278,16 @@ def test_active_source_returns_only_ipv4_and_never_queries_ipv6() -> None:
 
 
 def test_multiple_ipv6_leases_for_the_same_duid_share_one_card() -> None:
-    document = {"device": {"br-lan": {"leases": [
-        {"duid": "00020000ab115ef9d56e9c45ec09", "hostname": "test", "ipv6-addr": [{"address": address, "valid-lifetime": 60}]}
-        for address in ("fdda:beef:1::1", "fdda:beef:1::2")
-    ]}}}
+    document = {
+        "device": {
+            "br-lan": {
+                "leases": [
+                    {"duid": "00020000ab115ef9d56e9c45ec09", "hostname": "test", "ipv6-addr": [{"address": address, "valid-lifetime": 60}]}
+                    for address in ("fdda:beef:1::1", "fdda:beef:1::2")
+                ]
+            }
+        }
+    }
     records = parse_ipv6_records(leases=document, neighbors=[], now=NOW)
     devices = build_device_payloads(leases=(), ipv6=records, now=NOW)
     assert len(devices) == 1

@@ -9,15 +9,17 @@ def make_payload(*, nodes: list[dict[str, Any]]) -> dict[str, Any]:
 
 
 def test_new_nodes_sort_by_numeric_ip_not_name_or_profile_order(tmp_path: Path) -> None:
-    payload = make_payload(nodes=[
-        {"name": "alpha", "address": "192.168.20.100"},
-        {"name": "kex", "address": "10.9.9.9"},
-        {"name": "cerulean", "address": "192.168.20.43"},
-        {"name": "zeta", "address": "192.168.20.9"},
-        {"name": "missing", "address": None},
-        {"name": "invalid", "address": "unknown"},
-        {"name": "kveikur", "address": None},
-    ])
+    payload = make_payload(
+        nodes=[
+            {"name": "alpha", "address": "192.168.20.100"},
+            {"name": "kex", "address": "10.9.9.9"},
+            {"name": "cerulean", "address": "192.168.20.43"},
+            {"name": "zeta", "address": "192.168.20.9"},
+            {"name": "missing", "address": None},
+            {"name": "invalid", "address": "unknown"},
+            {"name": "kveikur", "address": None},
+        ]
+    )
     presented = present_payload(payload=payload, image_dir=tmp_path)
     assert [node["name"] for node in presented["nodes"]] == ["zeta", "kex", "cerulean", "kveikur", "alpha", "invalid", "missing"]
 

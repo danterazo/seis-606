@@ -1,4 +1,3 @@
-
 from homelab_dashboard.domain import Node, Workload, workload_counts_for
 
 

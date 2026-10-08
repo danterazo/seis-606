@@ -33,7 +33,7 @@ INTERESTING = re.compile(
 
 def run(*, command: list[str]) -> str | None:
     try:
-        completed = subprocess.run(command, capture_output=True, text=True, timeout=COMMAND_TIMEOUT_SECONDS, stdin=subprocess.DEVNULL)
+        completed = subprocess.run(command, capture_output=True, text=True, timeout=COMMAND_TIMEOUT_SECONDS, stdin=subprocess.DEVNULL, check=False)
     except (subprocess.TimeoutExpired, OSError):
         return None
     return completed.stdout if completed.returncode == 0 else None
@@ -128,7 +128,11 @@ def collect_boots() -> list[dict[str, Any]]:
     except ValueError:
         return []
     return [
-        {"boot_id": str(row.get("boot_id", "")), "first_seen": iso(microseconds=row.get("first_entry")), "last_seen": iso(microseconds=row.get("last_entry"))}
+        {
+            "boot_id": str(row.get("boot_id", "")),
+            "first_seen": iso(microseconds=row.get("first_entry")),
+            "last_seen": iso(microseconds=row.get("last_entry")),
+        }
         for row in rows
         if isinstance(row, dict)
     ]

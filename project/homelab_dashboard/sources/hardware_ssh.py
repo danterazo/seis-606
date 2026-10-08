@@ -35,18 +35,14 @@ class SshHardwareProbe:
         destination: str = SshTarget(host=address, user=self.user).destination
         command: tuple[str, ...] = ("ssh", *SSH_OPTIONS, destination, REMOTE_COMMAND)
         try:
-            completed: subprocess.CompletedProcess[str] = self.runner(
-                command, timeout=self.timeout_seconds, stdin=PROBE_SCRIPT
-            )
+            completed: subprocess.CompletedProcess[str] = self.runner(command, timeout=self.timeout_seconds, stdin=PROBE_SCRIPT)
         except FileNotFoundError as error:
             raise StatusSourceError("The OpenSSH client is not installed in this environment.") from error
         except subprocess.TimeoutExpired as error:
             raise StatusSourceError(f"Probing {node_name} timed out.") from error
 
         if completed.returncode != 0:
-            raise StatusSourceError(
-                explain_ssh_failure(stderr=completed.stderr, destination=destination, action="Probing hardware")
-            )
+            raise StatusSourceError(explain_ssh_failure(stderr=completed.stderr, destination=destination, action="Probing hardware"))
         document: object = self._decode(text=completed.stdout, node_name=node_name)
         return parse_hardware(document=document)
 

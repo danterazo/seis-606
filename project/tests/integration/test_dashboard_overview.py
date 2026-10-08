@@ -151,9 +151,15 @@ def test_activity_log_records_access_without_payload_and_can_be_cleared(tmp_path
         assert "refresh" not in status_entry["path"]
         assert "PVE unavailable" not in json.dumps(entries)
 
-        unauthorized = Request(f"{base}/api/logs/clear", data=b"", method="POST", headers={
-            "Origin": "http://evil.example", "X-Homelab-Action": "clear-logs",
-        })
+        unauthorized = Request(
+            f"{base}/api/logs/clear",
+            data=b"",
+            method="POST",
+            headers={
+                "Origin": "http://evil.example",
+                "X-Homelab-Action": "clear-logs",
+            },
+        )
         try:
             urlopen(unauthorized, timeout=5)
         except HTTPError as error:
@@ -162,9 +168,15 @@ def test_activity_log_records_access_without_payload_and_can_be_cleared(tmp_path
             raise AssertionError("Expected a cross-origin clear request to be rejected")
         assert any(entry["path"] == "/api/status" for entry in activity_log.read())
 
-        request = Request(f"{base}/api/logs/clear", data=b"", method="POST", headers={
-            "Origin": base, "X-Homelab-Action": "clear-logs",
-        })
+        request = Request(
+            f"{base}/api/logs/clear",
+            data=b"",
+            method="POST",
+            headers={
+                "Origin": base,
+                "X-Homelab-Action": "clear-logs",
+            },
+        )
         with urlopen(request, timeout=5) as response:
             assert response.status == 200
         cleared_entries = activity_log.read()
@@ -186,11 +198,21 @@ def test_reboot_endpoint_checks_origin_and_validates_commands_before_ssh() -> No
 
     class FakePve:
         def fetch(self) -> ClusterSnapshot:
-            return ClusterSnapshot(source="test", fetched_at=datetime(2026, 10, 7, tzinfo=UTC), nodes=(
-                Node(name="cerulean", state=NodeState.ONLINE, address="192.168.20.43", resources=Resources(), guests=(
-                    Guest(vmid=112, name="test", node="cerulean", kind=GuestKind.CONTAINER, state=GuestState.RUNNING, resources=Resources()),
-                )),
-            ))
+            return ClusterSnapshot(
+                source="test",
+                fetched_at=datetime(2026, 10, 7, tzinfo=UTC),
+                nodes=(
+                    Node(
+                        name="cerulean",
+                        state=NodeState.ONLINE,
+                        address="192.168.20.43",
+                        resources=Resources(),
+                        guests=(
+                            Guest(vmid=112, name="test", node="cerulean", kind=GuestKind.CONTAINER, state=GuestState.RUNNING, resources=Resources()),
+                        ),
+                    ),
+                ),
+            )
 
         def fetch_fresh(self) -> ClusterSnapshot:
             return self.fetch()
@@ -203,9 +225,16 @@ def test_reboot_endpoint_checks_origin_and_validates_commands_before_ssh() -> No
     base = f"http://127.0.0.1:{server.server_port}"
 
     def post(*, body: object, origin: str = base, action: str = "reboot", content_type: str = "application/json") -> int:
-        request = Request(f"{base}/api/guests/reboot", data=json.dumps(body).encode(), method="POST", headers={
-            "Origin": origin, "X-Homelab-Action": action, "Content-Type": content_type,
-        })
+        request = Request(
+            f"{base}/api/guests/reboot",
+            data=json.dumps(body).encode(),
+            method="POST",
+            headers={
+                "Origin": origin,
+                "X-Homelab-Action": action,
+                "Content-Type": content_type,
+            },
+        )
         try:
             with urlopen(request, timeout=5) as response:
                 assert json.load(response)["message"] == "Reboot command submitted."

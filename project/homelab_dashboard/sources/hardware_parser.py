@@ -75,4 +75,3 @@ def parse_hardware(*, document: object) -> Hardware:
         zfs_arc_bytes=as_integer(value=document.get("zfs_arc_bytes")),
         zfs_arc_max_bytes=as_integer(value=document.get("zfs_arc_max_bytes")),
     )
-

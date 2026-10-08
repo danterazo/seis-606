@@ -17,7 +17,7 @@ NVME_FIELDS = ("critical_warning", "available_spare", "available_spare_threshold
 
 def run(*, command: list[str], timeout: float) -> str:
     try:
-        completed = subprocess.run(command, capture_output=True, text=True, timeout=timeout, stdin=subprocess.DEVNULL)
+        completed = subprocess.run(command, capture_output=True, text=True, timeout=timeout, stdin=subprocess.DEVNULL, check=False)
     except (subprocess.TimeoutExpired, OSError):
         return ""
     return completed.stdout
@@ -93,7 +93,18 @@ def collect_pools() -> list[dict[str, Any]] | None:
             continue
         name, health, capacity, size, allocated, free, fragmentation = fields
         status = run(command=["zpool", "status", "-p", name], timeout=ZPOOL_TIMEOUT_SECONDS)
-        pools.append({"name": name, "health": health, "capacity": capacity, "size": size, "allocated": allocated, "free": free, "fragmentation": fragmentation, "status": status})
+        pools.append(
+            {
+                "name": name,
+                "health": health,
+                "capacity": capacity,
+                "size": size,
+                "allocated": allocated,
+                "free": free,
+                "fragmentation": fragmentation,
+                "status": status,
+            }
+        )
     return pools
 
 

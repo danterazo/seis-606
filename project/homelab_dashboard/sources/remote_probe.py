@@ -37,7 +37,7 @@ def read_int(*, path: str) -> int | None:
 
 def run(*, command: list[str], timeout: float = 4.0) -> str:
     try:
-        completed = subprocess.run(command, capture_output=True, text=True, timeout=timeout, stdin=subprocess.DEVNULL)
+        completed = subprocess.run(command, capture_output=True, text=True, timeout=timeout, stdin=subprocess.DEVNULL, check=False)
     except subprocess.TimeoutExpired as error:
         # intel_gpu_top is stopped with SIGINT by `timeout`; keep whatever it printed.
         partial = error.stdout
@@ -70,11 +70,7 @@ def cpu_topology() -> tuple[int | None, int | None]:
 
     records = [record for record in records if record]
     threads: int | None = sum("processor" in record for record in records) or None
-    core_pairs = {
-        (record.get("physical id", "0"), record["core id"])
-        for record in records
-        if "core id" in record
-    }
+    core_pairs = {(record.get("physical id", "0"), record["core id"]) for record in records if "core id" in record}
     if core_pairs:
         cores: int | None = len(core_pairs)
     else:
@@ -200,9 +196,7 @@ def collect_gpus() -> list[dict[str, Any]]:
 def ecc_supported() -> bool | None:
     output: str = run(command=["dmidecode", "--type", "16"])
     corrections: list[str] = [
-        line.split(":", 1)[1].strip().casefold()
-        for line in output.splitlines()
-        if line.strip().startswith("Error Correction Type:")
+        line.split(":", 1)[1].strip().casefold() for line in output.splitlines() if line.strip().startswith("Error Correction Type:")
     ]
     if not corrections:
         return None

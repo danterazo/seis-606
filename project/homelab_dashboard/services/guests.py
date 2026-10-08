@@ -31,9 +31,7 @@ class GuestRebooter:
             if previous is not None and self.clock() - previous < 30:
                 raise StatusSourceError("A reboot was recently attempted for this guest. Check its status before retrying.")
             snapshot: ClusterSnapshot = self.source.fetch_fresh()
-            matches: tuple[tuple[Node, Guest], ...] = tuple(
-                (node, guest) for node in snapshot.nodes for guest in node.guests if guest.vmid == vmid
-            )
+            matches: tuple[tuple[Node, Guest], ...] = tuple((node, guest) for node in snapshot.nodes for guest in node.guests if guest.vmid == vmid)
             if len(matches) != 1:
                 raise ValueError("The guest could not be uniquely identified in the current cluster.")
             node, guest = matches[0]

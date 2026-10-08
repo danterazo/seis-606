@@ -124,11 +124,19 @@ def parse_ipv6_records(*, leases: object, neighbors: object, now: datetime) -> t
                 if parsed_address.is_multicast or parsed_address.is_unspecified:
                     continue
                 lease_mac: str | None = neighbor_macs.get((interface, str(parsed_address))) or _duid_mac(duid_value)
-                identity: str = f"mac:{lease_mac}" if lease_mac is not None else f"duid:{duid_text}" if duid_text is not None else f"address:{parsed_address}"
-                records.append(Ipv6Record(
-                    address=str(parsed_address), interface=interface, identity=identity, mac=lease_mac, hostname=hostname,
-                    expires_at=datetime.fromtimestamp(now.timestamp() + lifetime, UTC),
-                ))
+                identity: str = (
+                    f"mac:{lease_mac}" if lease_mac is not None else f"duid:{duid_text}" if duid_text is not None else f"address:{parsed_address}"
+                )
+                records.append(
+                    Ipv6Record(
+                        address=str(parsed_address),
+                        interface=interface,
+                        identity=identity,
+                        mac=lease_mac,
+                        hostname=hostname,
+                        expires_at=datetime.fromtimestamp(now.timestamp() + lifetime, UTC),
+                    )
+                )
     return tuple(records)
 
 
@@ -162,10 +170,13 @@ def build_device_payloads(*, leases: tuple[DhcpLease, ...], ipv6: tuple[Ipv6Reco
             key: tuple[str, str] = (record.interface, record.identity)
             if key not in ipv6_only:
                 ipv6_only[key] = {
-                    "address": None, "mac": record.mac.upper() if record.mac is not None else None,
-                    "hostname": record.hostname, "display_name": display_name_for(name=record.hostname) if record.hostname else record.address,
+                    "address": None,
+                    "mac": record.mac.upper() if record.mac is not None else None,
+                    "hostname": record.hostname,
+                    "display_name": display_name_for(name=record.hostname) if record.hostname else record.address,
                     "network_group": "lan" if record.interface == "br-lan" else "guest_iot",
-                    "expires_at": None, "ipv6_addresses": [],
+                    "expires_at": None,
+                    "ipv6_addresses": [],
                 }
             targets = [ipv6_only[key]]
         for target in targets:

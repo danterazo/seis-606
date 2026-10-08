@@ -14,7 +14,17 @@ from homelab_dashboard.sources.storage_ssh import STORAGE_SCRIPT, SshStorageProb
 
 
 def hdd(**overrides: Any) -> dict[str, Any]:
-    return {"device": "/dev/sda", "model": "WDC", "serial": "X1", "protocol": "ATA", "rotation_rate": 7200, "smart_passed": True, "temperature": 38, "attributes": [], **overrides}
+    return {
+        "device": "/dev/sda",
+        "model": "WDC",
+        "serial": "X1",
+        "protocol": "ATA",
+        "rotation_rate": 7200,
+        "smart_passed": True,
+        "temperature": 38,
+        "attributes": [],
+        **overrides,
+    }
 
 
 def test_healthy_hdd_has_no_findings() -> None:
@@ -48,7 +58,13 @@ def test_failed_smart_and_bad_attributes_are_reported_worst_first() -> None:
 
 
 def test_nvme_health_log_is_judged() -> None:
-    nvme: dict[str, Any] = {"device": "/dev/nvme0", "protocol": "NVMe", "smart_passed": True, "temperature": 40, "nvme": {"critical_warning": 0, "available_spare": 4, "available_spare_threshold": 10, "percentage_used": 95, "media_errors": 0}}
+    nvme: dict[str, Any] = {
+        "device": "/dev/nvme0",
+        "protocol": "NVMe",
+        "smart_passed": True,
+        "temperature": 40,
+        "nvme": {"critical_warning": 0, "available_spare": 4, "available_spare_threshold": 10, "percentage_used": 95, "media_errors": 0},
+    }
     disk = parse_storage(document={"disks": [nvme]}).disks[0]
     assert disk.kind == "nvme"
     assert disk.level is HealthLevel.CRITICAL
@@ -70,7 +86,9 @@ def test_healthy_pool() -> None:
 
 
 def test_pool_problems() -> None:
-    status: str = HEALTHY_STATUS.replace("rpool       ONLINE       0     0     0", "rpool       ONLINE       0     0     3").replace("No known data errors", "Permanent errors have been detected")
+    status: str = HEALTHY_STATUS.replace("rpool       ONLINE       0     0     0", "rpool       ONLINE       0     0     3").replace(
+        "No known data errors", "Permanent errors have been detected"
+    )
     pool = parse_storage(document={"pools": [{"name": "rpool", "health": "DEGRADED", "capacity": "93", "status": status}]}).pools[0]
     assert pool.level is HealthLevel.CRITICAL
     assert any("checksum 3" in finding for finding in pool.findings)
@@ -124,7 +142,13 @@ def test_storage_is_probed_in_the_background_cached_and_kept_when_a_probe_fails(
     now: list[float] = [0.0]
     stub: StorageStub = StorageStub()
     source: HardwareEnrichedSource = HardwareEnrichedSource(
-        cluster=OneNode(), probe=HardwareStub(), expected_hardware=expected_hardware_for, ttl_seconds=3, storage_probe=stub, storage_ttl_seconds=300, clock=lambda: now[0]
+        cluster=OneNode(),
+        probe=HardwareStub(),
+        expected_hardware=expected_hardware_for,
+        ttl_seconds=3,
+        storage_probe=stub,
+        storage_ttl_seconds=300,
+        clock=lambda: now[0],
     )
     source.fetch()
     source.wait_for_storage_probes()

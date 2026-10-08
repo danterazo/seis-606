@@ -9,13 +9,22 @@ from homelab_dashboard.sources.base import StatusSourceError
 
 
 class FakeSource:
-    def __init__(self, *, kind: GuestKind = GuestKind.CONTAINER, guest_state: GuestState = GuestState.RUNNING, node_state: NodeState = NodeState.ONLINE) -> None:
+    def __init__(
+        self, *, kind: GuestKind = GuestKind.CONTAINER, guest_state: GuestState = GuestState.RUNNING, node_state: NodeState = NodeState.ONLINE
+    ) -> None:
         self.calls: int = 0
         self.snapshot: ClusterSnapshot = ClusterSnapshot(
-            source="test", fetched_at=datetime(2026, 10, 7, tzinfo=UTC),
-            nodes=(Node(name="cerulean", state=node_state, address="192.168.20.43", resources=Resources(), guests=(
-                Guest(vmid=112, name="test", node="cerulean", kind=kind, state=guest_state, resources=Resources()),
-            )),),
+            source="test",
+            fetched_at=datetime(2026, 10, 7, tzinfo=UTC),
+            nodes=(
+                Node(
+                    name="cerulean",
+                    state=node_state,
+                    address="192.168.20.43",
+                    resources=Resources(),
+                    guests=(Guest(vmid=112, name="test", node="cerulean", kind=kind, state=guest_state, resources=Resources()),),
+                ),
+            ),
         )
 
     def fetch(self) -> ClusterSnapshot:

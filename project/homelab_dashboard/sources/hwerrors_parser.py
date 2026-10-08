@@ -315,7 +315,14 @@ def _counter_rows(*, rows: object) -> tuple[MemoryCounter, ...] | None:
                     )
                 )
         if not dimm_rows:
-            counters.append(MemoryCounter(controller=controller, label=None, corrected=as_integer(value=row.get("corrected")) or 0, uncorrected=as_integer(value=row.get("uncorrected")) or 0))
+            counters.append(
+                MemoryCounter(
+                    controller=controller,
+                    label=None,
+                    corrected=as_integer(value=row.get("corrected")) or 0,
+                    uncorrected=as_integer(value=row.get("uncorrected")) or 0,
+                )
+            )
     return tuple(counters)
 
 
@@ -340,14 +347,27 @@ def _boot_records(*, rows: object, current_boot: str, boot_started: datetime | N
     records: list[BootRecord] = []
     for row in rows if isinstance(rows, list) else []:
         if isinstance(row, Mapping) and (boot_id := as_text(value=row.get("boot_id"))):
-            records.append(BootRecord(boot_id=boot_id, first_seen=as_text(value=row.get("first_seen")), last_seen=as_text(value=row.get("last_seen")), current=boot_id == current_boot))
+            records.append(
+                BootRecord(
+                    boot_id=boot_id,
+                    first_seen=as_text(value=row.get("first_seen")),
+                    last_seen=as_text(value=row.get("last_seen")),
+                    current=boot_id == current_boot,
+                )
+            )
     if current_boot and not any(record.current for record in records):
         started: str | None = None if boot_started is None else boot_started.isoformat()
         records.append(BootRecord(boot_id=current_boot, first_seen=started, last_seen=now.isoformat(), current=True))
     return tuple(records)
 
 
-def _summarize(*, incidents: tuple[ErrorIncident, ...], counters: tuple[MemoryCounter, ...] | None, persisted_uncorrected: int | None, persisted_corrected: int | None) -> tuple[HealthLevel, tuple[str, ...]]:
+def _summarize(
+    *,
+    incidents: tuple[ErrorIncident, ...],
+    counters: tuple[MemoryCounter, ...] | None,
+    persisted_uncorrected: int | None,
+    persisted_corrected: int | None,
+) -> tuple[HealthLevel, tuple[str, ...]]:
     findings: list[tuple[HealthLevel, str]] = []
     corrected: int = sum(counter.corrected for counter in counters or ())
     uncorrected: int = sum(counter.uncorrected for counter in counters or ())
@@ -386,7 +406,9 @@ def parse_hardware_errors(*, document: object) -> HardwareErrors:
     incidents: tuple[ErrorIncident, ...] = _build_incidents(events=events, current_boot=current_boot, now=now)
     counters: tuple[MemoryCounter, ...] | None = _counter_rows(rows=document.get("edac"))
     persisted_corrected, persisted_uncorrected, persisted_mce = _ras_summary(text=as_text(value=document.get("ras_summary")))
-    level, findings = _summarize(incidents=incidents, counters=counters, persisted_uncorrected=persisted_uncorrected, persisted_corrected=persisted_corrected)
+    level, findings = _summarize(
+        incidents=incidents, counters=counters, persisted_uncorrected=persisted_uncorrected, persisted_corrected=persisted_corrected
+    )
     journal_available: bool = isinstance(event_rows, list)
     if counters is None and not journal_available and persisted_corrected is None:
         level, findings = HealthLevel.UNKNOWN, ("No hardware error source could be read on this node",)

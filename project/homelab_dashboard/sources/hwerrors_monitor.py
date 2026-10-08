@@ -52,7 +52,9 @@ class HardwareErrorMonitor:
         if good is None:
             if failure is None:
                 return None
-            return HardwareErrors(level=HealthLevel.UNKNOWN, findings=("Hardware errors have not been collected from this node",), stale=True, error=failure)
+            return HardwareErrors(
+                level=HealthLevel.UNKNOWN, findings=("Hardware errors have not been collected from this node",), stale=True, error=failure
+            )
         return good if failure is None else replace(good, stale=True, error=failure)
 
     def _probe(self, node_name: str, address: str) -> None:
