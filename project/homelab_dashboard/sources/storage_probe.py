@@ -85,15 +85,15 @@ def collect_disks() -> Optional[List[Dict[str, Any]]]:
 def collect_pools() -> Optional[List[Dict[str, Any]]]:
     if shutil.which("zpool") is None:
         return None
-    listing = run(command=["zpool", "list", "-Hp", "-o", "name,health,capacity"], timeout=ZPOOL_TIMEOUT_SECONDS)
+    listing = run(command=["zpool", "list", "-Hp", "-o", "name,health,capacity,size,allocated,free,fragmentation"], timeout=ZPOOL_TIMEOUT_SECONDS)
     pools: List[Dict[str, Any]] = []
     for line in listing.splitlines():
         fields = line.split("\t")
-        if len(fields) != 3:
+        if len(fields) != 7:
             continue
-        name, health, capacity = fields
+        name, health, capacity, size, allocated, free, fragmentation = fields
         status = run(command=["zpool", "status", "-p", name], timeout=ZPOOL_TIMEOUT_SECONDS)
-        pools.append({"name": name, "health": health, "capacity": capacity, "status": status})
+        pools.append({"name": name, "health": health, "capacity": capacity, "size": size, "allocated": allocated, "free": free, "fragmentation": fragmentation, "status": status})
     return pools
 
 

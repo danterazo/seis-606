@@ -7,7 +7,7 @@
  * @typedef {{ cpu_model: string | null, ecc_supported?: boolean | null, zfs_arc_bytes?: number | null, zfs_arc_max_bytes?: number | null, storage?: StorageHealth | null, source: "live" | "expected" | "unknown" }} Hardware
  * @typedef {"ok" | "warning" | "critical" | "unknown"} HealthLevel
  * @typedef {{ device: string, model: string | null, serial: string | null, kind: string, level: HealthLevel, standby: boolean, temperature_celsius: number | null, power_on_hours: number | null, findings: string[] }} Disk
- * @typedef {{ name: string, state: string, level: HealthLevel, capacity_percent: number | null, findings: string[] }} Pool
+ * @typedef {{ name: string, state: string, level: HealthLevel, capacity_percent: number | null, size_bytes: number | null, allocated_bytes: number | null, free_bytes: number | null, fragmentation_percent: number | null, layout: string | null, scan: string | null, findings: string[] }} Pool
  * @typedef {{ disks: Disk[], pools: Pool[], smart_available: boolean, zfs_available: boolean }} StorageHealth
  * @typedef {{ name: string, display_name: string, state: "online" | "offline" | "unknown", address: string | null, image: string | null, initial: string, color: string, memory_description?: string | null, memory_ecc?: boolean | null, resources: Resources, guests: Guest[], hardware: Hardware }} PveNode
  * @typedef {{ source: string, fetched_at: string, nodes: PveNode[] }} Snapshot
@@ -127,6 +127,17 @@ const memoryUnit = (total) => (total < BYTES_PER_GIB ? { size: BYTES_PER_MIB, la
 function formatBytes(bytes) {
   const unit = memoryUnit(bytes);
   return `${trimNumber(bytes / unit.size, unit.digits)} ${unit.label}`;
+}
+
+/** Pool sizes run to terabytes. @param {number | null} bytes */
+function formatPoolBytes(bytes) {
+  if (bytes === null) return "—";
+  return bytes >= BYTES_PER_GIB * 1024 ? `${trimNumber(bytes / (BYTES_PER_GIB * 1024), 2)} TB` : formatBytes(bytes);
+}
+
+/** @param {Pool} pool */
+function poolUsage(pool) {
+  return pool.allocated_bytes === null || pool.size_bytes === null ? null : `${formatPoolBytes(pool.allocated_bytes)} / ${formatPoolBytes(pool.size_bytes)}`;
 }
 
 /** @param {{ used: number, total: number }} args */
@@ -339,8 +350,13 @@ function storageBadges(node) {
   if (storage.zfs_available) {
     for (const pool of storage.pools) {
       const reason = (pool.state !== "ONLINE" ? pool.state : pool.findings[0] ?? pool.state).toUpperCase();
-      const text = pool.level === "ok" ? `${pool.name} ${pool.state}` : `${pool.name} ${reason}${pool.findings.length > 1 ? ` +${pool.findings.length - 1}` : ""}`;
-      badges.push(healthBadge(node.name, pool.level, text, pool.findings.length === 0 ? `${pool.name} is healthy${pool.capacity_percent === null ? "" : `, ${pool.capacity_percent}% full`}` : `${pool.name}: ${pool.findings.join("; ")}`));
+      const usage = poolUsage(pool);
+      const headline = pool.level === "ok" ? `${pool.name} ${pool.state}` : `${pool.name} ${reason}${pool.findings.length > 1 ? ` +${pool.findings.length - 1}` : ""}`;
+      // Only tank carries the extra stats on its badge for now.
+      const extras = pool.name === "tank" ? [pool.fragmentation_percent === null ? null : `${pool.fragmentation_percent}% Frag`, pool.free_bytes === null ? null : `${formatPoolBytes(pool.free_bytes)} Free`, pool.scan].filter(Boolean) : [];
+      const text = [headline, ...extras].join(" · ");
+      const details = [usage === null ? null : `${usage} used`, pool.fragmentation_percent === null ? null : `${pool.fragmentation_percent}% fragmented`, pool.layout, pool.scan === null ? null : `Scan: ${pool.scan}`].filter(Boolean);
+      badges.push(healthBadge(node.name, pool.level, text, [pool.findings.length === 0 ? `${pool.name} is healthy${pool.capacity_percent === null ? "" : `, ${pool.capacity_percent}% full`}` : `${pool.name}: ${pool.findings.join("; ")}`, ...details].join("\n")));
     }
   }
   return badges.length === 0 ? [] : [el("div", { className: "storage-badges" }, badges)];
@@ -375,6 +391,11 @@ function renderStorageDialog(node) {
       el("td", {}, [levelCell(pool.level, pool.state)]),
       el("td", {}, [el("code", { text: pool.name })]),
       el("td", { text: pool.capacity_percent === null ? "—" : `${pool.capacity_percent}% full` }),
+      el("td", { text: poolUsage(pool) ?? "—" }),
+      el("td", { text: formatPoolBytes(pool.free_bytes) }),
+      el("td", { text: pool.fragmentation_percent === null ? "—" : `${pool.fragmentation_percent}%` }),
+      el("td", {}, [el("small", { text: pool.layout ?? "—" })]),
+      el("td", {}, [el("small", { text: pool.scan ?? "—" })]),
       el("td", { text: pool.findings.length === 0 ? "Normal" : pool.findings.join("; ") }),
     ]),
   );
@@ -385,7 +406,7 @@ function renderStorageDialog(node) {
     el("h3", { text: "Disks (SMART)" }),
     table(["Status", "Device", "Model", "Serial #", "Type", "Temp", "Age", "Findings"], diskRows, storage?.smart_available ? "No disks reported." : "smartctl is not installed on this node."),
     el("h3", { text: "ZFS Pools" }),
-    table(["Status", "Pool", "Capacity", "Findings"], poolRows, storage?.zfs_available ? "No pools reported." : "ZFS tools are not installed on this node."),
+    table(["Status", "Pool", "Capacity", "Used / Size", "Free", "Frag", "Layout", "Last scan", "Findings"], poolRows, storage?.zfs_available ? "No pools reported." : "ZFS tools are not installed on this node."),
   );
 }
 

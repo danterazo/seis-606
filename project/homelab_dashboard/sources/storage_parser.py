@@ -139,6 +139,56 @@ def _pool_status_findings(*, name: str, status: str) -> List[_Finding]:
     return findings
 
 
+def _pool_layout(*, name: str, status: str) -> Optional[str]:
+    """Summarises the top-level vdevs, e.g. "2 × raidz1 (6 disks)"."""
+    groups: List[Tuple[str, int]] = []
+    pool_indent: Optional[int] = None
+    for line in status.splitlines():
+        fields: List[str] = line.split()
+        indent: int = len(line) - len(line.lstrip())
+        if len(fields) >= 2 and fields[0] == name and fields[1] in _DEVICE_STATES:
+            pool_indent = indent
+        elif pool_indent is None:
+            continue
+        elif not fields or fields[0] in {"errors:", "logs", "cache", "spares", "special", "dedup"}:
+            break
+        elif indent == pool_indent + 2:
+            groups.append((re.sub(r"-\d+$", "", fields[0]), 0))
+        elif indent > pool_indent + 2 and groups:
+            groups[-1] = (groups[-1][0], groups[-1][1] + 1)
+    if not groups:
+        return None
+    kinds: dict[str, List[int]] = {}
+    for kind, disks in groups:
+        kinds.setdefault(kind, []).append(disks)
+    parts: List[str] = []
+    for kind, counts in kinds.items():
+        is_group: bool = counts[0] > 0
+        parts.append(f"{len(counts)} × {kind} ({counts[0]} disks)" if is_group else f"{len(counts)} × disk (stripe)")
+    return ", ".join(parts)
+
+
+def _pool_scan(*, status: str) -> Optional[str]:
+    """Shortens the scan line to e.g. "resilver Oct 8"."""
+    for line in status.splitlines():
+        if not line.strip().startswith("scan:"):
+            continue
+        kind: Optional["re.Match[str]"] = re.search(r"\b(scrub|resilver)", line)
+        if kind is None:
+            return None
+        label: str = kind.group(1).capitalize()
+        if "in progress" in line:
+            return f"{label} running"
+        when: Optional["re.Match[str]"] = re.search(r"\b(?:on|since) \w{3} (\w{3})\s+(\d+)", line)
+        return label if when is None else f"{label} {when.group(1)} {when.group(2)}"
+    return None
+
+
+def _as_count(*, value: object) -> Optional[int]:
+    text: Optional[str] = as_text(value=value)
+    return int(text) if text is not None and text.isdigit() else as_integer(value=value)
+
+
 def _parse_pool(*, row: object) -> Optional[Pool]:
     if not isinstance(row, Mapping):
         return None
@@ -155,11 +205,19 @@ def _parse_pool(*, row: object) -> Optional[Pool]:
         level: HealthLevel = HealthLevel.CRITICAL if capacity >= POOL_CAPACITY_LIMITS[1] else HealthLevel.WARNING
         findings.append((level, f"{capacity}% full"))
     findings.extend(_pool_status_findings(name=name, status=as_text(value=row.get("status")) or ""))
+    status_text: str = as_text(value=row.get("status")) or ""
+    fragmentation_text: str = (as_text(value=row.get("fragmentation")) or "").rstrip("%")
     return Pool(
         name=name,
         state=health,
         level=_worst(findings=findings),
         capacity_percent=capacity,
+        size_bytes=_as_count(value=row.get("size")),
+        allocated_bytes=_as_count(value=row.get("allocated")),
+        free_bytes=_as_count(value=row.get("free")),
+        fragmentation_percent=int(fragmentation_text) if fragmentation_text.isdigit() else None,
+        layout=_pool_layout(name=name, status=status_text),
+        scan=_pool_scan(status=status_text),
         findings=tuple(text for _, text in sorted(findings, key=lambda finding: _SEVERITY.index(finding[0]), reverse=True)),
     )
 

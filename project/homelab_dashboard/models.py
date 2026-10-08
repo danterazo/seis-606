@@ -92,6 +92,12 @@ class Pool:
     state: str
     level: HealthLevel
     capacity_percent: Optional[int] = None
+    size_bytes: Optional[int] = None
+    allocated_bytes: Optional[int] = None
+    free_bytes: Optional[int] = None
+    fragmentation_percent: Optional[int] = None
+    layout: Optional[str] = None
+    scan: Optional[str] = None
     findings: Tuple[str, ...] = ()
 
 

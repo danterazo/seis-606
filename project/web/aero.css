@@ -118,7 +118,7 @@ span.health-badge[role="button"] { cursor: pointer; }
 .health-warning { color: #7a4b00; background: rgba(255,236,190,.95); border-color: rgba(168,108,0,.5); }
 .health-critical { color: #8f1d14; background: rgba(255,221,215,.95); border-color: rgba(156,29,20,.55); }
 .health-unknown, .health-na { color: #4d5d67; background: rgba(236,244,248,.9); }
-#storage-dialog { width: min(860px, calc(100vw - 28px)); }
+#storage-dialog { width: min(1100px, calc(100vw - 28px)); }
 .storage-body { padding: 4px 18px 16px; overflow: auto; max-height: min(620px, calc(100dvh - 110px)); }
 .storage-body h3 { margin: 14px 0 6px; font-size: 14px; }
 .storage-table { width: 100%; border-collapse: collapse; font-size: 12px; }
