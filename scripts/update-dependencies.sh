@@ -4,6 +4,10 @@ set -euo pipefail
 # resolve, update lock, and install python dependencies
 poetry update
 
+# update and install the dashboard's web dependencies
+npm update --prefix project/web
+npm ci --prefix project/web
+
 # install lab envs (without mutating lockfiles)
 # support both naming conventions: 765 uses "labs", 606 uses "assignments"
 LAB_DIRS=()
