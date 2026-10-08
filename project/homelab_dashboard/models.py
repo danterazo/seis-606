@@ -73,6 +73,7 @@ class Hardware:
     source: HardwareSource = HardwareSource.UNKNOWN
     ecc_supported: Optional[bool] = None
     zfs_arc_bytes: Optional[int] = None
+    zfs_arc_max_bytes: Optional[int] = None
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)

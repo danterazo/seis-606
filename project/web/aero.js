@@ -4,7 +4,7 @@
  * @typedef {{ cpu_ratio: number | null, cpu_cores: number | null, memory_used_bytes: number | null, memory_total_bytes: number | null }} Resources
  * @typedef {"running" | "stopped" | "paused" | "unknown"} GuestState
  * @typedef {{ vmid: number, name: string, display_name?: string, node: string, kind: "vm" | "container", state: GuestState, resources: Resources }} Guest
- * @typedef {{ cpu_model: string | null, ecc_supported?: boolean | null, zfs_arc_bytes?: number | null, source: "live" | "expected" | "unknown" }} Hardware
+ * @typedef {{ cpu_model: string | null, ecc_supported?: boolean | null, zfs_arc_bytes?: number | null, zfs_arc_max_bytes?: number | null, source: "live" | "expected" | "unknown" }} Hardware
  * @typedef {{ name: string, display_name: string, state: "online" | "offline" | "unknown", address: string | null, image: string | null, initial: string, color: string, memory_description?: string | null, memory_ecc?: boolean | null, resources: Resources, guests: Guest[], hardware: Hardware }} PveNode
  * @typedef {{ source: string, fetched_at: string, nodes: PveNode[] }} Snapshot
  * @typedef {"all" | "running" | "vm" | "container"} GuestFilter
@@ -308,6 +308,7 @@ function renderOverview(nodes) {
   const tiles = nodes.map((node) => {
     const online = node.state === "online";
     const arcBytes = node.hardware.zfs_arc_bytes ?? null;
+    const arcMax = node.hardware.zfs_arc_max_bytes ?? null;
     const ramTitle = arcBytes === null ? undefined : `ZFS ARC (amber): ${formatBytes(arcBytes)}`;
     const gauges = [gauge({ label: "CPU", value: cpuPercent(node.resources), tone: "cpu" }), gauge({ label: "RAM", value: memoryPercent(node.resources), tone: "memory", arcValue: arcPercent(node), title: ramTitle })];
     const modelLine = cpuModelLine(node.hardware);
@@ -332,7 +333,7 @@ function renderOverview(nodes) {
       ...(online
         ? [el("div", { className: "tile-readings" }, [
             el("div", { className: "gauges" }, gauges),
-            el("div", { className: "tile-details" }, [el("div", { className: "facts" }, [fact("CPU", formatCores(node.resources)), fact("RAM", memoryText), ...(arcBytes === null ? [] : [fact("ZFS ARC", formatBytes(arcBytes))])]), ...hardwareDetails]),
+            el("div", { className: "tile-details" }, [el("div", { className: "facts" }, [fact("CPU", formatCores(node.resources)), fact("RAM", memoryText), ...(arcBytes === null ? [] : [fact("ZFS ARC", arcMax ? formatMemoryPair({ used: arcBytes, total: arcMax }) : formatBytes(arcBytes))])]), ...hardwareDetails]),
           ])]
         : [el("p", { className: "offline-note", text: "No live readings." }), ...hardwareDetails]),
     ]);

@@ -71,5 +71,6 @@ def parse_hardware(*, document: object) -> Hardware:
         source=HardwareSource.LIVE,
         ecc_supported=ecc if isinstance(ecc, bool) else None,
         zfs_arc_bytes=as_integer(value=document.get("zfs_arc_bytes")),
+        zfs_arc_max_bytes=as_integer(value=document.get("zfs_arc_max_bytes")),
     )
 
