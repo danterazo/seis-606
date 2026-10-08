@@ -295,12 +295,13 @@ function renderNodeList(nodes) {
 /** @param {string} label @param {string} value */
 const fact = (label, value) => el("div", { className: "fact" }, [el("span", { className: "fact-label", text: label }), el("span", { className: "fact-value", text: value })]);
 
-/** The CPU model is a quiet subtitle; italics mark it as configured rather than read from the node. @param {Hardware} hardware */
-function cpuModelLine({ cpu_model: model, source }) {
+/** The CPU model is a quiet subtitle; italics mark it as configured rather than read from the node. @param {Hardware} hardware @param {Resources} resources */
+function cpuModelLine({ cpu_model: model, source }, { cpu_cores: cores }) {
   if (model === null) return null;
   const expected = source !== "live";
   const displayModel = model.replace(" Threadripper PRO ", " Threadripper ");
-  return el("small", { className: `cpu-model${expected ? " is-expected" : ""}`, text: displayModel, attrs: { title: `${model} · ${expected ? "Expected hardware (node not probed)" : "Read from the node"}` } });
+  const coreText = cores === null ? "" : ` (${cores}c)`;
+  return el("small", { className: `cpu-model${expected ? " is-expected" : ""}`, text: `${displayModel}${coreText}`, attrs: { title: `${model}${coreText} · ${expected ? "Expected hardware (node not probed)" : "Read from the node"}` } });
 }
 
 /** @param {PveNode[]} nodes */
@@ -311,7 +312,7 @@ function renderOverview(nodes) {
     const arcMax = node.hardware.zfs_arc_max_bytes ?? null;
     const ramTitle = arcBytes === null ? undefined : `ZFS ARC (amber): ${formatBytes(arcBytes)}`;
     const gauges = [gauge({ label: "CPU", value: cpuPercent(node.resources), tone: "cpu" }), gauge({ label: "RAM", value: memoryPercent(node.resources), tone: "memory", arcValue: arcPercent(node), title: ramTitle })];
-    const modelLine = cpuModelLine(node.hardware);
+    const modelLine = cpuModelLine(node.hardware, node.resources);
     const { memory_used_bytes: used, memory_total_bytes: total } = node.resources;
     const memoryText = used !== null && total !== null ? formatMemoryPair({ used, total }) : formatRam(node.resources);
     const hardwareDetails =
@@ -331,7 +332,7 @@ function renderOverview(nodes) {
       ...(online
         ? [el("div", { className: "tile-readings" }, [
             el("div", { className: "gauges" }, gauges),
-            el("div", { className: "tile-details" }, [el("div", { className: "facts" }, [fact("CPU", formatCores(node.resources)), fact("RAM", memoryText), ...(arcBytes === null ? [] : [fact("ZFS ARC", arcMax ? formatMemoryPair({ used: arcBytes, total: arcMax }) : formatBytes(arcBytes))])]), ...hardwareDetails]),
+            el("div", { className: "tile-details" }, [el("div", { className: "facts" }, [fact("RAM", memoryText), ...(arcBytes === null ? [] : [fact("ZFS ARC", arcMax ? formatMemoryPair({ used: arcBytes, total: arcMax }) : formatBytes(arcBytes))])]), ...hardwareDetails]),
           ])]
         : [el("p", { className: "offline-note", text: "No live readings." }), ...hardwareDetails]),
     ]);

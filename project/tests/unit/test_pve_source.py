@@ -116,7 +116,22 @@ def test_ssh_command_never_prompts_or_relaxes_host_checking() -> None:
     assert command[0] == "ssh"
     assert set(SSH_OPTIONS) <= set(command)
     assert "-oStrictHostKeyChecking=yes" in command
-    assert command[-1].count("pvesh get") == 2
+    assert command[-1].count("pvesh get") == 3
+
+
+def test_reachable_node_stays_online_and_keeps_its_figures_without_quorum() -> None:
+    resources: List[Dict[str, Any]] = [{"type": "node", "node": "cerulean", "status": "unknown"}, {"type": "node", "node": "kex", "status": "unknown"}]
+    cluster_status: List[Dict[str, Any]] = [
+        {"type": "node", "name": "cerulean", "ip": "10.0.0.2", "online": 1, "local": 1},
+        {"type": "node", "name": "kex", "ip": "10.0.0.1", "online": 0, "local": 0},
+    ]
+    local_status: Dict[str, Any] = {"cpu": 0.25, "cpuinfo": {"cpus": 4}, "memory": {"used": 1, "total": 4}}
+    stdout: str = documents(resources=resources, cluster_status=cluster_status) + "\n" + json.dumps(local_status)
+
+    cerulean, kex = make_source(stdout=stdout).fetch().nodes
+
+    assert (cerulean.state, cerulean.resources.cpu_cores, cerulean.resources.memory_used_bytes) == (NodeState.ONLINE, 4, 1)
+    assert kex.state is not NodeState.ONLINE and kex.resources.memory_used_bytes is None
 
 
 def test_core_counts_are_kept_for_guests_and_for_offline_nodes() -> None:
