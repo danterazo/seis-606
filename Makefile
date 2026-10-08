@@ -24,6 +24,8 @@ upgrade:
 verify-gpu:
 	poetry run python -c "import llama_cpp.llama_cpp as lib; print('supports_gpu_offload =', bool(lib.llama_supports_gpu_offload()))"
 
+format: fix lint
+
 fix: fix-python fix-web
 
 fix-python:
