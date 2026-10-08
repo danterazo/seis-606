@@ -374,7 +374,7 @@ function renderStorageDialog(node) {
   required("#storage-body").replaceChildren(
     el("h3", { text: "Disks (SMART)" }),
     table(["Status", "Device", "Type", "Temp", "Age", "Findings"], diskRows, storage?.smart_available ? "No disks reported." : "smartctl is not installed on this node."),
-    el("h3", { text: "ZFS pools" }),
+    el("h3", { text: "ZFS Pools" }),
     table(["Status", "Pool", "Capacity", "Findings"], poolRows, storage?.zfs_available ? "No pools reported." : "ZFS tools are not installed on this node."),
   );
 }
