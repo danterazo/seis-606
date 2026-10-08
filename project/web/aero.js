@@ -352,6 +352,12 @@ function renderStorageDialog(node) {
   required("#storage-heading").textContent = `Storage Health · ${nodeLabel(node)}`;
   /** @param {HealthLevel} level @param {string} text */
   const levelCell = (level, text) => el("span", { className: `health-badge health-${level}`, text });
+  /** @param {number | null} powerOnHours */
+  const diskAge = (powerOnHours) => {
+    if (powerOnHours === null) return "—";
+    const days = Math.round(powerOnHours / 24);
+    return days > 365 ? `${Math.floor(days / 365)}y ${days % 365}d` : `${days} d`;
+  };
   const diskRows = (storage?.disks ?? []).map((disk) =>
     el("tr", {}, [
       el("td", {}, [levelCell(disk.level, disk.standby ? "Standby" : stateLabel(disk.level === "ok" ? "OK" : disk.level))]),
@@ -360,7 +366,7 @@ function renderStorageDialog(node) {
       el("td", {}, [el("small", { text: disk.serial ?? "" })]),
       el("td", { text: disk.kind.toUpperCase() }),
       el("td", { text: disk.temperature_celsius === null ? "—" : `${disk.temperature_celsius} °C` }),
-      el("td", { text: disk.power_on_hours === null ? "—" : `${Math.round(disk.power_on_hours / 24)} d` }),
+      el("td", { text: diskAge(disk.power_on_hours) }),
       el("td", { text: disk.findings.length === 0 ? "Normal" : disk.findings.join("; ") }),
     ]),
   );
