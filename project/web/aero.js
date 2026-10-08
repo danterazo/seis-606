@@ -4,7 +4,11 @@
  * @typedef {{ cpu_ratio: number | null, cpu_cores: number | null, memory_used_bytes: number | null, memory_total_bytes: number | null }} Resources
  * @typedef {"running" | "stopped" | "paused" | "unknown"} GuestState
  * @typedef {{ vmid: number, name: string, display_name?: string, node: string, kind: "vm" | "container", state: GuestState, resources: Resources }} Guest
- * @typedef {{ cpu_model: string | null, ecc_supported?: boolean | null, zfs_arc_bytes?: number | null, zfs_arc_max_bytes?: number | null, source: "live" | "expected" | "unknown" }} Hardware
+ * @typedef {{ cpu_model: string | null, ecc_supported?: boolean | null, zfs_arc_bytes?: number | null, zfs_arc_max_bytes?: number | null, storage?: Storage | null, source: "live" | "expected" | "unknown" }} Hardware
+ * @typedef {"ok" | "warning" | "critical" | "unknown"} HealthLevel
+ * @typedef {{ device: string, model: string | null, serial: string | null, kind: string, level: HealthLevel, standby: boolean, temperature_celsius: number | null, power_on_hours: number | null, findings: string[] }} Disk
+ * @typedef {{ name: string, state: string, level: HealthLevel, capacity_percent: number | null, findings: string[] }} Pool
+ * @typedef {{ disks: Disk[], pools: Pool[], smart_available: boolean, zfs_available: boolean }} Storage
  * @typedef {{ name: string, display_name: string, state: "online" | "offline" | "unknown", address: string | null, image: string | null, initial: string, color: string, memory_description?: string | null, memory_ecc?: boolean | null, resources: Resources, guests: Guest[], hardware: Hardware }} PveNode
  * @typedef {{ source: string, fetched_at: string, nodes: PveNode[] }} Snapshot
  * @typedef {"all" | "running" | "vm" | "container"} GuestFilter
@@ -304,6 +308,99 @@ function cpuModelLine({ cpu_model: model, source }, { cpu_cores: cores }) {
   return el("small", { className: `cpu-model${expected ? " is-expected" : ""}`, text: `${displayModel}${coreText}`, attrs: { title: `${model}${coreText} · ${expected ? "Expected hardware (node not probed)" : "Read from the node"}` } });
 }
 
+/** @type {ReadonlyArray<HealthLevel>} */
+const HEALTH_ORDER = ["ok", "unknown", "warning", "critical"];
+
+/** @param {ReadonlyArray<HealthLevel>} levels @returns {HealthLevel} */
+const worstLevel = (levels) => levels.reduce((worst, level) => (HEALTH_ORDER.indexOf(level) > HEALTH_ORDER.indexOf(worst) ? level : worst), /** @type {HealthLevel} */ ("ok"));
+
+/** A badge that opens the node's storage details; a span because tiles are buttons and can't nest one. @param {string} nodeName @param {HealthLevel | "na"} level @param {string} text @param {string} title */
+function healthBadge(nodeName, level, text, title) {
+  return el("span", { className: `health-badge health-${level}`, text, attrs: { role: "button", tabindex: "0", title: `${title}\nClick for details`, "data-storage-node": nodeName } });
+}
+
+/** One SMART badge plus one badge per zpool, each coloured by its worst finding. @param {PveNode} node */
+function storageBadges(node) {
+  const storage = node.hardware.storage;
+  if (!storage) return [];
+  /** @type {HTMLElement[]} */
+  const badges = [];
+  if (!storage.smart_available) {
+    badges.push(healthBadge(node.name, "na", "SMART n/a", "smartctl is not installed on this node"));
+  } else if (storage.disks.length > 0) {
+    const level = worstLevel(storage.disks.map((disk) => disk.level));
+    const flagged = storage.disks.filter((disk) => disk.level !== "ok");
+    const hottest = Math.max(...storage.disks.map((disk) => disk.temperature_celsius ?? -Infinity));
+    const text = flagged.length === 0 ? "SMART OK" : `SMART ${flagged.length} ${level === "unknown" ? "unreadable" : level === "warning" ? "warn" : "critical"}`;
+    const lines = flagged.length === 0 ? [`All ${plural(storage.disks.length, "disk")} healthy${Number.isFinite(hottest) ? `, hottest ${hottest} °C` : ""}`] : flagged.map((disk) => `${disk.device}: ${disk.findings.join("; ")}`);
+    badges.push(healthBadge(node.name, level, text, lines.join("\n")));
+  }
+  if (storage.zfs_available) {
+    for (const pool of storage.pools) {
+      const text = pool.level === "ok" ? `${pool.name} ${pool.state}` : `${pool.name} ${pool.state}${pool.findings.length > 1 ? ` +${pool.findings.length - 1}` : ""}`;
+      badges.push(healthBadge(node.name, pool.level, text, pool.findings.length === 0 ? `${pool.name} is healthy${pool.capacity_percent === null ? "" : `, ${pool.capacity_percent}% full`}` : `${pool.name}: ${pool.findings.join("; ")}`));
+    }
+  }
+  return badges.length === 0 ? [] : [el("div", { className: "storage-badges" }, badges)];
+}
+
+/** @param {PveNode} node */
+function renderStorageDialog(node) {
+  const storage = node.hardware.storage;
+  required("#storage-heading").textContent = `Storage health · ${nodeLabel(node)}`;
+  /** @param {HealthLevel} level @param {string} text */
+  const levelCell = (level, text) => el("span", { className: `health-badge health-${level}`, text });
+  const diskRows = (storage?.disks ?? []).map((disk) =>
+    el("tr", {}, [
+      el("td", {}, [levelCell(disk.level, disk.standby ? "standby" : disk.level)]),
+      el("td", {}, [el("code", { text: disk.device }), el("small", { text: ` ${[disk.model, disk.serial].filter(Boolean).join(" · ")}` })]),
+      el("td", { text: disk.kind.toUpperCase() }),
+      el("td", { text: disk.temperature_celsius === null ? "—" : `${disk.temperature_celsius} °C` }),
+      el("td", { text: disk.power_on_hours === null ? "—" : `${Math.round(disk.power_on_hours / 24)} d` }),
+      el("td", { text: disk.findings.length === 0 ? "Normal" : disk.findings.join("; ") }),
+    ]),
+  );
+  const poolRows = (storage?.pools ?? []).map((pool) =>
+    el("tr", {}, [
+      el("td", {}, [levelCell(pool.level, pool.state)]),
+      el("td", {}, [el("code", { text: pool.name })]),
+      el("td", { text: pool.capacity_percent === null ? "—" : `${pool.capacity_percent}% full` }),
+      el("td", { text: pool.findings.length === 0 ? "Normal" : pool.findings.join("; ") }),
+    ]),
+  );
+  /** @param {string[]} headers @param {HTMLElement[]} rows @param {string} empty */
+  const table = (headers, rows, empty) =>
+    rows.length === 0 ? el("p", { className: "empty", text: empty }) : el("table", { className: "storage-table" }, [el("thead", {}, [el("tr", {}, headers.map((header) => el("th", { text: header })))]), el("tbody", {}, rows)]);
+  required("#storage-body").replaceChildren(
+    el("h3", { text: "Disks (SMART)" }),
+    table(["Status", "Device", "Type", "Temp", "Age", "Findings"], diskRows, storage?.smart_available ? "No disks reported." : "smartctl is not installed on this node."),
+    el("h3", { text: "ZFS pools" }),
+    table(["Status", "Pool", "Capacity", "Findings"], poolRows, storage?.zfs_available ? "No pools reported." : "ZFS tools are not installed on this node."),
+  );
+}
+
+/** @type {string | null} */
+let storageDialogNode = null;
+
+/** @param {string | null} nodeName */
+function openStorageDialog(nodeName) {
+  storageDialogNode = nodeName;
+  syncStorageDialog();
+}
+
+/** Keeps an open dialog current as new snapshots arrive. */
+function syncStorageDialog() {
+  const dialog = required("#storage-dialog");
+  if (!(dialog instanceof HTMLDialogElement) || storageDialogNode === null) return;
+  const node = state.snapshot?.nodes.find((candidate) => candidate.name === storageDialogNode);
+  if (node === undefined) {
+    dialog.close();
+    return;
+  }
+  renderStorageDialog(node);
+  if (!dialog.open) dialog.showModal();
+}
+
 /** @param {PveNode[]} nodes */
 function renderOverview(nodes) {
   const tiles = nodes.map((node) => {
@@ -332,7 +429,7 @@ function renderOverview(nodes) {
       ...(online
         ? [el("div", { className: "tile-readings" }, [
             el("div", { className: "gauges" }, gauges),
-            el("div", { className: "tile-details" }, [el("div", { className: "facts" }, [fact("RAM", memoryText), ...(arcBytes === null ? [] : [fact("ZFS ARC", arcMax ? formatMemoryPair({ used: arcBytes, total: arcMax }) : formatBytes(arcBytes))])]), ...hardwareDetails]),
+            el("div", { className: "tile-details" }, [el("div", { className: "facts" }, [fact("RAM", memoryText), ...(arcBytes === null ? [] : [fact("ZFS ARC", arcMax ? formatMemoryPair({ used: arcBytes, total: arcMax }) : formatBytes(arcBytes))])]), ...hardwareDetails, ...storageBadges(node)]),
           ])]
         : [el("p", { className: "offline-note", text: "No live readings." }), ...hardwareDetails]),
     ]);
@@ -614,6 +711,7 @@ function render() {
   renderOverview(nodes);
   renderTopology(nodes);
   renderGuests(nodes);
+  syncStorageDialog();
   required("#source-label").textContent = state.snapshot?.source ?? "No data source connected";
   const lastUpdate = state.snapshot ? new Date(state.snapshot.fetched_at).toLocaleTimeString() : null;
   required("#updated").textContent =
@@ -673,6 +771,11 @@ document.addEventListener("click", (event) => {
     void rebootGuest(Number(rebootTarget.getAttribute("data-reboot-vmid")), rebootTarget.getAttribute("data-reboot-node") ?? "");
     return;
   }
+  const storageBadge = event.target.closest("[data-storage-node]");
+  if (storageBadge instanceof Element) {
+    openStorageDialog(storageBadge.getAttribute("data-storage-node"));
+    return;
+  }
   const nodeChip = event.target.closest("[data-node-filter]");
   if (nodeChip instanceof Element) {
     state.selectedNode = nodeChip.getAttribute("data-node-filter") || null;
@@ -709,6 +812,20 @@ required("#close-logs-button").addEventListener("click", () => {
   if (dialog instanceof HTMLDialogElement) dialog.close();
 });
 required("#clear-logs-button").addEventListener("click", () => void clearActivityLog());
+required("#close-storage-button").addEventListener("click", () => {
+  const dialog = required("#storage-dialog");
+  if (dialog instanceof HTMLDialogElement) dialog.close();
+});
+required("#storage-dialog").addEventListener("close", () => {
+  storageDialogNode = null;
+});
+document.addEventListener("keydown", (event) => {
+  if ((event.key !== "Enter" && event.key !== " ") || !(event.target instanceof Element)) return;
+  const storageBadge = event.target.closest("[data-storage-node]");
+  if (!(storageBadge instanceof Element)) return;
+  event.preventDefault();
+  openStorageDialog(storageBadge.getAttribute("data-storage-node"));
+});
 
 const selectedHaiku = HEADER_HAIKUS[Math.floor(Math.random() * HEADER_HAIKUS.length)];
 required("#haiku").replaceChildren(...selectedHaiku.map((line, index) => el("span", { text: index < selectedHaiku.length - 1 ? `${line} /` : line })));

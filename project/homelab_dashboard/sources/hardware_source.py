@@ -1,13 +1,14 @@
 import threading
 import time
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import Future, ThreadPoolExecutor
 from dataclasses import dataclass, field, replace
 from datetime import UTC, datetime
 from typing import Callable, Dict, List, Optional, Protocol, Tuple
 
-from homelab_dashboard.models import ClusterSnapshot, Hardware, Node, NodeState
+from homelab_dashboard.models import ClusterSnapshot, Hardware, Node, NodeState, Storage
 from homelab_dashboard.sources.base import RefreshableStatusSource, StatusSourceError
 from homelab_dashboard.sources.hardware_ssh import HardwareProbe
+from homelab_dashboard.sources.storage_ssh import StorageProbe
 
 
 class ExpectedHardware(Protocol):
@@ -39,10 +40,17 @@ class HardwareEnrichedSource:
     probe: HardwareProbe
     expected_hardware: ExpectedHardware
     ttl_seconds: float
+    storage_probe: Optional[StorageProbe] = None
+    storage_ttl_seconds: float = 300.0
     clock: Callable[[], float] = time.monotonic
     now: Callable[[], datetime] = _utc_now
     _lock: threading.Lock = field(default_factory=threading.Lock, init=False)
     _entries: Dict[str, _Entry] = field(default_factory=dict, init=False)
+    _storage_lock: threading.Lock = field(default_factory=threading.Lock, init=False)
+    _storage: Dict[str, Storage] = field(default_factory=dict, init=False)
+    _storage_checked: Dict[str, float] = field(default_factory=dict, init=False)
+    _storage_running: Dict[str, "Future[None]"] = field(default_factory=dict, init=False)
+    _storage_pool: ThreadPoolExecutor = field(default_factory=lambda: ThreadPoolExecutor(max_workers=4), init=False)
 
     def fetch(self) -> ClusterSnapshot:
         return self._enrich(snapshot=self.cluster.fetch(), force=False)
@@ -57,9 +65,42 @@ class HardwareEnrichedSource:
                 with ThreadPoolExecutor(max_workers=len(stale)) as pool:
                     for node, entry in zip(stale, pool.map(self._probe_one, stale)):
                         self._entries[node.name] = entry
+            for node in snapshot.nodes:
+                if self._is_probeable(node=node):
+                    self._refresh_storage(node=node, force=force)
             nodes: Tuple[Node, ...] = tuple(self._with_hardware(node=node) for node in snapshot.nodes)
             checked: List[datetime] = [self._entries[node.name].checked_at for node in snapshot.nodes if self._is_probeable(node=node)]
         return replace(snapshot, nodes=nodes, fetched_at=max([snapshot.fetched_at, *checked]))
+
+    def wait_for_storage_probes(self) -> None:
+        with self._storage_lock:
+            running: List["Future[None]"] = list(self._storage_running.values())
+        for future in running:
+            future.result()
+
+    def _refresh_storage(self, *, node: Node, force: bool) -> None:
+        """SMART reads take seconds, so they run in the background and the page keeps the last result meanwhile."""
+        if self.storage_probe is None:
+            return
+        with self._storage_lock:
+            checked: Optional[float] = self._storage_checked.get(node.name)
+            fresh: bool = checked is not None and self.clock() - checked < self.storage_ttl_seconds
+            if node.name in self._storage_running or (fresh and not force):
+                return
+            self._storage_running[node.name] = self._storage_pool.submit(self._probe_storage, node.name, str(node.address))
+
+    def _probe_storage(self, node_name: str, address: str) -> None:
+        assert self.storage_probe is not None
+        result: Optional[Storage] = None
+        try:
+            result = self.storage_probe.probe(node_name=node_name, address=address)
+        except StatusSourceError:
+            pass  # keep the previous reading rather than hiding a known problem
+        with self._storage_lock:
+            if result is not None:
+                self._storage[node_name] = result
+            self._storage_checked[node_name] = self.clock()
+            del self._storage_running[node_name]
 
     @staticmethod
     def _is_probeable(*, node: Node) -> bool:
@@ -78,5 +119,7 @@ class HardwareEnrichedSource:
 
     def _with_hardware(self, *, node: Node) -> Node:
         if self._is_probeable(node=node) and node.name in self._entries:
-            return replace(node, hardware=self._entries[node.name].hardware)
+            with self._storage_lock:
+                storage: Optional[Storage] = self._storage.get(node.name)
+            return replace(node, hardware=replace(self._entries[node.name].hardware, storage=storage))
         return replace(node, hardware=self.expected_hardware(node_name=node.name))

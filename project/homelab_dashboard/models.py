@@ -35,6 +35,13 @@ class HardwareSource(StrEnum):
     UNKNOWN = "unknown"
 
 
+class HealthLevel(StrEnum):
+    OK = "ok"
+    WARNING = "warning"
+    CRITICAL = "critical"
+    UNKNOWN = "unknown"
+
+
 @dataclass(frozen=True, slots=True, kw_only=True)
 class Resources:
     """Readings Proxmox did not report stay None rather than becoming zero."""
@@ -65,6 +72,40 @@ class Gpu:
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
+class Disk:
+    """`kind` is hdd, ssd or nvme; `findings` lists only what is not normal."""
+
+    device: str
+    model: Optional[str]
+    serial: Optional[str]
+    kind: str
+    level: HealthLevel
+    standby: bool = False
+    temperature_celsius: Optional[int] = None
+    power_on_hours: Optional[int] = None
+    findings: Tuple[str, ...] = ()
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class Pool:
+    name: str
+    state: str
+    level: HealthLevel
+    capacity_percent: Optional[int] = None
+    findings: Tuple[str, ...] = ()
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class Storage:
+    """The availability flags tell "no problems" apart from "smartctl / zpool is not installed"."""
+
+    disks: Tuple[Disk, ...] = ()
+    pools: Tuple[Pool, ...] = ()
+    smart_available: bool = False
+    zfs_available: bool = False
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
 class Hardware:
     """`source` says whether this was read from the node (live) or taken from the configured profile (expected)."""
 
@@ -74,6 +115,7 @@ class Hardware:
     ecc_supported: Optional[bool] = None
     zfs_arc_bytes: Optional[int] = None
     zfs_arc_max_bytes: Optional[int] = None
+    storage: Optional[Storage] = None
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)

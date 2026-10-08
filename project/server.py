@@ -21,6 +21,7 @@ from homelab_dashboard.sources.base import RefreshableStatusSource, StatusSource
 from homelab_dashboard.sources.cache import CachedStatusSource
 from homelab_dashboard.sources.hardware_source import HardwareEnrichedSource
 from homelab_dashboard.sources.hardware_ssh import SshHardwareProbe
+from homelab_dashboard.sources.storage_ssh import SshStorageProbe
 from homelab_dashboard.sources.openwrt_ssh import OpenWrtLeaseSource
 from homelab_dashboard.sources.proxmox_ssh import ProxmoxSshSource, SshTarget
 
@@ -195,6 +196,8 @@ def main() -> None:
         probe=SshHardwareProbe(user=settings.ssh_user, timeout_seconds=settings.ssh_timeout_seconds),
         expected_hardware=expected_hardware_for,
         ttl_seconds=settings.hardware_cache_seconds,
+        storage_probe=SshStorageProbe(user=settings.ssh_user),
+        storage_ttl_seconds=settings.storage_cache_seconds,
     )
     devices: OpenWrtLeaseSource = OpenWrtLeaseSource(target=router_target, ttl_seconds=settings.router_cache_seconds)
     rebooter: GuestRebooter = GuestRebooter(source=enriched, user=settings.ssh_user)

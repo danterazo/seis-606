@@ -109,6 +109,20 @@ button { cursor: pointer; }
 .log-detail { display: grid; gap: 4px; min-width: 0; }
 .log-path { overflow-wrap: anywhere; font-size: 12px; }
 .log-meta { color: var(--ink-soft); font-size: 11px; overflow-wrap: anywhere; }
+.storage-badges { display: flex; flex-wrap: wrap; gap: 4px; min-width: 0; }
+.health-badge { display: inline-flex; align-items: center; min-height: 16px; padding: 1px 6px; border: 1px solid rgba(60,85,100,.3); border-radius: 4px; font-size: 10px; font-weight: 700; line-height: 1.2; white-space: nowrap; }
+span.health-badge[role="button"] { cursor: pointer; }
+.health-ok { color: #245c42; background: rgba(220,244,227,.9); border-color: rgba(36,92,66,.3); }
+.health-warning { color: #7a4b00; background: rgba(255,236,190,.95); border-color: rgba(168,108,0,.5); }
+.health-critical { color: #8f1d14; background: rgba(255,221,215,.95); border-color: rgba(156,29,20,.55); }
+.health-unknown, .health-na { color: #4d5d67; background: rgba(236,244,248,.9); }
+#storage-dialog { width: min(860px, calc(100vw - 28px)); }
+.storage-body { padding: 4px 18px 16px; overflow: auto; max-height: min(620px, calc(100dvh - 110px)); }
+.storage-body h3 { margin: 14px 0 6px; font-size: 14px; }
+.storage-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.storage-table th { text-align: left; color: var(--ink-soft); font-size: 11px; }
+.storage-table th, .storage-table td { padding: 5px 8px 5px 0; border-bottom: 1px solid rgba(15,90,150,.14); vertical-align: top; }
+.storage-table small { color: var(--ink-soft); }
 
 .layout {
   display: grid; grid-template-columns: 380px minmax(0, 1fr) 400px; gap: 18px;
