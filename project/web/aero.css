@@ -212,7 +212,7 @@ button { cursor: pointer; }
 .tile-head { display: flex; align-items: center; gap: 10px; }
 .tile-head .server-glyph { width: 30px; height: 34px; }
 .tile-title { display: grid; flex: 1; min-width: 0; gap: 1px; }
-.cpu-model { font-size: 11px; letter-spacing: .01em; opacity: .85; }
+.cpu-model { display: block; min-width: 0; overflow: hidden; font-size: 11px; letter-spacing: .01em; opacity: .85; text-overflow: ellipsis; white-space: nowrap; }
 .cpu-model.is-expected { font-style: italic; }
 .tile-readings { display: grid; grid-template-columns: minmax(104px, .9fr) minmax(0, 1.1fr); gap: 10px; align-items: center; }
 .tile-details { display: grid; gap: 5px; min-width: 0; padding-left: 10px; border-left: 1px solid rgba(15,90,150,.18); }

@@ -287,7 +287,8 @@ const fact = (label, value) => el("div", { className: "fact" }, [el("span", { cl
 function cpuModelLine({ cpu_model: model, source }) {
   if (model === null) return null;
   const expected = source !== "live";
-  return el("small", { className: `cpu-model${expected ? " is-expected" : ""}`, text: model, attrs: { title: expected ? "Expected hardware (node not probed)" : "Read from the node" } });
+  const displayModel = model.replace(" Threadripper PRO ", " Threadripper ");
+  return el("small", { className: `cpu-model${expected ? " is-expected" : ""}`, text: displayModel, attrs: { title: `${model} · ${expected ? "Expected hardware (node not probed)" : "Read from the node"}` } });
 }
 
 /** @param {PveNode[]} nodes */
