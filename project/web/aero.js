@@ -571,6 +571,12 @@ function syncStorageDialog() {
   if (!dialog.open) dialog.showModal();
 }
 
+/** Memory and error badges share the first row, storage badges the second, so a longer badge never reshuffles the rest. @param {HTMLElement[]} hardware @param {HTMLElement[]} storage */
+function footerRows(hardware, storage) {
+  const rows = [hardware, storage].filter((row) => row.length > 0).map((row) => el("div", { className: "footer-row" }, row));
+  return el("div", { className: "tile-footer" }, rows);
+}
+
 /** @param {PveNode[]} nodes */
 function renderOverview(nodes) {
   const tiles = nodes.map((node) => {
@@ -600,8 +606,8 @@ function renderOverview(nodes) {
         ? [el("div", { className: "tile-readings" }, [
             el("div", { className: "gauges" }, gauges),
             el("div", { className: "tile-details" }, [el("div", { className: "facts" }, [fact("RAM", memoryText), ...(arcBytes === null ? [] : [fact("ZFS ARC", arcMax ? formatMemoryPair({ used: arcBytes, total: arcMax }) : formatBytes(arcBytes))])])]),
-          ]), el("div", { className: "tile-footer" }, [...hardwareDetails, ...hardwareErrorBadges(node), ...storageBadges(node)])]
-        : [el("p", { className: "offline-note", text: "No live readings." }), ...hardwareDetails, el("div", { className: "tile-footer" }, hardwareErrorBadges(node))]),
+          ]), footerRows([...hardwareDetails, ...hardwareErrorBadges(node)], storageBadges(node))]
+        : [el("p", { className: "offline-note", text: "No live readings." }), ...hardwareDetails, footerRows(hardwareErrorBadges(node), [])]),
     ]);
   });
   const host = required("#overview");
@@ -1033,21 +1039,80 @@ void refreshDevices();
 window.setInterval(() => void refresh(), REFRESH_INTERVAL_MS);
 window.setInterval(() => void refreshDevices(), DEVICES_INTERVAL_MS);
 
-// Dev only: the server exposes this endpoint when DASHBOARD_DEV=1; a changed version means code or assets were edited.
+// Dev only: swap stylesheets in place and reload for assets that need re-execution.
 void (async () => {
-  /** @returns {Promise<string | null>} */
+  /** @returns {Promise<{version: string, assets: Record<string, number>} | null>} */
   const readVersion = async () => {
     try {
       const response = await fetch("/__dev/version", { cache: "no-store" });
-      return response.ok ? String((await response.json()).version) : null;
+      return response.ok ? await response.json() : null;
     } catch {
       return null;
     }
   };
   const initial = await readVersion();
   if (initial === null) return;
+  let previous = initial;
+
+  /** @param {string} path @param {number} version @returns {Promise<boolean>} */
+  const replaceStylesheet = (path, version) => {
+    const links = /** @type {HTMLLinkElement[]} */ ([...document.querySelectorAll('link[rel="stylesheet"]')])
+      .filter((link) => new URL(link.href).pathname === path);
+    if (links.length === 0) return Promise.resolve(true);
+
+    return Promise.all(links.map((link) => new Promise((resolve) => {
+      const replacement = /** @type {HTMLLinkElement} */ (link.cloneNode());
+      const url = new URL(link.href);
+      url.searchParams.set("__dev", String(version));
+      replacement.href = url.toString();
+      replacement.addEventListener("load", () => {
+        link.remove();
+        resolve(true);
+      }, { once: true });
+      replacement.addEventListener("error", () => {
+        replacement.remove();
+        resolve(false);
+      }, { once: true });
+      link.after(replacement);
+    }))).then((results) => results.every(Boolean));
+  };
+
+  let checkInFlight = false;
   setInterval(async () => {
-    const current = await readVersion();
-    if (current !== null && current !== initial) location.reload();
+    if (checkInFlight) return;
+    checkInFlight = true;
+    try {
+      const current = await readVersion();
+      if (current === null) return;
+      if (current.version !== previous.version) {
+        location.reload();
+        return;
+      }
+
+      const changedPaths = [...new Set([...Object.keys(previous.assets), ...Object.keys(current.assets)])]
+        .filter((path) => previous.assets[path] !== current.assets[path]);
+      if (changedPaths.length === 0) return;
+
+      const requiresReload = changedPaths.some((path) => (
+        !path.toLowerCase().endsWith(".css")
+        || previous.assets[path] === undefined
+        || current.assets[path] === undefined
+      ));
+      if (requiresReload) {
+        location.reload();
+        return;
+      }
+
+      for (const path of changedPaths) {
+        const loaded = await replaceStylesheet(path, current.assets[path]);
+        if (!loaded) {
+          location.reload();
+          return;
+        }
+      }
+      previous = current;
+    } finally {
+      checkInFlight = false;
+    }
   }, 1000);
 })();

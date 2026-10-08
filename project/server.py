@@ -62,7 +62,12 @@ class DashboardHandler(SimpleHTTPRequestHandler):
     def do_GET(self) -> None:
         url = urlparse(self.path)
         if url.path == DEV_VERSION_PATH and os.environ.get("DASHBOARD_DEV") == "1":
-            self._send_json(status=HTTPStatus.OK, payload={"version": BOOT_ID})
+            assets: Dict[str, int] = {
+                f"/{path.relative_to(WEB_ROOT).as_posix()}": path.stat().st_mtime_ns
+                for path in sorted(WEB_ROOT.rglob("*"))
+                if path.is_file()
+            }
+            self._send_json(status=HTTPStatus.OK, payload={"version": BOOT_ID, "assets": assets})
             return
         if url.path == LOGS_PATH:
             self._send_json(status=HTTPStatus.OK, payload={"entries": self.activity_log.read()})

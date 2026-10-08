@@ -43,7 +43,7 @@ def test_dashboard_snapshot_includes_label_and_node_counts() -> None:
     assert snapshot["nodes"][0]["workload_count"] == 2
 
 
-def test_dev_version_ignores_web_asset_changes(tmp_path: Any, monkeypatch: Any) -> None:
+def test_dev_version_reports_web_asset_changes_without_server_restart(tmp_path: Any, monkeypatch: Any) -> None:
     class UnavailablePve:
         def fetch(self) -> ClusterSnapshot:
             raise StatusSourceError("PVE unavailable")
@@ -68,11 +68,13 @@ def test_dev_version_ignores_web_asset_changes(tmp_path: Any, monkeypatch: Any) 
     base = f"http://127.0.0.1:{http_server.server_port}"
     try:
         with urlopen(f"{base}/__dev/version", timeout=5) as response:
-            initial_version = json.load(response)["version"]
+            initial_payload = json.load(response)
         current_mtime = asset.stat().st_mtime_ns
         os.utime(asset, ns=(current_mtime + 1_000_000_000, current_mtime + 1_000_000_000))
         with urlopen(f"{base}/__dev/version", timeout=5) as response:
-            assert json.load(response)["version"] == initial_version
+            current_payload = json.load(response)
+        assert current_payload["version"] == initial_payload["version"]
+        assert current_payload["assets"]["/aero.css"] > initial_payload["assets"]["/aero.css"]
     finally:
         http_server.shutdown()
         http_server.server_close()
