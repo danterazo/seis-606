@@ -12,8 +12,10 @@ Unfortunately for the purposes of HW4, I didn't make dramatic changes to the spe
 
 With the exception of the inventory management feature, I think the web UI is close to what I envisioned originally. I look forward to what more I can refine before the project's due date.
 
+
 ## Dashboard Screenshots
 These are screenshots of the running dashboard. Making this site publicly accessible sounds like a security nightmare given the level of access the backend has into my network, so it's local-only for now. I utilized AI to generate accessibility captions for each image.
+
 
 ### Dashboard Overview
 As seen on my 16:9 1440p display:
@@ -24,20 +26,24 @@ The site resizes for mobile devices as well:
 
 ![Mobile version of the dashboard overview with node metrics, LAN devices discovered from router leases, topology, guests, and haiku](assets/dashboard-overview-mobile.png)
 
+
 ### Dynamic Cluster Topology
 This panel displays the topology of my PVE nodes. Each node's containers are visible below them. When a node is connected, its dotted line will turn thicker and sport the associated color.
 
 ![Cluster topology showing nodes and their guests](assets/dynamic-topology.png)
+
 
 ### VM and Container View
 This section allows me to filter and search through my virtual machines and containers. By default, it shows all guests across all nodes. Filters allow me to quickly locate specific guests and view their status across different nodes.
 
 ![VM filter selected for Kex, showing running and stopped virtual machines](assets/filtering.png)
 
+
 ### Network DHCP
 This panel shows the DHCP leases for devices on my local network. Below is a clip of the guests on my IoT and Guest VLANs. I filter the lists between two different panels.
 
 ![Searchable guest list with node and status filters](assets/guest-list.png)
+
 
 ### Node and Hardware Health
 I tried to make these system summary cards dense yet easy to read at a glance. Each server's CPU usage, RAM usage, and ZFS pool usage are displayed as prominent circles / meters. Specific values for RAM and ZFS ARC (also RAM) usage are shown to the right. Underneath are colored cards that highlight hardware errors, SMART status, and other critical alerts. These were inspired by me fighting every server except one over the last week and a half.
@@ -56,10 +62,12 @@ Clicking on the *SMART* badge opens a modal displaying the health status of my s
 
 ![Storage health modal showing SMART disk status and ZFS pool details](assets/smart-modal.png)
 
+
 ### Activity Logging
 This modal displays recent web UI activity, including requests made to the dashboard and actions taken by users. I figured repeating the nodes' logs themselves would be redundant, though that might be a feature in a future version.
 
 ![Activity log modal showing recent dashboard requests](assets/activity-modal.png)
+
 
 ### Dashboard Styling
 Originally, this card was here to fill in blank space. Now, that's less of an issue, but I decided to keep it anyway. The world needs more whimsy and I'll start by adding that to my dashboard.
