@@ -1,10 +1,13 @@
 #!/bin/bash
 set -euo pipefail
 
+# update system dependencies
+uv tool upgrade --all
+
 # resolve, update lock, and install python dependencies
 poetry update
 
-# update and install the dashboard's web dependencies
+# update and install dashboard's web dependencies
 REPO_NAME=$(basename "$(git rev-parse --show-toplevel)")
 if [[ "$REPO_NAME" == "seis-606-vibe" ]]; then
   npm update --prefix project/web
