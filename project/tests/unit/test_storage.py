@@ -83,7 +83,9 @@ HEALTHY_STATUS: str = "  pool: rpool\n state: ONLINE\n  scan: scrub repaired 0B 
 
 def test_healthy_pool() -> None:
     pool = parse_storage(
-        document={"pools": [{"name": "rpool", "health": "ONLINE", "capacity": "12", "size": "1000", "dataset_available": "400", "status": HEALTHY_STATUS}]}
+        document={
+            "pools": [{"name": "rpool", "health": "ONLINE", "capacity": "12", "size": "1000", "dataset_available": "400", "status": HEALTHY_STATUS}]
+        }
     ).pools[0]
     assert (pool.level, pool.capacity_percent, pool.findings) == (HealthLevel.OK, 12, ())
     assert (pool.size_bytes, pool.dataset_available_bytes) == (1000, 400)

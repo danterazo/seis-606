@@ -250,7 +250,12 @@ function zfsTotals(pools) {
   if (known.length === 0) return null;
   const size = known.reduce((sum, pool) => sum + (pool.size_bytes ?? 0), 0);
   const used = known.reduce((sum, pool) => sum + (pool.size_bytes ?? 0) - (pool.dataset_available_bytes ?? 0), 0);
-  return { size, used, names: known.map((pool) => pool.name), usedByPool: known.map((pool) => (pool.size_bytes ?? 0) - (pool.dataset_available_bytes ?? 0)) };
+  return {
+    size,
+    used,
+    names: known.map((pool) => pool.name),
+    usedByPool: known.map((pool) => (pool.size_bytes ?? 0) - (pool.dataset_available_bytes ?? 0)),
+  };
 }
 
 /** @param {{ label: string, value: number | null, tone: "cpu" | "memory" | "storage", arcValue?: number | null, arcClass?: string, title?: string }} args */
