@@ -5,8 +5,11 @@ set -euo pipefail
 poetry update
 
 # update and install the dashboard's web dependencies
-npm update --prefix project/web
-npm ci --prefix project/web
+REPO_NAME=$(basename "$(git rev-parse --show-toplevel)")
+if [[ "$REPO_NAME" == "seis-606-vibe" ]]; then
+  npm update --prefix project/web
+  npm ci --prefix project/web
+fi
 
 # install lab envs (without mutating lockfiles)
 # support both naming conventions: 765 uses "labs", 606 uses "assignments"
