@@ -21,7 +21,8 @@ rsync -avh --mkpath --delete scripts "$DST/"
 
 # sync files
 rsync -avh --mkpath .github/copilot-instructions.md "$DST/.github/"
-rsync -avh .envrc Makefile .editorconfig .gitignore "$DST/"
+# rsync -avh .envrc Makefile .editorconfig .gitignore "$DST/"
+rsync -avh .envrc .editorconfig .gitignore "$DST/"
 
 # announce completion
 echo -e "\033[1;32mSync complete\033[0m"
