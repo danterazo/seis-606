@@ -44,7 +44,9 @@ def _parse_guest(*, row: JsonObject) -> Optional[Guest]:
     )
 
 
-def _parse_node(*, row: JsonObject, address: Optional[str], guests: Sequence[Guest], online: bool, local_resources: Optional[Resources]) -> Optional[Node]:
+def _parse_node(
+    *, row: JsonObject, address: Optional[str], guests: Sequence[Guest], online: bool, local_resources: Optional[Resources]
+) -> Optional[Node]:
     name: Optional[str] = as_text(value=row.get("node"))
     if name is None:
         return None
