@@ -48,7 +48,7 @@ def parse_leases(*, text: str) -> tuple[DhcpLease, ...]:
             if seconds < 0 or not re.fullmatch(r"(?:[0-9a-fA-F]{2}:){5}[0-9a-fA-F]{2}", mac):
                 raise ValueError("Invalid lease")
             parsed_address: ipaddress.IPv4Address = ipaddress.IPv4Address(address)
-            expires_at: datetime | None = datetime.fromtimestamp(seconds, UTC) if seconds else None
+            expires_at: datetime | None = datetime.fromtimestamp(timestamp=seconds, tz=UTC) if seconds else None
         except (ValueError, OverflowError, OSError) as error:
             raise StatusSourceError("OpenWRT returned an invalid DHCP lease record.") from error
         leases.append(DhcpLease(address=str(parsed_address), mac=mac.lower(), hostname=None if hostname == "*" else hostname, expires_at=expires_at))
@@ -89,7 +89,7 @@ def parse_ipv6_records(*, leases: object, neighbors: object, now: datetime) -> t
     for row in neighbors:
         if not isinstance(row, dict) or not isinstance(row.get("dev"), str) or not row["dev"].startswith("br-"):
             continue
-        mac: str | None = _mac_address(row.get("lladdr"))
+        mac: str | None = _mac_address(value=row.get("lladdr"))
         states: object = row.get("state", [])
         if mac is None or not isinstance(states, list) or any(state in ("FAILED", "INCOMPLETE") for state in states):
             continue
@@ -123,7 +123,7 @@ def parse_ipv6_records(*, leases: object, neighbors: object, now: datetime) -> t
                     continue
                 if parsed_address.is_multicast or parsed_address.is_unspecified:
                     continue
-                lease_mac: str | None = neighbor_macs.get((interface, str(parsed_address))) or _duid_mac(duid_value)
+                lease_mac: str | None = neighbor_macs.get((interface, str(parsed_address))) or _duid_mac(value=duid_value)
                 identity: str = (
                     f"mac:{lease_mac}" if lease_mac is not None else f"duid:{duid_text}" if duid_text is not None else f"address:{parsed_address}"
                 )
@@ -134,7 +134,7 @@ def parse_ipv6_records(*, leases: object, neighbors: object, now: datetime) -> t
                         identity=identity,
                         mac=lease_mac,
                         hostname=hostname,
-                        expires_at=datetime.fromtimestamp(now.timestamp() + lifetime, UTC),
+                        expires_at=datetime.fromtimestamp(timestamp=now.timestamp() + lifetime, tz=UTC),
                     )
                 )
     return tuple(records)

@@ -207,7 +207,7 @@ def _title(*, category: ErrorCategory, classification: ErrorClass, events: list[
 
     text: str
     if category is ErrorCategory.ECC_MEMORY:
-        address, page, dimm = top("address"), top("page_frame"), top("dimm")
+        address, page, dimm = top(name="address"), top(name="page_frame"), top(name="dimm")
         where: str = f" ({dimm[0]})" if dimm else ""
         if address and address[1] >= 2:
             text = f"{lead}{kind}ECC {noun} at the same memory location{where}, address {address[0]}"
@@ -216,22 +216,22 @@ def _title(*, category: ErrorCategory, classification: ErrorClass, events: list[
         else:
             text = f"{lead}{kind}ECC memory {noun}{' on ' + dimm[0] if dimm else ''}"
     elif category is ErrorCategory.CPU_MCE:
-        cpu, bank, type_ = top("cpu"), top("bank"), top("type")
+        cpu, bank, type_ = top(name="cpu"), top(name="bank"), top(name="type")
         subject: str = f"{type_[0]}s" if type_ else "machine-check events"
         if type_ and count == 1:
             subject = type_[0]
         where = f" reported on CPU {cpu[0]}" if cpu else ""
         where += f" (bank {bank[0]})" if bank else ""
-        note: tuple[str, int] | None = top("note")
+        note: tuple[str, int] | None = top(name="note")
         text = f"{lead}{kind}{subject}{where}" if cpu or not note else f"{note[0]} reported by the CPU machine-check subsystem"
     elif category is ErrorCategory.PAGE_OFFLINE:
-        frame: tuple[str, int] | None = top("page_frame")
+        frame: tuple[str, int] | None = top(name="page_frame")
         text = f"Kernel soft-offlined memory page {frame[0] if frame else ''} (page retirement is containment, not a repair)".replace("  ", " ")
     elif category is ErrorCategory.PCIE:
-        device: tuple[str, int] | None = top("device")
+        device: tuple[str, int] | None = top(name="device")
         text = f"{lead}{kind}PCIe bus {noun}{' on ' + device[0] if device else ''}"
     else:
-        device = top("device")
+        device = top(name="device")
         text = f"{lead}storage-path {noun}{' involving ' + device[0] if device else ''}"
     return text[:1].upper() + text[1:]
 

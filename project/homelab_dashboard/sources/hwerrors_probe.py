@@ -53,7 +53,7 @@ def read_count(*, path: Path) -> int | None:
 
 def iso(*, microseconds: Any) -> str | None:
     try:
-        return datetime.fromtimestamp(int(microseconds) / 1_000_000, timezone.utc).isoformat()
+        return datetime.fromtimestamp(timestamp=int(microseconds) / 1_000_000, tz=timezone.utc).isoformat()
     except (TypeError, ValueError, OverflowError, OSError):
         return None
 
@@ -145,7 +145,7 @@ def collect_ras_summary() -> str | None:
 def main() -> None:
     uptime_text = (read_text(path=Path("/proc/uptime")) or "").split()
     document = {
-        "now": datetime.now(timezone.utc).isoformat(),
+        "now": datetime.now(tz=timezone.utc).isoformat(),
         "boot_id": (read_text(path=Path("/proc/sys/kernel/random/boot_id")) or "").replace("-", ""),
         "uptime_seconds": float(uptime_text[0]) if uptime_text else None,
         "edac": collect_edac(),

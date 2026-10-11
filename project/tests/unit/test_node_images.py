@@ -24,7 +24,7 @@ def test_returns_none_when_no_image_exists(tmp_path: Path) -> None:
     assert find_node_image(node_name="kex", image_dir=tmp_path) is None
 
 
-@pytest.mark.parametrize("node_name", ["../secret", "a/b", "", "name with space", "..", "x\x00y"])
+@pytest.mark.parametrize(argnames="node_name", argvalues=["../secret", "a/b", "", "name with space", "..", "x\x00y"])
 def test_rejects_names_that_could_escape_the_image_folder(*, node_name: str, tmp_path: Path) -> None:
     result: str | None = find_node_image(node_name=node_name, image_dir=tmp_path)
 

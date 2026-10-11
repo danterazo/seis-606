@@ -55,7 +55,7 @@ def test_clean_node_is_ok_and_distinct_from_unreadable() -> None:
 
 
 def test_repeated_corrected_ecc_errors_at_one_address_are_one_escalated_incident_with_raw_evidence() -> None:
-    result: HardwareErrors = parse_hardware_errors(document=document(*(event(EDAC_LINE, minute=minute) for minute in range(5))))
+    result: HardwareErrors = parse_hardware_errors(document=document(*(event(message=EDAC_LINE, minute=minute) for minute in range(5))))
     (incident,) = result.incidents
     assert (incident.category, incident.classification) == (ErrorCategory.ECC_MEMORY, ErrorClass.CORRECTED)
     assert incident.count == 5 and incident.level is HealthLevel.CRITICAL and incident.current_boot
@@ -71,17 +71,19 @@ def test_repeated_corrected_ecc_errors_at_one_address_are_one_escalated_incident
 
 
 def test_single_corrected_error_is_a_warning_not_ignored() -> None:
-    assert parse_hardware_errors(document=document(event(EDAC_LINE))).level is HealthLevel.WARNING
+    assert parse_hardware_errors(document=document(event(message=EDAC_LINE))).level is HealthLevel.WARNING
 
 
 def test_uncorrected_ecc_is_critical_only_on_the_current_boot() -> None:
     line: str = EDAC_LINE.replace("1 CE", "1 UE")
-    assert parse_hardware_errors(document=document(event(line))).level is HealthLevel.CRITICAL
-    assert parse_hardware_errors(document=document(event(line, boot_id=OLD_BOOT))).level is HealthLevel.WARNING
+    assert parse_hardware_errors(document=document(event(message=line))).level is HealthLevel.CRITICAL
+    assert parse_hardware_errors(document=document(event(message=line, boot_id=OLD_BOOT))).level is HealthLevel.WARNING
 
 
 def test_earlier_boot_incidents_are_marked_historical_and_recurrence_spans_boots() -> None:
-    result: HardwareErrors = parse_hardware_errors(document=document(event(EDAC_LINE, boot_id=OLD_BOOT, minute=1), event(EDAC_LINE, minute=2)))
+    result: HardwareErrors = parse_hardware_errors(
+        document=document(event(message=EDAC_LINE, boot_id=OLD_BOOT, minute=1), event(message=EDAC_LINE, minute=2))
+    )
     old, new = sorted(result.incidents, key=lambda incident: incident.current_boot)
     assert not old.current_boot and new.current_boot
     assert old.level is HealthLevel.WARNING and new.level is HealthLevel.CRITICAL
@@ -91,7 +93,7 @@ def test_earlier_boot_incidents_are_marked_historical_and_recurrence_spans_boots
 
 def test_cpu_internal_parity_reports_keep_cpu_bank_and_raw_status() -> None:
     message: str = "bank=0 status=90000040000f0005 Internal parity error Corrected_error cpu=5 socketid=0"
-    result: HardwareErrors = parse_hardware_errors(document=document(*(event(message, minute=minute, source="rasdaemon") for minute in range(3))))
+    result: HardwareErrors = parse_hardware_errors(document=document(*(event(message=message, minute=minute, source="rasdaemon") for minute in range(3))))
     (incident,) = result.incidents
     assert incident.category is ErrorCategory.CPU_MCE and incident.classification is ErrorClass.CORRECTED
     assert dict(incident.fields).items() >= {"cpu": "5", "bank": "0", "status": "0x90000040000f0005", "socket": "0"}.items()
@@ -102,10 +104,10 @@ def test_cpu_internal_parity_reports_keep_cpu_bank_and_raw_status() -> None:
 def test_kernel_mce_lines_cmci_storms_and_soft_offlining_are_separate_categories() -> None:
     result: HardwareErrors = parse_hardware_errors(
         document=document(
-            event("mce: [Hardware Error]: Machine check events logged", minute=1),
-            event("mce: CMCI storm detected: switching to poll mode", minute=2),
-            event("RAS: Soft-offlining pfn: 0x17c08ac", minute=3),
-            event("mce: [Hardware Error]: CPU 5: Machine Check: 0 Bank 0: 90000040000f0005", minute=4),
+            event(message="mce: [Hardware Error]: Machine check events logged", minute=1),
+            event(message="mce: CMCI storm detected: switching to poll mode", minute=2),
+            event(message="RAS: Soft-offlining pfn: 0x17c08ac", minute=3),
+            event(message="mce: [Hardware Error]: CPU 5: Machine Check: 0 Bank 0: 90000040000f0005", minute=4),
         )
     )
     categories = {incident.category for incident in result.incidents}
@@ -119,10 +121,10 @@ def test_kernel_mce_lines_cmci_storms_and_soft_offlining_are_separate_categories
 def test_pcie_and_storage_path_errors_are_tracked_without_double_counting_continuation_lines() -> None:
     result: HardwareErrors = parse_hardware_errors(
         document=document(
-            event("pcieport 0000:00:1c.0: PCIe Bus Error: severity=Uncorrected (Fatal), type=Transaction Layer", minute=1),
-            event("pcieport 0000:00:1c.0:   device [8086:1234] error status/mask=00004000/00000000", minute=1),
-            event("nvme nvme0: controller is down; will reset: CSTS=0x3", minute=2),
-            event("blk_update_request: I/O error, dev sdb, sector 0", minute=3),
+            event(message="pcieport 0000:00:1c.0: PCIe Bus Error: severity=Uncorrected (Fatal), type=Transaction Layer", minute=1),
+            event(message="pcieport 0000:00:1c.0:   device [8086:1234] error status/mask=00004000/00000000", minute=1),
+            event(message="nvme nvme0: controller is down; will reset: CSTS=0x3", minute=2),
+            event(message="blk_update_request: I/O error, dev sdb, sector 0", minute=3),
         )
     )
     by_category = {incident.category: incident for incident in result.incidents}
@@ -135,7 +137,7 @@ def test_pcie_and_storage_path_errors_are_tracked_without_double_counting_contin
 
 def test_perf_sample_rate_message_is_not_a_hardware_error() -> None:
     message: str = "perf: interrupt took too long (2503 > 2500), lowering kernel.perf_event_max_sample_rate to 79000"
-    assert parse_hardware_errors(document=document(event(message))).incidents == ()
+    assert parse_hardware_errors(document=document(event(message=message))).incidents == ()
 
 
 def test_edac_counters_and_persisted_rasdaemon_totals() -> None:
@@ -212,7 +214,7 @@ class OfflineAfterwards:
 
     def fetch(self) -> ClusterSnapshot:
         node: Node = Node(name="kex", state=self.state, address="10.0.0.5", resources=Resources(), guests=())
-        return ClusterSnapshot(source="fake", fetched_at=datetime(2025, 1, 1, tzinfo=UTC), nodes=(node,))
+        return ClusterSnapshot(source="fake", fetched_at=datetime(year=2025, month=1, day=1, tzinfo=UTC), nodes=(node,))
 
     fetch_fresh = fetch
 

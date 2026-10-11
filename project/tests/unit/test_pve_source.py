@@ -10,7 +10,7 @@ from homelab_dashboard.models import GuestKind, GuestState, NodeState
 from homelab_dashboard.sources.base import StatusSourceError
 from homelab_dashboard.sources.proxmox_ssh import SSH_OPTIONS, CommandRunner, ProxmoxSshSource, SshTarget
 
-FIXED_TIME: Final[datetime] = datetime(2026, 10, 6, 12, 0, tzinfo=UTC)
+FIXED_TIME: Final[datetime] = datetime(year=2026, month=10, day=6, hour=12, minute=0, tzinfo=UTC)
 
 RESOURCES: Final[list[dict[str, Any]]] = [
     {"type": "node", "node": "cerulean", "status": "online", "cpu": 0.25, "mem": 8, "maxmem": 16},
@@ -168,27 +168,27 @@ def test_settings_default_to_root_on_cerulean() -> None:
 
 
 @pytest.mark.parametrize(
-    ("stderr", "expected"),
-    [
+    argnames=("stderr", "expected"),
+    argvalues=[
         ("Host key verification failed.", "known_hosts"),
         ("root@x: Permission denied (publickey).", "authentication"),
         ("ssh: connect to host x port 22: Connection refused", "refused"),
     ],
 )
 def test_failures_become_safe_messages(*, stderr: str, expected: str) -> None:
-    with pytest.raises(StatusSourceError, match=expected):
+    with pytest.raises(expected_exception=StatusSourceError, match=expected):
         make_source(stderr=stderr, returncode=255).fetch()
 
 
 def test_malformed_output_is_rejected() -> None:
-    with pytest.raises(StatusSourceError):
+    with pytest.raises(expected_exception=StatusSourceError):
         make_source(stdout="not json").fetch()
 
 
 @pytest.mark.parametrize(
-    ("host", "user"),
-    [("-oProxyCommand=evil", "root"), ("admin@cerulean", "root"), ("cerulean", "-oBad"), ("cerulean", "a b")],
+    argnames=("host", "user"),
+    argvalues=[("-oProxyCommand=evil", "root"), ("admin@cerulean", "root"), ("cerulean", "-oBad"), ("cerulean", "a b")],
 )
 def test_target_rejects_option_injection(*, host: str, user: str) -> None:
-    with pytest.raises(ValueError):
+    with pytest.raises(expected_exception=ValueError):
         SshTarget(host=host, user=user)

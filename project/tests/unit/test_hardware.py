@@ -22,7 +22,7 @@ from homelab_dashboard.sources.hardware_source import HardwareEnrichedSource
 from homelab_dashboard.sources.hardware_ssh import PROBE_SCRIPT, SshHardwareProbe
 from homelab_dashboard.sources.proxmox_ssh import CommandRunner
 
-START: datetime = datetime(2025, 1, 1, 12, 0, 0, tzinfo=UTC)
+START: datetime = datetime(year=2025, month=1, day=1, hour=12, minute=0, second=0, tzinfo=UTC)
 
 
 def make_node(*, name: str, state: NodeState = NodeState.ONLINE, address: str | None = "10.0.0.5") -> Node:
@@ -110,7 +110,7 @@ def test_parse_hardware_reads_cpu_topology() -> None:
 
 
 def test_parse_hardware_rejects_non_objects() -> None:
-    with pytest.raises(StatusSourceError):
+    with pytest.raises(expected_exception=StatusSourceError):
         parse_hardware(document=["nope"])
 
 
@@ -129,7 +129,7 @@ def test_probe_reads_busiest_engine_of_last_complete_sample_from_unclosed_stream
 
 def test_probe_counts_physical_cores_and_logical_threads(monkeypatch: pytest.MonkeyPatch) -> None:
     cpuinfo: str = "\n\n".join(f"processor : {thread}\nphysical id : 0\ncore id : {thread // 2}" for thread in range(4))
-    monkeypatch.setattr(remote_probe, "read_text", lambda *, path: cpuinfo if path == "/proc/cpuinfo" else None)
+    monkeypatch.setattr(target=remote_probe, name="read_text", value=lambda *, path: cpuinfo if path == "/proc/cpuinfo" else None)
 
     assert remote_probe.cpu_topology() == (2, 4)
 
@@ -150,8 +150,8 @@ def test_expected_hardware_matches_the_configured_machines() -> None:
 
 
 @pytest.mark.parametrize(
-    ("output", "expected"),
-    [
+    argnames=("output", "expected"),
+    argvalues=[
         ("\tError Correction Type: Multi-bit ECC", True),
         ("\tError Correction Type: Single-bit ECC", True),
         ("\tError Correction Type: None", False),
@@ -167,26 +167,26 @@ def test_probe_reports_firmware_ecc_without_guessing(monkeypatch: pytest.MonkeyP
         assert command == ["dmidecode", "--type", "16"]
         return output
 
-    monkeypatch.setattr(remote_probe, "run", fake_run)
+    monkeypatch.setattr(target=remote_probe, name="run", value=fake_run)
     assert remote_probe.ecc_supported() is expected
 
 
-@pytest.mark.parametrize("value", [True, False, None, "yes", 1])
+@pytest.mark.parametrize(argnames="value", argvalues=[True, False, None, "yes", 1])
 def test_parser_accepts_only_boolean_ecc_readings(value: object) -> None:
     hardware: Hardware = parse_hardware(document={"ecc_supported": value})
     assert hardware.ecc_supported is (value if isinstance(value, bool) else None)
 
 
 def test_probe_does_not_collect_gpus(monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]) -> None:
-    monkeypatch.setattr(remote_probe, "cpu_model", lambda: "Intel N150")
-    monkeypatch.setattr(remote_probe, "cpu_topology", lambda: (4, 8))
-    monkeypatch.setattr(remote_probe, "ecc_supported", lambda: None)
-    monkeypatch.setattr(remote_probe, "zfs_arc_stat", lambda *, name: 1024 if name == "size" else 2048)
+    monkeypatch.setattr(target=remote_probe, name="cpu_model", value=lambda: "Intel N150")
+    monkeypatch.setattr(target=remote_probe, name="cpu_topology", value=lambda: (4, 8))
+    monkeypatch.setattr(target=remote_probe, name="ecc_supported", value=lambda: None)
+    monkeypatch.setattr(target=remote_probe, name="zfs_arc_stat", value=lambda *, name: 1024 if name == "size" else 2048)
 
     def forbidden_collection() -> None:
         pytest.fail("GPU collection is deferred")
 
-    monkeypatch.setattr(remote_probe, "collect_gpus", forbidden_collection)
+    monkeypatch.setattr(target=remote_probe, name="collect_gpus", value=forbidden_collection)
     remote_probe.main()
     assert json.loads(capsys.readouterr().out) == {
         "cpu_model": "Intel N150",
@@ -245,7 +245,7 @@ def test_probe_results_are_cached_until_the_ttl_or_a_forced_refresh() -> None:
 
 
 def test_snapshot_time_advances_with_each_probe_so_the_browser_redraws() -> None:
-    later: datetime = datetime(2025, 1, 1, 12, 0, 5, tzinfo=UTC)
+    later: datetime = datetime(year=2025, month=1, day=1, hour=12, minute=0, second=5, tzinfo=UTC)
     source: HardwareEnrichedSource = HardwareEnrichedSource(
         cluster=FakeCluster(nodes=(make_node(name="cerulean"),)),
         probe=FakeProbe(results={"cerulean": LIVE}),
@@ -276,9 +276,9 @@ def test_ssh_probe_sends_the_script_on_stdin_with_strict_host_keys() -> None:
 
 
 def test_ssh_probe_reports_failures_and_malformed_output() -> None:
-    with pytest.raises(StatusSourceError, match="refused"):
+    with pytest.raises(expected_exception=StatusSourceError, match="refused"):
         SshHardwareProbe(runner=make_runner(stderr="Permission denied (publickey)", returncode=255, calls=[])).probe(
             node_name="x", address="10.0.0.1"
         )
-    with pytest.raises(StatusSourceError, match="malformed"):
+    with pytest.raises(expected_exception=StatusSourceError, match="malformed"):
         SshHardwareProbe(runner=make_runner(stdout="not json", calls=[])).probe(node_name="x", address="10.0.0.1")

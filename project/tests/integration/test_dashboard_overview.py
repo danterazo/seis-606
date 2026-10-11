@@ -56,8 +56,8 @@ def test_dev_version_reports_web_asset_changes_without_server_restart(tmp_path: 
     web_root.mkdir()
     asset = web_root / "aero.css"
     asset.write_text("body { color: black; }")
-    monkeypatch.setattr(server, "WEB_ROOT", web_root)
-    monkeypatch.setenv("DASHBOARD_DEV", "1")
+    monkeypatch.setattr(target=server, name="WEB_ROOT", value=web_root)
+    monkeypatch.setenv(name="DASHBOARD_DEV", value="1")
     activity_log = ActivityLog(tmp_path / "logs" / "access.jsonl")
     http_server = create_server(
         settings=Settings.from_env(environ={"PORT": "0"}),
@@ -200,7 +200,7 @@ def test_reboot_endpoint_checks_origin_and_validates_commands_before_ssh() -> No
         def fetch(self) -> ClusterSnapshot:
             return ClusterSnapshot(
                 source="test",
-                fetched_at=datetime(2026, 10, 7, tzinfo=UTC),
+                fetched_at=datetime(year=2026, month=10, day=7, tzinfo=UTC),
                 nodes=(
                     Node(
                         name="cerulean",

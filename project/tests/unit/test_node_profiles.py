@@ -43,8 +43,8 @@ def test_lookup_ignores_case() -> None:
 
 
 @pytest.mark.parametrize(
-    ("name", "display_name"),
-    [
+    argnames=("name", "display_name"),
+    argvalues=[
         ("OVEDUR-10G", "\u00f3ve\u00f0ur-10g"),
         ("CREALITY-K1C-WIFI", "var\u00f0eldur"),
         ("suika", "\u3059\u3044\u304b"),
@@ -97,6 +97,6 @@ def test_every_color_is_a_plain_hex_value() -> None:
         assert re.fullmatch(HEX_COLOR, color)
 
 
-@pytest.mark.parametrize("fallback", FALLBACK_PALETTE)
+@pytest.mark.parametrize(argnames="fallback", argvalues=FALLBACK_PALETTE)
 def test_fallback_colors_never_collide_with_configured_nodes(*, fallback: str) -> None:
     assert fallback not in {profile.color for profile in NODE_PROFILES.values()}

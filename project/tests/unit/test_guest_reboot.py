@@ -15,7 +15,7 @@ class FakeSource:
         self.calls: int = 0
         self.snapshot: ClusterSnapshot = ClusterSnapshot(
             source="test",
-            fetched_at=datetime(2026, 10, 7, tzinfo=UTC),
+            fetched_at=datetime(year=2026, month=10, day=7, tzinfo=UTC),
             nodes=(
                 Node(
                     name="cerulean",
@@ -35,7 +35,7 @@ class FakeSource:
         return self.snapshot
 
 
-@pytest.mark.parametrize(("kind", "expected"), [(GuestKind.CONTAINER, "pct reboot 112"), (GuestKind.VM, "qm reboot 112")])
+@pytest.mark.parametrize(argnames=("kind", "expected"), argvalues=[(GuestKind.CONTAINER, "pct reboot 112"), (GuestKind.VM, "qm reboot 112")])
 def test_reboot_uses_the_current_node_address_and_server_derived_kind(kind: GuestKind, expected: str) -> None:
     calls: list[Sequence[str]] = []
 
@@ -49,7 +49,7 @@ def test_reboot_uses_the_current_node_address_and_server_derived_kind(kind: Gues
     assert source.calls == 1
     assert calls[0][-2:] == ("root@192.168.20.43", expected)
     assert "-oStrictHostKeyChecking=yes" in calls[0]
-    with pytest.raises(StatusSourceError, match="recently attempted"):
+    with pytest.raises(expected_exception=StatusSourceError, match="recently attempted"):
         service.reboot(vmid=112, node_name="cerulean")
     assert len(calls) == 1
 
@@ -58,24 +58,24 @@ def forbidden_runner(command: Sequence[str], *, timeout: float, stdin: str | Non
     pytest.fail("An invalid request must not run SSH")
 
 
-@pytest.mark.parametrize("vmid", [True, "112", "112; reboot", 99, 1000000000, None])
+@pytest.mark.parametrize(argnames="vmid", argvalues=[True, "112", "112; reboot", 99, 1000000000, None])
 def test_invalid_ids_never_run_ssh(vmid: object) -> None:
     service = GuestRebooter(source=FakeSource(), runner=forbidden_runner)
-    with pytest.raises(ValueError, match="Guest ID"):
+    with pytest.raises(expected_exception=ValueError, match="Guest ID"):
         service.reboot(vmid=vmid, node_name="cerulean")
 
 
-@pytest.mark.parametrize(("vmid", "node"), [(113, "cerulean"), (112, "kex"), (112, "cerulean; reboot"), (112, "")])
+@pytest.mark.parametrize(argnames=("vmid", "node"), argvalues=[(113, "cerulean"), (112, "kex"), (112, "cerulean; reboot"), (112, "")])
 def test_missing_or_moved_guests_never_run_ssh(vmid: int, node: str) -> None:
     service = GuestRebooter(source=FakeSource(), runner=forbidden_runner)
-    with pytest.raises(ValueError):
+    with pytest.raises(expected_exception=ValueError):
         service.reboot(vmid=vmid, node_name=node)
 
 
-@pytest.mark.parametrize(("guest_state", "node_state"), [(GuestState.STOPPED, NodeState.ONLINE), (GuestState.RUNNING, NodeState.OFFLINE)])
+@pytest.mark.parametrize(argnames=("guest_state", "node_state"), argvalues=[(GuestState.STOPPED, NodeState.ONLINE), (GuestState.RUNNING, NodeState.OFFLINE)])
 def test_unavailable_guests_never_run_ssh(guest_state: GuestState, node_state: NodeState) -> None:
     service = GuestRebooter(source=FakeSource(guest_state=guest_state, node_state=node_state), runner=forbidden_runner)
-    with pytest.raises(ValueError, match="Only running"):
+    with pytest.raises(expected_exception=ValueError, match="Only running"):
         service.reboot(vmid=112, node_name="cerulean")
 
 
@@ -84,7 +84,7 @@ def test_command_failure_does_not_claim_a_successful_reboot() -> None:
         return subprocess.CompletedProcess(args=command, returncode=255, stdout="", stderr="Permission denied")
 
     service = GuestRebooter(source=FakeSource(), runner=runner)
-    with pytest.raises(StatusSourceError, match="refused"):
+    with pytest.raises(expected_exception=StatusSourceError, match="refused"):
         service.reboot(vmid=112, node_name="cerulean")
 
 
@@ -93,5 +93,5 @@ def test_command_timeout_warns_against_blind_retries() -> None:
         raise subprocess.TimeoutExpired(cmd=command, timeout=timeout)
 
     service = GuestRebooter(source=FakeSource(), runner=runner)
-    with pytest.raises(StatusSourceError, match="may still be running"):
+    with pytest.raises(expected_exception=StatusSourceError, match="may still be running"):
         service.reboot(vmid=112, node_name="cerulean")

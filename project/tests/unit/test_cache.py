@@ -25,7 +25,7 @@ class ScriptedSource:
         self.calls += 1
         if self.fail:
             raise StatusSourceError("down")
-        return ClusterSnapshot(source=f"call-{self.calls}", fetched_at=datetime(2026, 10, 7, tzinfo=UTC), nodes=())
+        return ClusterSnapshot(source=f"call-{self.calls}", fetched_at=datetime(year=2026, month=10, day=7, tzinfo=UTC), nodes=())
 
 
 def make_cache(*, source: ScriptedSource, clock: FakeClock, ttl: float = 4.0) -> CachedStatusSource:
@@ -70,7 +70,7 @@ def test_failures_are_cached_so_a_down_node_is_not_retried_per_request() -> None
     cache = make_cache(source=source, clock=clock)
 
     for _ in range(3):
-        with pytest.raises(StatusSourceError, match="down"):
+        with pytest.raises(expected_exception=StatusSourceError, match="down"):
             cache.fetch()
 
     assert source.calls == 1
@@ -80,7 +80,7 @@ def test_recovery_is_picked_up_after_the_ttl() -> None:
     source, clock = ScriptedSource(), FakeClock()
     source.fail = True
     cache = make_cache(source=source, clock=clock)
-    with pytest.raises(StatusSourceError):
+    with pytest.raises(expected_exception=StatusSourceError):
         cache.fetch()
 
     source.fail = False

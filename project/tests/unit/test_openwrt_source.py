@@ -14,7 +14,7 @@ from homelab_dashboard.sources.openwrt_ssh import (
 )
 from homelab_dashboard.sources.proxmox_ssh import SshTarget
 
-NOW: datetime = datetime(2026, 10, 7, tzinfo=UTC)
+NOW: datetime = datetime(year=2026, month=10, day=7, tzinfo=UTC)
 LEASES: str = "2000000000 AA:BB:CC:DD:EE:FF 192.168.10.23 ringom4-wifi *\n0 11:22:33:44:55:66 192.168.10.24 * *\n"
 
 
@@ -24,7 +24,7 @@ def test_dnsmasq_leases_preserve_identity_and_use_shared_names() -> None:
     assert named.to_payload()["mac"] == "AA:BB:CC:DD:EE:FF"
     assert named.hostname == "ringom4-wifi"
     assert named.to_payload()["display_name"] == DISPLAY_NAMES["ringom4-wifi"]
-    assert named.expires_at == datetime.fromtimestamp(2000000000, UTC)
+    assert named.expires_at == datetime.fromtimestamp(timestamp=2000000000, tz=UTC)
     assert unnamed.expires_at is None
     assert unnamed.hostname is None
     assert unnamed.to_payload()["display_name"] == "192.168.10.24"
@@ -32,8 +32,8 @@ def test_dnsmasq_leases_preserve_identity_and_use_shared_names() -> None:
 
 
 @pytest.mark.parametrize(
-    "text",
-    [
+    argnames="text",
+    argvalues=[
         "bad row",
         "x aa:bb:cc:dd:ee:ff 192.168.10.2 suika *",
         "0 bad 192.168.10.2 suika *",
@@ -42,7 +42,7 @@ def test_dnsmasq_leases_preserve_identity_and_use_shared_names() -> None:
     ],
 )
 def test_malformed_leases_are_not_presented_as_empty_inventory(text: str) -> None:
-    with pytest.raises(StatusSourceError):
+    with pytest.raises(expected_exception=StatusSourceError):
         parse_leases(text=text)
 
 
@@ -104,7 +104,7 @@ def test_expired_leases_are_filtered_even_when_the_cache_is_fresh() -> None:
     runner = FakeRunner()
     runner.stdout = "100 aa:bb:cc:dd:ee:ff 192.168.10.2 suika *"
     seconds: list[int] = [99]
-    source = OpenWrtLeaseSource(target=SshTarget(host="router"), runner=runner, now=lambda: datetime.fromtimestamp(seconds[0], UTC))
+    source = OpenWrtLeaseSource(target=SshTarget(host="router"), runner=runner, now=lambda: datetime.fromtimestamp(timestamp=seconds[0], tz=UTC))
     assert len(source.fetch()["leases"]) == 1
     seconds[0] = 100
     assert source.fetch()["leases"] == []
@@ -121,7 +121,7 @@ def test_leases_are_grouped_lan_first_and_sorted_by_numeric_ip() -> None:
     assert [lease["network_group"] for lease in leases] == ["lan", "lan", "lan", "guest_iot", "guest_iot"]
 
 
-@pytest.mark.parametrize("address", ["192.168.0.1", "192.168.255.254", "172.16.0.1", "10.0.0.1", "192.169.0.1"])
+@pytest.mark.parametrize(argnames="address", argvalues=["192.168.0.1", "192.168.255.254", "172.16.0.1", "10.0.0.1", "192.169.0.1"])
 def test_network_groups_include_all_non_lan_devices_in_the_second_panel(address: str) -> None:
     lease = parse_leases(text=f"0 aa:bb:cc:dd:ee:ff {address} device *")[0]
     assert lease.to_payload()["network_group"] == ("lan" if address.startswith("192.168.") else "guest_iot")
@@ -151,7 +151,7 @@ def test_named_devices_precede_ip_only_devices_in_both_panels() -> None:
     ]
 
 
-@pytest.mark.parametrize("error", [FileNotFoundError(), subprocess.TimeoutExpired(cmd="ssh", timeout=8)])
+@pytest.mark.parametrize(argnames="error", argvalues=[FileNotFoundError(), subprocess.TimeoutExpired(cmd="ssh", timeout=8)])
 def test_transport_errors_stay_local_to_the_devices_payload(error: Exception) -> None:
     def runner(command: Sequence[str], *, timeout: float, stdin: str | None = None) -> "subprocess.CompletedProcess[str]":
         raise error
@@ -259,11 +259,11 @@ def test_ipv6_records_expire_and_failed_or_wan_neighbors_are_not_inventory() -> 
     assert records[0].mac == "aa:bb:cc:dd:ee:ff"
     devices = build_device_payloads(leases=(), ipv6=records, now=NOW)
     assert devices[0]["network_group"] == "guest_iot"
-    assert build_device_payloads(leases=(), ipv6=records, now=datetime.fromtimestamp(NOW.timestamp() + 1, UTC)) == []
+    assert build_device_payloads(leases=(), ipv6=records, now=datetime.fromtimestamp(timestamp=NOW.timestamp() + 1, tz=UTC)) == []
 
 
 def test_malformed_ipv6_documents_are_reported() -> None:
-    with pytest.raises(StatusSourceError, match="IPv6 discovery"):
+    with pytest.raises(expected_exception=StatusSourceError, match="IPv6 discovery"):
         parse_ipv6_records(leases={}, neighbors=[], now=NOW)
 
 

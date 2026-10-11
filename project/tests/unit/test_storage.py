@@ -35,7 +35,7 @@ def test_healthy_hdd_has_no_findings() -> None:
     assert storage.disks[0].findings == ()
 
 
-@pytest.mark.parametrize(("celsius", "level"), [(44, HealthLevel.OK), (45, HealthLevel.WARNING), (50, HealthLevel.CRITICAL)])
+@pytest.mark.parametrize(argnames=("celsius", "level"), argvalues=[(44, HealthLevel.OK), (45, HealthLevel.WARNING), (50, HealthLevel.CRITICAL)])
 def test_hdd_temperature_thresholds(celsius: int, level: HealthLevel) -> None:
     assert parse_storage(document={"disks": [hdd(temperature=celsius)]}).disks[0].level is level
 
@@ -111,7 +111,7 @@ def test_pool_problems() -> None:
 def test_missing_tools_are_distinguished_from_clean_results() -> None:
     storage: Storage = parse_storage(document={"disks": None, "pools": []})
     assert (storage.smart_available, storage.zfs_available) == (False, True)
-    with pytest.raises(StatusSourceError):
+    with pytest.raises(expected_exception=StatusSourceError):
         parse_storage(document=[])
 
 
@@ -139,8 +139,8 @@ def test_pool_probe_reads_available_from_only_the_root_dataset(monkeypatch: pyte
             return "rpool\t600\n"
         raise AssertionError(command)
 
-    monkeypatch.setattr(storage_probe.shutil, "which", lambda name: "/sbin/zpool" if name == "zpool" else None)
-    monkeypatch.setattr(storage_probe, "run", fake_run)
+    monkeypatch.setattr(target=storage_probe.shutil, name="which", value=lambda name: "/sbin/zpool" if name == "zpool" else None)
+    monkeypatch.setattr(target=storage_probe, name="run", value=fake_run)
 
     pools = storage_probe.collect_pools()
 
@@ -152,7 +152,7 @@ def test_pool_probe_reads_available_from_only_the_root_dataset(monkeypatch: pyte
 class OneNode:
     def fetch(self) -> ClusterSnapshot:
         node: Node = Node(name="kex", state=NodeState.ONLINE, address="10.0.0.5", resources=Resources(), guests=())
-        return ClusterSnapshot(source="fake", fetched_at=datetime(2025, 1, 1, tzinfo=UTC), nodes=(node,))
+        return ClusterSnapshot(source="fake", fetched_at=datetime(year=2025, month=1, day=1, tzinfo=UTC), nodes=(node,))
 
     fetch_fresh = fetch
 
