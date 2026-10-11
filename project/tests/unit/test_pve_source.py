@@ -2,7 +2,7 @@ import json
 import subprocess
 from collections.abc import Sequence
 from datetime import UTC, datetime
-from typing import Any, Final
+from typing import Any, Final, Optional
 
 import pytest
 from homelab_dashboard.config import Settings
@@ -31,9 +31,9 @@ def make_runner(
     stdout: str = "",
     stderr: str = "",
     returncode: int = 0,
-    calls: list[Sequence[str]] | None = None,
+    calls: Optional[list[Sequence[str]]] = None,
 ) -> CommandRunner:
-    def runner(command: Sequence[str], *, timeout: float, stdin: str | None = None) -> "subprocess.CompletedProcess[str]":
+    def runner(command: Sequence[str], *, timeout: float, stdin: Optional[str] = None) -> "subprocess.CompletedProcess[str]":
         if calls is not None:
             calls.append(command)
         return subprocess.CompletedProcess(args=command, returncode=returncode, stdout=stdout, stderr=stderr)
@@ -46,7 +46,7 @@ def make_source(
     stdout: str = "",
     stderr: str = "",
     returncode: int = 0,
-    calls: list[Sequence[str]] | None = None,
+    calls: Optional[list[Sequence[str]]] = None,
 ) -> ProxmoxSshSource:
     return ProxmoxSshSource(
         target=SshTarget(host="cerulean"),

@@ -1,6 +1,6 @@
 from collections.abc import Mapping
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, Optional, Union
 
 
 @dataclass(kw_only=True)
@@ -10,11 +10,11 @@ class Workload:
     name: str
     kind: str
     reported_state: str
-    architecture: str | None = None
+    architecture: Optional[str] = None
     restart_count: int = 0
-    reason: str | None = None
-    health: str | None = None
-    last_seen: str | None = None
+    reason: Optional[str] = None
+    health: Optional[str] = None
+    last_seen: Optional[str] = None
     tags: list[str] = field(default_factory=list)
 
 
@@ -24,17 +24,17 @@ class Node:
     name: str
     reported_state: str
     workloads: list[Workload] = field(default_factory=list)
-    architecture: str | None = None
+    architecture: Optional[str] = None
     connection_state: str = "unknown"
-    last_successful_update: str | None = None
-    source_label: str | None = None
+    last_successful_update: Optional[str] = None
+    source_label: Optional[str] = None
     workload_counts: dict[str, int] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
         self.workload_counts = workload_counts_for(node=self)
 
 
-def normalize_workload(*, value: Mapping[str, Any] | Workload) -> Workload:
+def normalize_workload(*, value: Union[Mapping[str, Any], Workload]) -> Workload:
     if isinstance(value, Workload):
         return value
 
@@ -53,7 +53,7 @@ def normalize_workload(*, value: Mapping[str, Any] | Workload) -> Workload:
     )
 
 
-def normalize_node(*, value: Mapping[str, Any] | Node) -> Node:
+def normalize_node(*, value: Union[Mapping[str, Any], Node]) -> Node:
     if isinstance(value, Node):
         return value
 
@@ -70,7 +70,7 @@ def normalize_node(*, value: Mapping[str, Any] | Node) -> Node:
     )
 
 
-def workload_counts_for(*, node: Node | Mapping[str, Any]) -> dict[str, int]:
+def workload_counts_for(*, node: Union[Node, Mapping[str, Any]]) -> dict[str, int]:
     node_obj: Node = node if isinstance(node, Node) else normalize_node(value=node)
 
     counts: dict[str, int] = {}

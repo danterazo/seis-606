@@ -60,6 +60,9 @@
     line-length = 150
     exclude = [".git", ".venv"]
 
+[tool.ruff.lint]
+    ignore = ["UP007", "UP045"]
+
 [tool.pytest.ini_options]
     pythonpath = ["project"]
 

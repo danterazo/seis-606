@@ -4,7 +4,7 @@ from collections.abc import Callable
 from concurrent.futures import Future, ThreadPoolExecutor
 from dataclasses import dataclass, field, replace
 from datetime import UTC, datetime
-from typing import Protocol
+from typing import Optional, Protocol
 
 from homelab_dashboard.models import ClusterSnapshot, Hardware, HardwareErrors, Node, NodeState, Storage
 from homelab_dashboard.sources.base import RefreshableStatusSource, StatusSourceError
@@ -42,9 +42,9 @@ class HardwareEnrichedSource:
     probe: HardwareProbe
     expected_hardware: ExpectedHardware
     ttl_seconds: float
-    storage_probe: StorageProbe | None = None
+    storage_probe: Optional[StorageProbe] = None
     storage_ttl_seconds: float = 300.0
-    errors: HardwareErrorMonitor | None = None
+    errors: Optional[HardwareErrorMonitor] = None
     clock: Callable[[], float] = time.monotonic
     now: Callable[[], datetime] = _utc_now
     _lock: threading.Lock = field(default_factory=threading.Lock, init=False)
@@ -90,7 +90,7 @@ class HardwareEnrichedSource:
         if self.storage_probe is None:
             return
         with self._storage_lock:
-            checked: float | None = self._storage_checked.get(node.name)
+            checked: Optional[float] = self._storage_checked.get(node.name)
             fresh: bool = checked is not None and self.clock() - checked < self.storage_ttl_seconds
             if node.name in self._storage_running or (fresh and not force):
                 return
@@ -98,7 +98,7 @@ class HardwareEnrichedSource:
 
     def _probe_storage(self, node_name: str, address: str) -> None:
         assert self.storage_probe is not None
-        result: Storage | None = None
+        result: Optional[Storage] = None
         try:
             result = self.storage_probe.probe(node_name=node_name, address=address)
         except StatusSourceError:
@@ -114,7 +114,7 @@ class HardwareEnrichedSource:
         return node.state is NodeState.ONLINE and node.address is not None
 
     def _is_stale(self, *, node: Node) -> bool:
-        entry: _Entry | None = self._entries.get(node.name)
+        entry: Optional[_Entry] = self._entries.get(node.name)
         return entry is None or self.clock() - entry.stored_at >= self.ttl_seconds
 
     def _probe_one(self, node: Node) -> _Entry:
@@ -126,11 +126,11 @@ class HardwareEnrichedSource:
 
     def _with_hardware(self, *, node: Node) -> Node:
         # Hardware error history is kept even while the node is down; that is when it matters most.
-        hardware_errors: HardwareErrors | None = None
+        hardware_errors: Optional[HardwareErrors] = None
         if self.errors is not None:
             hardware_errors = self.errors.latest(node_name=node.name, reachable=self._is_probeable(node=node))
         if self._is_probeable(node=node) and node.name in self._entries:
             with self._storage_lock:
-                storage: Storage | None = self._storage.get(node.name)
+                storage: Optional[Storage] = self._storage.get(node.name)
             return replace(node, hardware=replace(self._entries[node.name].hardware, storage=storage, hardware_errors=hardware_errors))
         return replace(node, hardware=replace(self.expected_hardware(node_name=node.name), hardware_errors=hardware_errors))

@@ -2,6 +2,7 @@ import json
 import subprocess
 from collections.abc import Sequence
 from datetime import UTC, datetime
+from typing import Optional
 
 import pytest
 from homelab_dashboard.models import (
@@ -25,7 +26,7 @@ from homelab_dashboard.sources.proxmox_ssh import CommandRunner
 START: datetime = datetime(year=2025, month=1, day=1, hour=12, minute=0, second=0, tzinfo=UTC)
 
 
-def make_node(*, name: str, state: NodeState = NodeState.ONLINE, address: str | None = "10.0.0.5") -> Node:
+def make_node(*, name: str, state: NodeState = NodeState.ONLINE, address: Optional[str] = "10.0.0.5") -> Node:
     return Node(name=name, state=state, address=address, resources=Resources(), guests=())
 
 
@@ -46,13 +47,13 @@ class FakeCluster:
 
 
 class FakeProbe:
-    def __init__(self, *, results: dict[str, Hardware | None]) -> None:
-        self.results: dict[str, Hardware | None] = results
+    def __init__(self, *, results: dict[str, Optional[Hardware]]) -> None:
+        self.results: dict[str, Optional[Hardware]] = results
         self.calls: list[str] = []
 
     def probe(self, *, node_name: str, address: str) -> Hardware:
         self.calls.append(node_name)
-        result: Hardware | None = self.results.get(node_name)
+        result: Optional[Hardware] = self.results.get(node_name)
         if result is None:
             raise StatusSourceError("probe failed")
         return result
@@ -162,7 +163,7 @@ def test_expected_hardware_matches_the_configured_machines() -> None:
         ("Error Correction Type: None\nError Correction Type: Multi-bit ECC", True),
     ],
 )
-def test_probe_reports_firmware_ecc_without_guessing(monkeypatch: pytest.MonkeyPatch, output: str, expected: bool | None) -> None:
+def test_probe_reports_firmware_ecc_without_guessing(monkeypatch: pytest.MonkeyPatch, output: str, expected: Optional[bool]) -> None:
     def fake_run(*, command: list[str], timeout: float = 4.0) -> str:
         assert command == ["dmidecode", "--type", "16"]
         return output
@@ -256,8 +257,8 @@ def test_snapshot_time_advances_with_each_probe_so_the_browser_redraws() -> None
     assert source.fetch().fetched_at == later
 
 
-def make_runner(*, stdout: str = "", stderr: str = "", returncode: int = 0, calls: list[tuple[Sequence[str], str | None]]) -> CommandRunner:
-    def runner(command: Sequence[str], *, timeout: float, stdin: str | None = None) -> "subprocess.CompletedProcess[str]":
+def make_runner(*, stdout: str = "", stderr: str = "", returncode: int = 0, calls: list[tuple[Sequence[str], Optional[str]]]) -> CommandRunner:
+    def runner(command: Sequence[str], *, timeout: float, stdin: Optional[str] = None) -> "subprocess.CompletedProcess[str]":
         calls.append((command, stdin))
         return subprocess.CompletedProcess(args=list(command), returncode=returncode, stdout=stdout, stderr=stderr)
 
@@ -265,7 +266,7 @@ def make_runner(*, stdout: str = "", stderr: str = "", returncode: int = 0, call
 
 
 def test_ssh_probe_sends_the_script_on_stdin_with_strict_host_keys() -> None:
-    calls: list[tuple[Sequence[str], str | None]] = []
+    calls: list[tuple[Sequence[str], Optional[str]]] = []
     probe: SshHardwareProbe = SshHardwareProbe(runner=make_runner(stdout=json.dumps({"cpu_model": "Intel(R) N150", "gpus": []}), calls=calls))
     hardware: Hardware = probe.probe(node_name="cerulean", address="192.168.20.43")
     command, stdin = calls[0]

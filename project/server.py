@@ -9,7 +9,7 @@ from functools import partial
 from http import HTTPStatus
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from typing import Any, Final
+from typing import Any, Final, Optional, Union
 from urllib.parse import parse_qs, urlparse
 
 from homelab_dashboard.activity_log import ActivityLog
@@ -38,25 +38,25 @@ BOOT_ID: Final[str] = str(time.time_ns())
 CLEAR_LOGS_PATH: Final[str] = "/api/logs/clear"
 LOG_PATH: Final[Path] = Path(__file__).resolve().parent / "logs" / "access.jsonl"
 
-RequestSocket = socket.socket | tuple[bytes, socket.socket]
+RequestSocket = Union[socket.socket, tuple[bytes, socket.socket]]
 
 
 class DashboardHandler(SimpleHTTPRequestHandler):
     def __init__(
         self,
         request: RequestSocket,
-        client_address: Any,
+        client_address: tuple[str, int],
         server: socketserver.BaseServer,
         *,
         source: RefreshableStatusSource,
         activity_log: ActivityLog,
-        devices: OpenWrtLeaseSource | None = None,
-        rebooter: GuestRebooter | None = None,
+        devices: Optional[OpenWrtLeaseSource] = None,
+        rebooter: Optional[GuestRebooter] = None,
     ) -> None:
         self.source: RefreshableStatusSource = source
         self.activity_log: ActivityLog = activity_log
-        self.devices: OpenWrtLeaseSource | None = devices
-        self.rebooter: GuestRebooter | None = rebooter
+        self.devices: Optional[OpenWrtLeaseSource] = devices
+        self.rebooter: Optional[GuestRebooter] = rebooter
         super().__init__(request, client_address, server, directory=str(WEB_ROOT))
 
     def do_GET(self) -> None:
@@ -135,7 +135,7 @@ class DashboardHandler(SimpleHTTPRequestHandler):
             or self.headers.get("X-Homelab-Action") != action
         )
 
-    def log_request(self, code: int | str = "-", size: int | str = "-") -> None:
+    def log_request(self, code: Union[int, str] = "-", size: Union[int, str] = "-") -> None:
         request_path: str = urlparse(self.path).path[:512]
         try:
             self.activity_log.record(
@@ -172,9 +172,9 @@ def create_server(
     *,
     settings: Settings,
     source: RefreshableStatusSource,
-    activity_log: ActivityLog | None = None,
-    devices: OpenWrtLeaseSource | None = None,
-    rebooter: GuestRebooter | None = None,
+    activity_log: Optional[ActivityLog] = None,
+    devices: Optional[OpenWrtLeaseSource] = None,
+    rebooter: Optional[GuestRebooter] = None,
 ) -> ThreadingHTTPServer:
     log_store: ActivityLog = activity_log if activity_log is not None else ActivityLog(LOG_PATH)
     return ThreadingHTTPServer(

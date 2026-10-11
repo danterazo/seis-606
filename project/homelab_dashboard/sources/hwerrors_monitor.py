@@ -3,6 +3,7 @@ import time
 from collections.abc import Callable
 from concurrent.futures import Future, ThreadPoolExecutor
 from dataclasses import dataclass, field, replace
+from typing import Optional
 
 from homelab_dashboard.models import HardwareErrors, HealthLevel
 from homelab_dashboard.sources.base import StatusSourceError
@@ -31,7 +32,7 @@ class HardwareErrorMonitor:
 
     def refresh(self, *, node_name: str, address: str, force: bool) -> None:
         with self._lock:
-            checked: float | None = self._checked.get(node_name)
+            checked: Optional[float] = self._checked.get(node_name)
             fresh: bool = checked is not None and self.clock() - checked < self.ttl_seconds
             if node_name in self._running or (fresh and not force):
                 return
@@ -43,10 +44,10 @@ class HardwareErrorMonitor:
         for future in running:
             future.result()
 
-    def latest(self, *, node_name: str, reachable: bool) -> HardwareErrors | None:
+    def latest(self, *, node_name: str, reachable: bool) -> Optional[HardwareErrors]:
         with self._lock:
-            good: HardwareErrors | None = self._good.get(node_name)
-            failure: str | None = self._failure.get(node_name)
+            good: Optional[HardwareErrors] = self._good.get(node_name)
+            failure: Optional[str] = self._failure.get(node_name)
         if not reachable:
             failure = UNREACHABLE
         if good is None:
@@ -58,15 +59,15 @@ class HardwareErrorMonitor:
         return good if failure is None else replace(good, stale=True, error=failure)
 
     def _probe(self, node_name: str, address: str) -> None:
-        result: HardwareErrors | None = None
-        failure: str | None = None
+        result: Optional[HardwareErrors] = None
+        failure: Optional[str] = None
         try:
             result = self.probe.probe(node_name=node_name, address=address)
         except StatusSourceError as error:
             failure = str(error)
         with self._lock:
             if result is not None:
-                previous: HardwareErrors | None = self._good.get(node_name)
+                previous: Optional[HardwareErrors] = self._good.get(node_name)
                 rebooted: bool = previous is not None and previous.boot_id != result.boot_id
                 carried: bool = previous is not None and previous.counters_reset and not rebooted
                 self._good[node_name] = replace(result, counters_reset=rebooted or carried)

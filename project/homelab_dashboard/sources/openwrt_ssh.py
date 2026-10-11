@@ -6,7 +6,7 @@ import time
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
-from typing import Any, Final
+from typing import Any, Final, Optional
 
 from homelab_dashboard.node_profiles import display_name_for
 from homelab_dashboard.sources.base import StatusSourceError
@@ -20,8 +20,8 @@ REMOTE_COMMAND: Final[str] = "cat /tmp/dhcp.leases"
 class DhcpLease:
     address: str
     mac: str
-    hostname: str | None
-    expires_at: datetime | None
+    hostname: Optional[str]
+    expires_at: Optional[datetime]
 
     def to_payload(self) -> dict[str, Any]:
         return {
@@ -48,7 +48,7 @@ def parse_leases(*, text: str) -> tuple[DhcpLease, ...]:
             if seconds < 0 or not re.fullmatch(r"(?:[0-9a-fA-F]{2}:){5}[0-9a-fA-F]{2}", mac):
                 raise ValueError("Invalid lease")
             parsed_address: ipaddress.IPv4Address = ipaddress.IPv4Address(address)
-            expires_at: datetime | None = datetime.fromtimestamp(timestamp=seconds, tz=UTC) if seconds else None
+            expires_at: Optional[datetime] = datetime.fromtimestamp(timestamp=seconds, tz=UTC) if seconds else None
         except (ValueError, OverflowError, OSError) as error:
             raise StatusSourceError("OpenWRT returned an invalid DHCP lease record.") from error
         leases.append(DhcpLease(address=str(parsed_address), mac=mac.lower(), hostname=None if hostname == "*" else hostname, expires_at=expires_at))
@@ -60,16 +60,16 @@ class Ipv6Record:
     address: str
     interface: str
     identity: str
-    mac: str | None = None
-    hostname: str | None = None
-    expires_at: datetime | None = None
+    mac: Optional[str] = None
+    hostname: Optional[str] = None
+    expires_at: Optional[datetime] = None
 
 
-def _mac_address(value: object) -> str | None:
+def _mac_address(value: object) -> Optional[str]:
     return value.lower() if isinstance(value, str) and re.fullmatch(r"(?:[0-9a-fA-F]{2}:){5}[0-9a-fA-F]{2}", value) else None
 
 
-def _duid_mac(value: object) -> str | None:
+def _duid_mac(value: object) -> Optional[str]:
     if not isinstance(value, str):
         return None
     try:
@@ -89,7 +89,7 @@ def parse_ipv6_records(*, leases: object, neighbors: object, now: datetime) -> t
     for row in neighbors:
         if not isinstance(row, dict) or not isinstance(row.get("dev"), str) or not row["dev"].startswith("br-"):
             continue
-        mac: str | None = _mac_address(value=row.get("lladdr"))
+        mac: Optional[str] = _mac_address(value=row.get("lladdr"))
         states: object = row.get("state", [])
         if mac is None or not isinstance(states, list) or any(state in ("FAILED", "INCOMPLETE") for state in states):
             continue
@@ -108,9 +108,9 @@ def parse_ipv6_records(*, leases: object, neighbors: object, now: datetime) -> t
             if not isinstance(lease, dict) or not isinstance(lease.get("ipv6-addr"), list):
                 continue
             duid_value: object = lease.get("duid")
-            duid_text: str | None = duid_value.casefold() if isinstance(duid_value, str) and duid_value else None
+            duid_text: Optional[str] = duid_value.casefold() if isinstance(duid_value, str) and duid_value else None
             hostname_value: object = lease.get("hostname")
-            hostname: str | None = hostname_value if isinstance(hostname_value, str) and hostname_value not in ("", "*") else None
+            hostname: Optional[str] = hostname_value if isinstance(hostname_value, str) and hostname_value not in ("", "*") else None
             for reading in lease["ipv6-addr"]:
                 if not isinstance(reading, dict):
                     continue
@@ -123,7 +123,7 @@ def parse_ipv6_records(*, leases: object, neighbors: object, now: datetime) -> t
                     continue
                 if parsed_address.is_multicast or parsed_address.is_unspecified:
                     continue
-                lease_mac: str | None = neighbor_macs.get((interface, str(parsed_address))) or _duid_mac(value=duid_value)
+                lease_mac: Optional[str] = neighbor_macs.get((interface, str(parsed_address))) or _duid_mac(value=duid_value)
                 identity: str = (
                     f"mac:{lease_mac}" if lease_mac is not None else f"duid:{duid_text}" if duid_text is not None else f"address:{parsed_address}"
                 )
@@ -141,7 +141,7 @@ def parse_ipv6_records(*, leases: object, neighbors: object, now: datetime) -> t
 
 
 def _device_sort_key(device: dict[str, Any]) -> tuple[bool, bool, int, int, str]:
-    hostname: str | None = device["hostname"]
+    hostname: Optional[str] = device["hostname"]
     unnamed: bool = hostname is None
     if hostname is not None:
         try:
@@ -204,10 +204,10 @@ class OpenWrtLeaseSource:
     clock: Callable[[], float] = time.monotonic
     now: Callable[[], datetime] = _utc_now
     _lock: threading.Lock = field(default_factory=threading.Lock, init=False)
-    _stored_at: float | None = field(default=None, init=False)
-    _fetched_at: datetime | None = field(default=None, init=False)
+    _stored_at: Optional[float] = field(default=None, init=False)
+    _fetched_at: Optional[datetime] = field(default=None, init=False)
     _leases: tuple[DhcpLease, ...] = field(default=(), init=False)
-    _error: str | None = field(default=None, init=False)
+    _error: Optional[str] = field(default=None, init=False)
 
     def _read(self) -> tuple[DhcpLease, ...]:
         command: tuple[str, ...] = ("ssh", *SSH_OPTIONS, self.target.destination, REMOTE_COMMAND)

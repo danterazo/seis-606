@@ -1,4 +1,4 @@
-from typing import Any, Final
+from typing import Final, Optional, Union
 
 _HEALTH_MAP: Final[dict[str, str]] = {
     "running": "healthy",
@@ -26,7 +26,7 @@ _MESSAGES: Final[dict[str, str]] = {
 }
 
 
-def classify_health_state(*, state: str | None) -> str:
+def classify_health_state(*, state: Optional[str]) -> str:
     if state is None:
         return "unknown"
     return _HEALTH_MAP.get(str(state).strip().lower(), "unknown")
@@ -37,11 +37,11 @@ def workload_health_finding(
     workload_id: str,
     name: str,
     reported_state: str,
-    reason: str | None = None,
+    reason: Optional[str] = None,
     restart_count: int = 0,
-    architecture: str | None = None,
-    node_id: str | None = None,
-) -> dict[str, Any]:
+    architecture: Optional[str] = None,
+    node_id: Optional[str] = None,
+) -> dict[str, Optional[Union[str, int]]]:
     category: str = classify_health_state(state=reported_state)
     template: str = _MESSAGES.get(category, "{name} ({workload_id}) is " + reported_state)
 

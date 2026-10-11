@@ -4,7 +4,7 @@ import subprocess
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from datetime import UTC, datetime
-from typing import Final, Protocol
+from typing import Final, Optional, Protocol
 
 from homelab_dashboard.models import ClusterSnapshot
 from homelab_dashboard.sources.base import StatusSourceError
@@ -44,10 +44,10 @@ _USER_PATTERN: Final[str] = r"[A-Za-z_][A-Za-z0-9_-]*"
 
 
 class CommandRunner(Protocol):
-    def __call__(self, command: Sequence[str], *, timeout: float, stdin: str | None = None) -> "subprocess.CompletedProcess[str]": ...
+    def __call__(self, command: Sequence[str], *, timeout: float, stdin: Optional[str] = None) -> "subprocess.CompletedProcess[str]": ...
 
 
-def run_command(command: Sequence[str], *, timeout: float, stdin: str | None = None) -> "subprocess.CompletedProcess[str]":
+def run_command(command: Sequence[str], *, timeout: float, stdin: Optional[str] = None) -> "subprocess.CompletedProcess[str]":
     return subprocess.run(command, capture_output=True, text=True, timeout=timeout, check=False, input=stdin)
 
 
@@ -56,7 +56,7 @@ def explain_ssh_failure(*, stderr: str, destination: str, action: str) -> str:
     for needle, template in _FAILURE_MESSAGES:
         if needle in lowered:
             return template.format(target=destination)
-    detail: str | None = stderr.strip().splitlines()[-1][:160] if stderr.strip() else None
+    detail: Optional[str] = stderr.strip().splitlines()[-1][:160] if stderr.strip() else None
     return f"{action} on {destination} failed ({detail or 'no error output'})."
 
 
@@ -97,7 +97,7 @@ def _decode_arrays(*, text: str, count: int) -> list[list[JsonObject]]:
     return arrays
 
 
-def _decode_local_status(*, text: str) -> JsonObject | None:
+def _decode_local_status(*, text: str) -> Optional[JsonObject]:
     """The third document, if the node returned one; anything unreadable is simply absent."""
     decoder: json.JSONDecoder = json.JSONDecoder()
     index: int = 0

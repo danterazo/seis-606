@@ -2,7 +2,7 @@ import json
 import subprocess
 from collections.abc import Sequence
 from datetime import UTC, datetime
-from typing import Any
+from typing import Any, Optional
 
 from homelab_dashboard.models import (
     ClusterSnapshot,
@@ -161,9 +161,9 @@ def test_boot_and_uptime_are_recorded() -> None:
 
 
 def test_probe_sends_script_and_parses() -> None:
-    sent: list[str | None] = []
+    sent: list[Optional[str]] = []
 
-    def runner(command: Sequence[str], *, timeout: float, stdin: str | None = None) -> "subprocess.CompletedProcess[str]":
+    def runner(command: Sequence[str], *, timeout: float, stdin: Optional[str] = None) -> "subprocess.CompletedProcess[str]":
         sent.append(stdin)
         return subprocess.CompletedProcess(args=list(command), returncode=0, stdout=json.dumps(document(event(EDAC_LINE))), stderr="")
 
@@ -189,24 +189,24 @@ def test_monitor_keeps_last_known_state_marked_stale_and_flags_counter_resets() 
     assert monitor.latest(node_name="kex", reachable=True) is None
     monitor.refresh(node_name="kex", address="10.0.0.1", force=False)
     monitor.wait()
-    first: HardwareErrors | None = monitor.latest(node_name="kex", reachable=True)
+    first: Optional[HardwareErrors] = monitor.latest(node_name="kex", reachable=True)
     assert first is not None and not first.stale and not first.counters_reset
 
     stub.fail = True
     now[0] = 61.0
     monitor.refresh(node_name="kex", address="10.0.0.1", force=False)
     monitor.wait()
-    kept: HardwareErrors | None = monitor.latest(node_name="kex", reachable=True)
+    kept: Optional[HardwareErrors] = monitor.latest(node_name="kex", reachable=True)
     assert kept is not None and kept.stale and kept.error == "ssh down" and kept.incidents == first.incidents
 
-    down: HardwareErrors | None = monitor.latest(node_name="kex", reachable=False)
+    down: Optional[HardwareErrors] = monitor.latest(node_name="kex", reachable=False)
     assert down is not None and down.stale and down.error == UNREACHABLE and down.incidents == first.incidents
 
     stub.fail, stub.boot = False, OLD_BOOT
     now[0] = 200.0
     monitor.refresh(node_name="kex", address="10.0.0.1", force=False)
     monitor.wait()
-    after: HardwareErrors | None = monitor.latest(node_name="kex", reachable=True)
+    after: Optional[HardwareErrors] = monitor.latest(node_name="kex", reachable=True)
     assert after is not None and not after.stale and after.counters_reset
 
 
@@ -237,8 +237,8 @@ def test_hardware_errors_survive_a_node_going_offline() -> None:
     )
     source.fetch()
     source.wait_for_storage_probes()
-    online: HardwareErrors | None = source.fetch().nodes[0].hardware.hardware_errors
+    online: Optional[HardwareErrors] = source.fetch().nodes[0].hardware.hardware_errors
     assert online is not None and online.incidents and not online.stale
     cluster.state = NodeState.OFFLINE
-    offline: HardwareErrors | None = source.fetch().nodes[0].hardware.hardware_errors
+    offline: Optional[HardwareErrors] = source.fetch().nodes[0].hardware.hardware_errors
     assert offline is not None and offline.stale and offline.incidents == online.incidents

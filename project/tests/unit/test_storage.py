@@ -2,7 +2,7 @@ import json
 import subprocess
 from collections.abc import Sequence
 from datetime import UTC, datetime
-from typing import Any
+from typing import Any, Optional
 
 import pytest
 from homelab_dashboard.models import ClusterSnapshot, Hardware, HardwareSource, HealthLevel, Node, NodeState, Resources, Storage
@@ -116,9 +116,9 @@ def test_missing_tools_are_distinguished_from_clean_results() -> None:
 
 
 def test_ssh_probe_sends_script_and_parses() -> None:
-    sent: list[str | None] = []
+    sent: list[Optional[str]] = []
 
-    def runner(command: Sequence[str], *, timeout: float, stdin: str | None = None) -> "subprocess.CompletedProcess[str]":
+    def runner(command: Sequence[str], *, timeout: float, stdin: Optional[str] = None) -> "subprocess.CompletedProcess[str]":
         sent.append(stdin)
         return subprocess.CompletedProcess(args=list(command), returncode=0, stdout=json.dumps({"disks": [hdd()], "pools": []}), stderr="")
 

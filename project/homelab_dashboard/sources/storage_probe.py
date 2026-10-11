@@ -7,12 +7,12 @@ Judging what is abnormal happens on the dashboard side; this script only reports
 import json
 import shutil
 import subprocess
-from typing import Any
+from typing import Any, Final, Optional
 
 # `-n standby` makes smartctl skip a spun-down disk instead of waking it.
-SMARTCTL_TIMEOUT_SECONDS = 20.0
-ZPOOL_TIMEOUT_SECONDS = 15.0
-NVME_FIELDS = ("critical_warning", "available_spare", "available_spare_threshold", "percentage_used", "media_errors")
+SMARTCTL_TIMEOUT_SECONDS: Final[float] = 20.0
+ZPOOL_TIMEOUT_SECONDS: Final[float] = 15.0
+NVME_FIELDS: Final[tuple[str, ...]] = ("critical_warning", "available_spare", "available_spare_threshold", "percentage_used", "media_errors")
 
 
 def run(*, command: list[str], timeout: float) -> str:
@@ -23,7 +23,7 @@ def run(*, command: list[str], timeout: float) -> str:
     return completed.stdout
 
 
-def run_json(*, command: list[str]) -> dict[str, Any] | None:
+def run_json(*, command: list[str]) -> Optional[dict[str, Any]]:
     # smartctl exits non-zero to flag SMART findings while still printing valid JSON, so ignore the exit status.
     try:
         document = json.loads(run(command=command, timeout=SMARTCTL_TIMEOUT_SECONDS))
@@ -32,7 +32,7 @@ def run_json(*, command: list[str]) -> dict[str, Any] | None:
     return document if isinstance(document, dict) else None
 
 
-def describe_disk(*, name: str, report: dict[str, Any] | None) -> dict[str, Any]:
+def describe_disk(*, name: str, report: Optional[dict[str, Any]]) -> dict[str, Any]:
     if report is None:
         return {"device": name, "read_failed": True}
     messages = " ".join(str(message.get("string", "")) for message in report.get("smartctl", {}).get("messages", []))
@@ -65,7 +65,7 @@ def describe_disk(*, name: str, report: dict[str, Any] | None) -> dict[str, Any]
     }
 
 
-def collect_disks() -> list[dict[str, Any]] | None:
+def collect_disks() -> Optional[list[dict[str, Any]]]:
     if shutil.which("smartctl") is None:
         return None
     scan = run_json(command=["smartctl", "--scan", "-j"]) or {}
@@ -82,7 +82,7 @@ def collect_disks() -> list[dict[str, Any]] | None:
     return disks
 
 
-def collect_pools() -> list[dict[str, Any]] | None:
+def collect_pools() -> Optional[list[dict[str, Any]]]:
     if shutil.which("zpool") is None:
         return None
     listing = run(command=["zpool", "list", "-Hp", "-o", "name,health,capacity,size,allocated,free,fragmentation"], timeout=ZPOOL_TIMEOUT_SECONDS)

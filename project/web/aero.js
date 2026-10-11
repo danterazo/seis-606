@@ -160,12 +160,12 @@ function formatMemoryPair({ used, total }) {
 }
 
 /** @param {Resources} resources */
-const formatCores = ({ cpu_cores: cores }) => (cores === null ? "cores unknown" : `${cores} ${cores === 1 ? "Core" : "Cores"}`);
+const formatCores = ({ cpu_cores: cores }) => (cores === null ? "Cores unknown" : `${cores} ${cores === 1 ? "core" : "cores"}`);
 
 /** Allotment, usage, then percentage: "3/8 GB (38%)". @param {Resources} resources */
 function formatRam(resources) {
   const { memory_used_bytes: used, memory_total_bytes: total } = resources;
-  if (total === null) return "unknown";
+  if (total === null) return "Unknown";
   if (used === null) return `${formatBytes(total)} total`;
   return `${formatMemoryPair({ used, total })} (${formatPercent(memoryPercent(resources))})`;
 }
@@ -305,17 +305,17 @@ function renderBanner() {
   let content;
   if (error !== null) {
     const lastGood = snapshot === null ? "" : ` Showing the last data from ${new Date(snapshot.fetched_at).toLocaleTimeString()}.`;
-    content = { tone: "alert", title: "Can't Reach Proxmox", detail: `${error}${lastGood}` };
+    content = { tone: "alert", title: "Can't reach Proxmox", detail: `${error}${lastGood}` };
   } else if (snapshot === null) {
     content = { tone: "pending", title: "Connecting…", detail: "Asking Proxmox for the current status." };
   } else if (snapshot.nodes.length === 0) {
-    content = { tone: "pending", title: "No Nodes Reported", detail: "Proxmox returned an empty cluster." };
+    content = { tone: "pending", title: "No nodes reported", detail: "Proxmox returned an empty cluster." };
   } else {
     const down = snapshot.nodes.filter((node) => node.state !== "online").length;
     content =
       down === 0
-        ? { tone: "ok", title: "All Systems Operational", detail: `${plural(snapshot.nodes.length, "node")} online` }
-        : { tone: "warn", title: `${down} of ${plural(snapshot.nodes.length, "Node")} Unavailable!`, detail: "Check the node list for details." };
+        ? { tone: "ok", title: "All systems operational", detail: `${plural(snapshot.nodes.length, "node")} online` }
+        : { tone: "warn", title: `${down} of ${plural(snapshot.nodes.length, "node")} unavailable!`, detail: "Check the node list for details." };
   }
   banner.className = `banner banner-${content.tone}`;
   banner.replaceChildren(
@@ -399,7 +399,7 @@ function storageBadges(node) {
       flagged.length === 0 ? "SMART OK" : `SMART ${flagged.length} ${level === "unknown" ? "UNREADABLE" : level === "warning" ? "WARN" : "CRITICAL"}`;
     const lines =
       flagged.length === 0
-        ? [`All ${plural(storage.disks.length, "disk")} healthy${Number.isFinite(hottest) ? `, Hottest ${hottest} °C` : ""}`]
+        ? [`All ${plural(storage.disks.length, "disk")} healthy${Number.isFinite(hottest) ? `, hottest ${hottest} °C` : ""}`]
         : flagged.map((disk) => `${disk.device}: ${disk.findings.join("; ")}`);
     // Warnings and criticals both go red so a flagged disk stands out.
     badges.push(healthBadge(node.name, level === "warning" ? "critical" : level, text, lines.join("\n")));
@@ -418,17 +418,17 @@ function storageBadges(node) {
       const extras =
         pool.name === "tank"
           ? [
-              pool.fragmentation_percent === null ? null : `${pool.fragmentation_percent}% Frag`,
-              pool.free_bytes === null ? null : `${formatPoolBytes(pool.free_bytes)} Free`,
+              pool.fragmentation_percent === null ? null : `${pool.fragmentation_percent}% frag`,
+              pool.free_bytes === null ? null : `${formatPoolBytes(pool.free_bytes)} free`,
               pool.scan,
             ].filter(Boolean)
           : [];
       const text = [headline, ...extras].join(" · ");
       const details = [
         usage === null ? null : `Used: ${usage}`,
-        pool.fragmentation_percent === null ? null : `${pool.fragmentation_percent}% Fragmented`,
+        pool.fragmentation_percent === null ? null : `${pool.fragmentation_percent}% fragmented`,
         pool.layout,
-        pool.scan === null ? null : `Last Scan: ${pool.scan}`,
+        pool.scan === null ? null : `Last scan: ${pool.scan}`,
       ].filter(Boolean);
       badges.push(
         healthBadge(
@@ -437,7 +437,7 @@ function storageBadges(node) {
           text,
           [
             pool.findings.length === 0
-              ? `${pool.name} is healthy${pool.capacity_percent === null ? "" : `, ${pool.capacity_percent}% Full`}`
+              ? `${pool.name} is healthy${pool.capacity_percent === null ? "" : `, ${pool.capacity_percent}% full`}`
               : `${pool.name}: ${pool.findings.join("; ")}`,
             ...details,
           ].join("\n"),
@@ -456,14 +456,14 @@ function hardwareErrorBadges(node) {
   const history = errors.incidents.filter((incident) => !incident.current_boot).length;
   const headline =
     errors.level === "unknown"
-      ? "HW Errors N/A"
+      ? "HW errors N/A"
       : errors.level === "ok"
-        ? "HW Errors: None"
+        ? "HW errors: none"
         : current.length > 0
-          ? `HW Errors: ${plural(current.length, "Incident")}`
+          ? `HW errors: ${plural(current.length, "incident")}`
           : errors.incidents.length === 0
-            ? "HW Errors: Counters"
-            : `HW Errors: ${plural(history, "Past Incident")}`;
+            ? "HW errors: counters"
+            : `HW errors: ${plural(history, "past incident")}`;
   const staleness = errors.stale ? " · Stale" : "";
   const lines = [
     errors.findings.length === 0 ? "No hardware errors reported since the last check" : errors.findings.join("\n"),
@@ -527,7 +527,7 @@ function timelineEntries(node, errors) {
 /** @param {PveNode} node */
 function renderHardwareErrorsDialog(node) {
   const errors = node.hardware.hardware_errors;
-  required("#hwerrors-heading").textContent = `Hardware Errors · ${nodeLabel(node)}`;
+  required("#hwerrors-heading").textContent = `Hardware errors · ${nodeLabel(node)}`;
   if (!errors) {
     required("#hwerrors-body").replaceChildren(el("p", { className: "empty", text: "Hardware errors are not monitored for this node." }));
     return;
@@ -550,7 +550,7 @@ function renderHardwareErrorsDialog(node) {
         ]);
   const monitoring = [
     errors.stale
-      ? `Stale: ${errors.error ?? "no recent reading"}. Last successful check ${formatTime(errors.last_success)}.`
+      ? `Stale: ${errors.error ?? "No recent reading"}. Last successful check ${formatTime(errors.last_success)}.`
       : `Checked ${formatTime(errors.collected_at)}.`,
     errors.boot_started === null
       ? null
@@ -575,7 +575,7 @@ function renderHardwareErrorsDialog(node) {
   const incidentRows = errors.incidents.map((incident) =>
     el("tr", { className: incident.current_boot ? "" : "is-historical" }, [
       el("td", {}, [levelCell(incident.level, incident.current_boot ? "This boot" : "Earlier boot")]),
-      el("td", { text: `${categoryLabel(incident.category)} · ${incident.classification}` }),
+      el("td", { text: `${categoryLabel(incident.category)} · ${sentenceCase(incident.classification)}` }),
       el("td", {}, [
         el("div", { text: incident.title }),
         el("small", {
@@ -618,9 +618,9 @@ function renderHardwareErrorsDialog(node) {
           { className: "hw-findings" },
           errors.findings.map((finding) => el("li", { text: finding })),
         ),
-    el("h3", { text: "ECC Counters" }),
+    el("h3", { text: "ECC counters" }),
     el("p", { className: "hw-status", text: `Persisted history (survives reboots): ${persisted}` }),
-    table(["DIMM / Controller (since boot)", "Corrected", "Uncorrected"], counterRows, "No EDAC counters on this node."),
+    table(["DIMM / controller (since boot)", "Corrected", "Uncorrected"], counterRows, "No EDAC counters on this node."),
     el("h3", { text: "Incidents" }),
     table(
       ["Scope", "Class", "Evidence", "Events", "First seen", "Last seen"],
@@ -667,7 +667,7 @@ function syncHardwareErrorsDialog() {
 /** @param {PveNode} node */
 function renderStorageDialog(node) {
   const storage = node.hardware.storage;
-  required("#storage-heading").textContent = `Storage Health · ${nodeLabel(node)}`;
+  required("#storage-heading").textContent = `Storage health · ${nodeLabel(node)}`;
   /** @param {HealthLevel} level @param {string} text */
   const levelCell = (level, text) => el("span", { className: `health-badge health-${level}`, text });
   /** @param {number | null} powerOnHours */
@@ -692,7 +692,7 @@ function renderStorageDialog(node) {
     el("tr", {}, [
       el("td", {}, [levelCell(pool.level, pool.state)]),
       el("td", {}, [el("code", { text: pool.name })]),
-      el("td", { text: pool.capacity_percent === null ? "—" : `${pool.capacity_percent}% Full` }),
+      el("td", { text: pool.capacity_percent === null ? "—" : `${pool.capacity_percent}% full` }),
       el("td", { text: poolUsage(pool) ?? "—" }),
       el("td", { text: formatPoolBytes(pool.free_bytes) }),
       el("td", { text: pool.fragmentation_percent === null ? "—" : `${pool.fragmentation_percent}%` }),
@@ -722,9 +722,9 @@ function renderStorageDialog(node) {
       diskRows,
       storage?.smart_available ? "No disks reported." : "smartctl is not installed on this node.",
     ),
-    el("h3", { text: "ZFS Pools" }),
+    el("h3", { text: "ZFS pools" }),
     table(
-      ["Status", "Pool", "Capacity", "Used / Size", "Free", "Frag", "Layout", "Last Scan", "Findings"],
+      ["Status", "Pool", "Capacity", "Used / size", "Free", "Frag", "Layout", "Last scan", "Findings"],
       poolRows,
       storage?.zfs_available ? "No pools reported." : "ZFS tools are not installed on this node.",
     ),
@@ -907,7 +907,7 @@ function renderTopology(nodes) {
         ],
       ),
       svgText({ x, y: nodeY + 46, text: nodeLabel(node), className: "topo-label" }),
-      svgText({ x, y: nodeY + 62, text: node.address ?? "address unknown", className: "topo-sub" }),
+      svgText({ x, y: nodeY + 62, text: node.address ?? "Address unknown", className: "topo-sub" }),
     );
 
     const shown = node.guests.slice(0, MAX_TOPOLOGY_GUESTS);
@@ -979,11 +979,11 @@ function visibleGuests(nodes) {
 /** @param {PveNode[]} nodes */
 function renderGuests(nodes) {
   required("#guests-title").textContent =
-    state.selectedNode === null ? "VMs & Containers" : `VMs & Containers on ${displayNodeName(state.selectedNode)}`;
+    state.selectedNode === null ? "VMs & containers" : `VMs & containers on ${displayNodeName(state.selectedNode)}`;
   required("#node-chips").replaceChildren(
     el("button", {
       className: "chip",
-      text: "All Nodes",
+      text: "All nodes",
       attrs: { type: "button", "data-node-filter": "", "aria-pressed": String(state.selectedNode === null) },
     }),
     ...nodes.map((node) =>

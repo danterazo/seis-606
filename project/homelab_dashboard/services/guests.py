@@ -3,6 +3,7 @@ import threading
 import time
 from collections.abc import Callable
 from dataclasses import dataclass, field
+from typing import Optional
 
 from homelab_dashboard.models import ClusterSnapshot, Guest, GuestKind, GuestState, Node, NodeState
 from homelab_dashboard.sources.base import RefreshableStatusSource, StatusSourceError
@@ -27,7 +28,7 @@ class GuestRebooter:
         if not self._lock.acquire(blocking=False):
             raise StatusSourceError("Another guest reboot is already being submitted.")
         try:
-            previous: float | None = self._attempted_at.get(vmid)
+            previous: Optional[float] = self._attempted_at.get(vmid)
             if previous is not None and self.clock() - previous < 30:
                 raise StatusSourceError("A reboot was recently attempted for this guest. Check its status before retrying.")
             snapshot: ClusterSnapshot = self.source.fetch_fresh()

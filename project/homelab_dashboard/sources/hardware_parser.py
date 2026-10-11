@@ -1,6 +1,6 @@
 import re
 from collections.abc import Mapping
-from typing import Final
+from typing import Final, Optional
 
 from homelab_dashboard.models import Gpu, GpuState, Hardware, HardwareSource
 from homelab_dashboard.sources.base import StatusSourceError
@@ -27,7 +27,7 @@ def tidy_cpu_model(*, model: str) -> str:
     return re.sub(r"\s+", " ", tidied).strip()
 
 
-def _gpu_state(*, driver: str | None) -> GpuState:
+def _gpu_state(*, driver: Optional[str]) -> GpuState:
     if driver == PASSTHROUGH_DRIVER:
         return GpuState.PASSTHROUGH
     if driver in MONITORED_DRIVERS:
@@ -35,10 +35,10 @@ def _gpu_state(*, driver: str | None) -> GpuState:
     return GpuState.NO_DRIVER
 
 
-def _parse_gpu(*, row: object) -> Gpu | None:
+def _parse_gpu(*, row: object) -> Optional[Gpu]:
     if not isinstance(row, Mapping):
         return None
-    name: str | None = as_text(value=row.get("name"))
+    name: Optional[str] = as_text(value=row.get("name"))
     if name is None:
         return None
     state: GpuState = _gpu_state(driver=as_text(value=row.get("driver")))
@@ -57,12 +57,12 @@ def _parse_gpu(*, row: object) -> Gpu | None:
 def parse_hardware(*, document: object) -> Hardware:
     if not isinstance(document, Mapping):
         raise StatusSourceError("The hardware probe returned an unexpected response.")
-    model: str | None = as_text(value=document.get("cpu_model"))
+    model: Optional[str] = as_text(value=document.get("cpu_model"))
     ecc: object = document.get("ecc_supported")
     rows: object = document.get("gpus")
     gpus: list[Gpu] = []
     for row in rows if isinstance(rows, list) else []:
-        parsed: Gpu | None = _parse_gpu(row=row)
+        parsed: Optional[Gpu] = _parse_gpu(row=row)
         if parsed is not None:
             gpus.append(parsed)
     return Hardware(

@@ -1,6 +1,7 @@
 import subprocess
 from collections.abc import Sequence
 from datetime import UTC, datetime
+from typing import Optional
 
 import pytest
 from homelab_dashboard.node_profiles import DISPLAY_NAMES
@@ -53,7 +54,7 @@ class FakeRunner:
         self.stdout: str = LEASES
         self.stderr: str = ""
 
-    def __call__(self, command: Sequence[str], *, timeout: float, stdin: str | None = None) -> "subprocess.CompletedProcess[str]":
+    def __call__(self, command: Sequence[str], *, timeout: float, stdin: Optional[str] = None) -> "subprocess.CompletedProcess[str]":
         assert timeout == 8.0
         self.calls.append(command)
         return subprocess.CompletedProcess(args=command, returncode=self.returncode, stdout=self.stdout, stderr=self.stderr)
@@ -153,7 +154,7 @@ def test_named_devices_precede_ip_only_devices_in_both_panels() -> None:
 
 @pytest.mark.parametrize(argnames="error", argvalues=[FileNotFoundError(), subprocess.TimeoutExpired(cmd="ssh", timeout=8)])
 def test_transport_errors_stay_local_to_the_devices_payload(error: Exception) -> None:
-    def runner(command: Sequence[str], *, timeout: float, stdin: str | None = None) -> "subprocess.CompletedProcess[str]":
+    def runner(command: Sequence[str], *, timeout: float, stdin: Optional[str] = None) -> "subprocess.CompletedProcess[str]":
         raise error
 
     source = OpenWrtLeaseSource(target=SshTarget(host="router"), runner=runner)

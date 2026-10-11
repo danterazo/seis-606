@@ -1,7 +1,7 @@
 import ipaddress
 import zlib
 from dataclasses import dataclass
-from typing import Final
+from typing import Final, Optional
 
 from homelab_dashboard.models import Hardware, HardwareSource
 
@@ -29,11 +29,11 @@ class NodeProfile:
     initial: str
     color: str
     # When set, shown instead of whatever Proxmox reports (offline nodes report none).
-    address: str | None = None
+    address: Optional[str] = None
     # Shown, marked as expected, while the node can't be probed (e.g. it is offline).
-    expected_cpu: str | None = None
-    memory_description: str | None = None
-    memory_ecc: bool | None = None
+    expected_cpu: Optional[str] = None
+    memory_description: Optional[str] = None
+    memory_ecc: Optional[bool] = None
 
 
 NODE_PROFILES: Final[dict[str, NodeProfile]] = {
@@ -72,7 +72,7 @@ FALLBACK_PALETTE: Final[tuple[str, ...]] = ("#d6457f", "#c9a100", "#5b6b7a", "#8
 def profile_for_node(*, node_name: str) -> NodeProfile:
     """Configured profile, else a stable one so a new node keeps its color across restarts."""
     key: str = node_name.casefold()
-    known: NodeProfile | None = NODE_PROFILES.get(key)
+    known: Optional[NodeProfile] = NODE_PROFILES.get(key)
     if known is not None:
         return known
     return NodeProfile(
@@ -82,8 +82,8 @@ def profile_for_node(*, node_name: str) -> NodeProfile:
     )
 
 
-def node_sort_key(*, node_name: str, address: str | None = None) -> tuple[bool, int, int, str]:
-    effective_address: str | None = profile_for_node(node_name=node_name).address or address
+def node_sort_key(*, node_name: str, address: Optional[str] = None) -> tuple[bool, int, int, str]:
+    effective_address: Optional[str] = profile_for_node(node_name=node_name).address or address
     if effective_address is None:
         return (True, 0, 0, node_name.casefold())
     try:

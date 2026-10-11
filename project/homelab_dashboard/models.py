@@ -1,7 +1,7 @@
 from dataclasses import asdict, dataclass
 from datetime import datetime
 from enum import StrEnum
-from typing import Any
+from typing import Any, Optional
 
 
 class NodeState(StrEnum):
@@ -46,10 +46,10 @@ class HealthLevel(StrEnum):
 class Resources:
     """Readings Proxmox did not report stay None rather than becoming zero."""
 
-    cpu_ratio: float | None = None
-    cpu_cores: int | None = None
-    memory_used_bytes: int | None = None
-    memory_total_bytes: int | None = None
+    cpu_ratio: Optional[float] = None
+    cpu_cores: Optional[int] = None
+    memory_used_bytes: Optional[int] = None
+    memory_total_bytes: Optional[int] = None
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -66,9 +66,9 @@ class Guest:
 class Gpu:
     name: str
     state: GpuState
-    utilization_percent: float | None = None
-    memory_used_bytes: int | None = None
-    memory_total_bytes: int | None = None
+    utilization_percent: Optional[float] = None
+    memory_used_bytes: Optional[int] = None
+    memory_total_bytes: Optional[int] = None
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -76,13 +76,13 @@ class Disk:
     """`kind` is hdd, ssd or nvme; `findings` lists only what is not normal."""
 
     device: str
-    model: str | None
-    serial: str | None
+    model: Optional[str]
+    serial: Optional[str]
     kind: str
     level: HealthLevel
     standby: bool = False
-    temperature_celsius: int | None = None
-    power_on_hours: int | None = None
+    temperature_celsius: Optional[int] = None
+    power_on_hours: Optional[int] = None
     findings: tuple[str, ...] = ()
 
 
@@ -91,14 +91,14 @@ class Pool:
     name: str
     state: str
     level: HealthLevel
-    capacity_percent: int | None = None
-    size_bytes: int | None = None
-    dataset_available_bytes: int | None = None
-    allocated_bytes: int | None = None
-    free_bytes: int | None = None
-    fragmentation_percent: int | None = None
-    layout: str | None = None
-    scan: str | None = None
+    capacity_percent: Optional[int] = None
+    size_bytes: Optional[int] = None
+    dataset_available_bytes: Optional[int] = None
+    allocated_bytes: Optional[int] = None
+    free_bytes: Optional[int] = None
+    fragmentation_percent: Optional[int] = None
+    layout: Optional[str] = None
+    scan: Optional[str] = None
     findings: tuple[str, ...] = ()
 
 
@@ -160,8 +160,8 @@ class ErrorIncident:
 @dataclass(frozen=True, slots=True, kw_only=True)
 class BootRecord:
     boot_id: str
-    first_seen: str | None
-    last_seen: str | None
+    first_seen: Optional[str]
+    last_seen: Optional[str]
     current: bool
 
 
@@ -170,7 +170,7 @@ class MemoryCounter:
     """EDAC counters; they restart from zero at every boot."""
 
     controller: str
-    label: str | None
+    label: Optional[str]
     corrected: int
     uncorrected: int
 
@@ -189,15 +189,15 @@ class HardwareErrors:
     memory_counters: tuple[MemoryCounter, ...] = ()
     edac_available: bool = False
     journal_available: bool = False
-    persisted_corrected: int | None = None
-    persisted_uncorrected: int | None = None
-    persisted_mce: int | None = None
-    boot_id: str | None = None
-    boot_started: str | None = None
-    collected_at: str | None = None
+    persisted_corrected: Optional[int] = None
+    persisted_uncorrected: Optional[int] = None
+    persisted_mce: Optional[int] = None
+    boot_id: Optional[str] = None
+    boot_started: Optional[str] = None
+    collected_at: Optional[str] = None
     stale: bool = False
-    error: str | None = None
-    last_success: str | None = None
+    error: Optional[str] = None
+    last_success: Optional[str] = None
     counters_reset: bool = False
 
 
@@ -205,23 +205,23 @@ class HardwareErrors:
 class Hardware:
     """`source` says whether this was read from the node (live) or taken from the configured profile (expected)."""
 
-    cpu_model: str | None = None
-    cpu_cores: int | None = None
-    cpu_threads: int | None = None
+    cpu_model: Optional[str] = None
+    cpu_cores: Optional[int] = None
+    cpu_threads: Optional[int] = None
     gpus: tuple[Gpu, ...] = ()
     source: HardwareSource = HardwareSource.UNKNOWN
-    ecc_supported: bool | None = None
-    zfs_arc_bytes: int | None = None
-    zfs_arc_max_bytes: int | None = None
-    storage: Storage | None = None
-    hardware_errors: HardwareErrors | None = None
+    ecc_supported: Optional[bool] = None
+    zfs_arc_bytes: Optional[int] = None
+    zfs_arc_max_bytes: Optional[int] = None
+    storage: Optional[Storage] = None
+    hardware_errors: Optional[HardwareErrors] = None
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class Node:
     name: str
     state: NodeState
-    address: str | None
+    address: Optional[str]
     resources: Resources
     guests: tuple[Guest, ...]
     hardware: Hardware = Hardware()

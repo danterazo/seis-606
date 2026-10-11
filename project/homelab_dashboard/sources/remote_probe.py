@@ -9,20 +9,20 @@ import os
 import re
 import shlex
 import subprocess
-from typing import Any
+from typing import Any, Final, Optional
 
-PCI_ROOT = "/sys/bus/pci/devices"
-DISPLAY_CLASS_PREFIX = "0x03"
-VENDOR_NAMES = {"0x8086": "Intel", "0x10de": "NVIDIA", "0x1002": "AMD"}
-BYTES_PER_MIB = 1024 * 1024
-PCI_SLOT_LENGTH = len("0000:00:00.0")
-INTEL_SAMPLE_MS = "300"
-INTEL_WINDOW_SECONDS = "1.0"
+PCI_ROOT: Final[str] = "/sys/bus/pci/devices"
+DISPLAY_CLASS_PREFIX: Final[str] = "0x03"
+VENDOR_NAMES: Final[dict[str, str]] = {"0x8086": "Intel", "0x10de": "NVIDIA", "0x1002": "AMD"}
+BYTES_PER_MIB: Final[int] = 1024 * 1024
+PCI_SLOT_LENGTH: Final[int] = len("0000:00:00.0")
+INTEL_SAMPLE_MS: Final[str] = "300"
+INTEL_WINDOW_SECONDS: Final[str] = "1.0"
 
-NvidiaReading = tuple[float | None, int | None, int | None]
+NvidiaReading = tuple[Optional[float], Optional[int], Optional[int]]
 
 
-def read_text(*, path: str) -> str | None:
+def read_text(*, path: str) -> Optional[str]:
     try:
         with open(path) as handle:
             return handle.read().strip()
@@ -30,7 +30,7 @@ def read_text(*, path: str) -> str | None:
         return None
 
 
-def read_int(*, path: str) -> int | None:
+def read_int(*, path: str) -> Optional[int]:
     text = read_text(path=path)
     return int(text) if text is not None and text.isdigit() else None
 
@@ -47,14 +47,14 @@ def run(*, command: list[str], timeout: float = 4.0) -> str:
     return completed.stdout
 
 
-def cpu_model() -> str | None:
+def cpu_model() -> Optional[str]:
     for line in (read_text(path="/proc/cpuinfo") or "").splitlines():
         if line.startswith("model name"):
             return line.split(":", 1)[1].strip()
     return None
 
 
-def cpu_topology() -> tuple[int | None, int | None]:
+def cpu_topology() -> tuple[Optional[int], Optional[int]]:
     records: list[dict[str, str]] = []
     for line in (read_text(path="/proc/cpuinfo") or "").splitlines():
         if not line.strip():
@@ -69,10 +69,10 @@ def cpu_topology() -> tuple[int | None, int | None]:
         records[-1][key.strip()] = value.strip()
 
     records = [record for record in records if record]
-    threads: int | None = sum("processor" in record for record in records) or None
+    threads: Optional[int] = sum("processor" in record for record in records) or None
     core_pairs = {(record.get("physical id", "0"), record["core id"]) for record in records if "core id" in record}
     if core_pairs:
-        cores: int | None = len(core_pairs)
+        cores: Optional[int] = len(core_pairs)
     else:
         core_counts = {int(record["cpu cores"]) for record in records if record.get("cpu cores", "").isdigit()}
         sockets = {record.get("physical id", "0") for record in records}
@@ -91,7 +91,7 @@ def pretty_gpu_name(*, device: str, vendor: str) -> str:
     return f"{vendor} {marketing}" if vendor else marketing
 
 
-def lspci_device_name(*, slot: str) -> str | None:
+def lspci_device_name(*, slot: str) -> Optional[str]:
     for line in run(command=["lspci", "-mm", "-s", slot]).splitlines():
         fields = shlex.split(line)
         if len(fields) > 3:
@@ -115,7 +115,7 @@ def parse_nvidia(*, output: str) -> dict[str, NvidiaReading]:
     return readings
 
 
-def parse_intel_busy(*, output: str) -> float | None:
+def parse_intel_busy(*, output: str) -> Optional[float]:
     """intel_gpu_top streams a JSON array that is never closed; use the busiest engine of the last complete sample."""
     start = output.find("[")
     if start == -1:
@@ -149,7 +149,7 @@ def display_slots() -> list[str]:
     ]
 
 
-def driver_of(*, path: str) -> str | None:
+def driver_of(*, path: str) -> Optional[str]:
     try:
         return os.path.basename(os.readlink(f"{path}/driver"))
     except OSError:
@@ -168,9 +168,9 @@ def collect_gpus() -> list[dict[str, Any]]:
         vendor = VENDOR_NAMES.get(read_text(path=f"{path}/vendor") or "", "")
         driver = driver_of(path=path)
         device = lspci_device_name(slot=slot) or f"GPU {(read_text(path=f'{path}/device') or '').removeprefix('0x')}"
-        utilization: float | None = None
-        used: int | None = None
-        total: int | None = None
+        utilization: Optional[float] = None
+        used: Optional[int] = None
+        total: Optional[int] = None
         if driver == "amdgpu":
             busy = read_int(path=f"{path}/gpu_busy_percent")
             utilization = None if busy is None else float(busy)
@@ -193,7 +193,7 @@ def collect_gpus() -> list[dict[str, Any]]:
     return gpus
 
 
-def ecc_supported() -> bool | None:
+def ecc_supported() -> Optional[bool]:
     output: str = run(command=["dmidecode", "--type", "16"])
     corrections: list[str] = [
         line.split(":", 1)[1].strip().casefold() for line in output.splitlines() if line.strip().startswith("Error Correction Type:")
@@ -205,7 +205,7 @@ def ecc_supported() -> bool | None:
     return False if all(value == "none" for value in corrections) else None
 
 
-def zfs_arc_stat(*, name: str) -> int | None:
+def zfs_arc_stat(*, name: str) -> Optional[int]:
     for line in (read_text(path="/proc/spl/kstat/zfs/arcstats") or "").splitlines():
         fields = line.split()
         if len(fields) == 3 and fields[0] == name and fields[2].isdigit():

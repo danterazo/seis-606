@@ -13,17 +13,17 @@ import subprocess
 import time
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, Final, Optional
 
-LOOKBACK = "14 days ago"
-MAX_EVENTS = 3000
-MAX_MESSAGE_CHARS = 400
-JOURNAL_DEADLINE_SECONDS = 25.0
-COMMAND_TIMEOUT_SECONDS = 15.0
-EDAC_ROOT = Path("/sys/devices/system/edac/mc")
+LOOKBACK: Final[str] = "14 days ago"
+MAX_EVENTS: Final[int] = 3000
+MAX_MESSAGE_CHARS: Final[int] = 400
+JOURNAL_DEADLINE_SECONDS: Final[float] = 25.0
+COMMAND_TIMEOUT_SECONDS: Final[float] = 15.0
+EDAC_ROOT: Final[Path] = Path("/sys/devices/system/edac/mc")
 
 # Deliberately broad; the dashboard decides which lines are real events.
-INTERESTING = re.compile(
+INTERESTING: Final[re.Pattern[str]] = re.compile(
     r"mce|machine check|hardware error|edac|soft[- ]offlin|hwpoison|memory failure|pcie bus error|\baer\b"
     r"|nvme\d+|blk_update_request|i/o error|synchronize cache|rejecting i/o|detached scsi|\bata\d+(\.\d+)?:"
     r"|mpt3sas|megaraid|cmci|rasdaemon|\bsd [\d:]+: \[sd",
@@ -31,7 +31,7 @@ INTERESTING = re.compile(
 )
 
 
-def run(*, command: list[str]) -> str | None:
+def run(*, command: list[str]) -> Optional[str]:
     try:
         completed = subprocess.run(command, capture_output=True, text=True, timeout=COMMAND_TIMEOUT_SECONDS, stdin=subprocess.DEVNULL, check=False)
     except (subprocess.TimeoutExpired, OSError):
@@ -39,26 +39,26 @@ def run(*, command: list[str]) -> str | None:
     return completed.stdout if completed.returncode == 0 else None
 
 
-def read_text(*, path: Path) -> str | None:
+def read_text(*, path: Path) -> Optional[str]:
     try:
         return path.read_text(encoding="utf-8").strip()
     except OSError:
         return None
 
 
-def read_count(*, path: Path) -> int | None:
+def read_count(*, path: Path) -> Optional[int]:
     text = read_text(path=path)
     return int(text) if text is not None and text.isdigit() else None
 
 
-def iso(*, microseconds: Any) -> str | None:
+def iso(*, microseconds: Any) -> Optional[str]:
     try:
         return datetime.fromtimestamp(timestamp=int(microseconds) / 1_000_000, tz=UTC).isoformat()
     except (TypeError, ValueError, OverflowError, OSError):
         return None
 
 
-def collect_edac() -> list[dict[str, Any]] | None:
+def collect_edac() -> Optional[list[dict[str, Any]]]:
     if not EDAC_ROOT.is_dir():
         return None
     controllers: list[dict[str, Any]] = []
@@ -83,7 +83,7 @@ def collect_edac() -> list[dict[str, Any]] | None:
     return controllers
 
 
-def stream_journal(*, matches: list[str], source: str) -> list[dict[str, Any]] | None:
+def stream_journal(*, matches: list[str], source: str) -> Optional[list[dict[str, Any]]]:
     if shutil.which("journalctl") is None:
         return None
     command = ["journalctl", "--no-pager", "-o", "json", "--output-fields=MESSAGE,_BOOT_ID", "--since", LOOKBACK, *matches]
@@ -113,7 +113,7 @@ def stream_journal(*, matches: list[str], source: str) -> list[dict[str, Any]] |
     return list(kept) if process.wait() == 0 or kept else None
 
 
-def collect_events() -> list[dict[str, Any]] | None:
+def collect_events() -> Optional[list[dict[str, Any]]]:
     kernel = stream_journal(matches=["_TRANSPORT=kernel"], source="kernel")
     rasdaemon = stream_journal(matches=["SYSLOG_IDENTIFIER=rasdaemon"], source="rasdaemon")
     if kernel is None and rasdaemon is None:
@@ -138,7 +138,7 @@ def collect_boots() -> list[dict[str, Any]]:
     ]
 
 
-def collect_ras_summary() -> str | None:
+def collect_ras_summary() -> Optional[str]:
     return run(command=["ras-mc-ctl", "--summary"]) if shutil.which("ras-mc-ctl") else None
 
 

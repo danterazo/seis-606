@@ -3,7 +3,7 @@ from collections import Counter
 from collections.abc import Mapping
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
-from typing import Final
+from typing import Final, Optional
 
 from homelab_dashboard.models import (
     BootRecord,
@@ -86,23 +86,23 @@ def _hex(*, text: str) -> str:
     return hex(int(text, 16))
 
 
-def _first(*, pattern: "re.Pattern[str]", text: str) -> str | None:
-    found: re.Match[str] | None = pattern.search(text)
+def _first(*, pattern: "re.Pattern[str]", text: str) -> Optional[str]:
+    found: Optional[re.Match[str]] = pattern.search(text)
     return None if found is None else found.group(1)
 
 
 def _memory_attrs(*, text: str) -> dict[str, str]:
     attrs: dict[str, str] = {}
-    edac: re.Match[str] | None = _EDAC.search(text)
-    label: str | None = None if edac is None else edac.group("label")
+    edac: Optional[re.Match[str]] = _EDAC.search(text)
+    label: Optional[str] = None if edac is None else edac.group("label")
     label = label or _first(pattern=_DIMM_LABEL, text=text)
     if label is not None:
         attrs["dimm"] = label
     if edac is not None:
         attrs["controller"] = f"mc{edac.group('mc')}"
-    address: str | None = _first(pattern=_ADDRESS, text=text)
-    page: str | None = _first(pattern=_PAGE, text=text)
-    offset: str | None = _first(pattern=_OFFSET, text=text)
+    address: Optional[str] = _first(pattern=_ADDRESS, text=text)
+    page: Optional[str] = _first(pattern=_PAGE, text=text)
+    offset: Optional[str] = _first(pattern=_OFFSET, text=text)
     if address is None and page is not None and offset is not None:
         address = hex((int(page, 16) << PAGE_SHIFT) | int(offset, 16))
     if address is not None:
@@ -115,14 +115,14 @@ def _memory_attrs(*, text: str) -> dict[str, str]:
 
 def _cpu_attrs(*, text: str) -> dict[str, str]:
     attrs: dict[str, str] = {}
-    kernel: re.Match[str] | None = _KERNEL_MCE.search(text)
+    kernel: Optional[re.Match[str]] = _KERNEL_MCE.search(text)
     if kernel is not None:
         attrs.update(cpu=kernel.group(1), bank=kernel.group(2), status="0x" + kernel.group(3).lower())
     for name, pattern in (("cpu", _CPU), ("socket", _SOCKET), ("bank", _BANK)):
-        value: str | None = _first(pattern=pattern, text=text)
+        value: Optional[str] = _first(pattern=pattern, text=text)
         if value is not None:
             attrs.setdefault(name, value)
-    status: str | None = _first(pattern=_STATUS, text=text)
+    status: Optional[str] = _first(pattern=_STATUS, text=text)
     if status is not None:
         attrs.setdefault("status", "0x" + status.lower())
     if "parity" in text.casefold():
@@ -130,10 +130,10 @@ def _cpu_attrs(*, text: str) -> dict[str, str]:
     return attrs
 
 
-def _interpret(*, text: str, source: str) -> tuple[ErrorCategory, ErrorClass, str, dict[str, str]] | None:
+def _interpret(*, text: str, source: str) -> Optional[tuple[ErrorCategory, ErrorClass, str, dict[str, str]]]:
     """Maps one log line to (category, classification, grouping key, decoded fields); None for unrelated lines."""
     lowered: str = text.casefold()
-    soft: re.Match[str] | None = _SOFT_OFFLINE.search(text) or _HWPOISON.search(text)
+    soft: Optional[re.Match[str]] = _SOFT_OFFLINE.search(text) or _HWPOISON.search(text)
     if soft is not None:
         frame: str = _hex(text=soft.group(1))
         return ErrorCategory.PAGE_OFFLINE, ErrorClass.UNSPECIFIED, frame, {"page_frame": frame}
@@ -149,22 +149,22 @@ def _interpret(*, text: str, source: str) -> tuple[ErrorCategory, ErrorClass, st
         classification = ErrorClass.UNCORRECTED if "machine check exception" in lowered else _classification(text=text)
         location: str = f"cpu {attrs['cpu']} bank {attrs['bank']}" if "cpu" in attrs and "bank" in attrs else "unattributed"
         return ErrorCategory.CPU_MCE, classification, location, attrs
-    pcie: re.Match[str] | None = _PCIE.search(text)
+    pcie: Optional[re.Match[str]] = _PCIE.search(text)
     if pcie is not None:
         attrs = {}
-        device: str | None = _first(pattern=_BDF, text=text)
+        device: Optional[str] = _first(pattern=_BDF, text=text)
         if device is not None:
             attrs["device"] = device
         attrs["severity"] = pcie.group("severity")
         return ErrorCategory.PCIE, _classification(text=pcie.group("severity")), attrs.get("device", "unattributed"), attrs
     if any(pattern.search(text) for pattern in _STORAGE):
-        found: str | None = _first(pattern=_STORAGE_DEVICE, text=text)
+        found: Optional[str] = _first(pattern=_STORAGE_DEVICE, text=text)
         return ErrorCategory.STORAGE_PATH, ErrorClass.UNSPECIFIED, found or "unattributed", ({"device": found} if found else {})
     return None
 
 
-def _parse_time(*, value: object) -> datetime | None:
-    text: str | None = as_text(value=value)
+def _parse_time(*, value: object) -> Optional[datetime]:
+    text: Optional[str] = as_text(value=value)
     if text is None:
         return None
     try:
@@ -174,15 +174,15 @@ def _parse_time(*, value: object) -> datetime | None:
     return parsed if parsed.tzinfo is not None else parsed.replace(tzinfo=UTC)
 
 
-def _parse_event(*, row: object) -> _Event | None:
+def _parse_event(*, row: object) -> Optional[_Event]:
     if not isinstance(row, Mapping):
         return None
-    timestamp: datetime | None = _parse_time(value=row.get("timestamp"))
-    message: str | None = as_text(value=row.get("message"))
+    timestamp: Optional[datetime] = _parse_time(value=row.get("timestamp"))
+    message: Optional[str] = as_text(value=row.get("message"))
     if timestamp is None or message is None:
         return None
     source: str = as_text(value=row.get("source")) or "kernel"
-    interpreted: tuple[ErrorCategory, ErrorClass, str, dict[str, str]] | None = _interpret(text=message, source=source)
+    interpreted: Optional[tuple[ErrorCategory, ErrorClass, str, dict[str, str]]] = _interpret(text=message, source=source)
     if interpreted is None:
         return None
     category, classification, key, attrs = interpreted
@@ -190,7 +190,7 @@ def _parse_event(*, row: object) -> _Event | None:
     return _Event(timestamp=timestamp, raw=raw, category=category, classification=classification, key=key, attrs=attrs)
 
 
-def _top(*, events: list[_Event], name: str) -> tuple[str, int] | None:
+def _top(*, events: list[_Event], name: str) -> Optional[tuple[str, int]]:
     values: Counter[str] = Counter(event.attrs[name] for event in events if name in event.attrs)
     common: list[tuple[str, int]] = values.most_common(1)
     return common[0] if common else None
@@ -202,7 +202,7 @@ def _title(*, category: ErrorCategory, classification: ErrorClass, events: list[
     kind: str = "" if classification is ErrorClass.UNSPECIFIED else f"{classification.value} "
     noun: str = "errors" if count > 1 else "error"
 
-    def top(name: str) -> tuple[str, int] | None:
+    def top(name: str) -> Optional[tuple[str, int]]:
         return _top(events=events, name=name)
 
     text: str
@@ -222,13 +222,13 @@ def _title(*, category: ErrorCategory, classification: ErrorClass, events: list[
             subject = type_[0]
         where = f" reported on CPU {cpu[0]}" if cpu else ""
         where += f" (bank {bank[0]})" if bank else ""
-        note: tuple[str, int] | None = top(name="note")
+        note: Optional[tuple[str, int]] = top(name="note")
         text = f"{lead}{kind}{subject}{where}" if cpu or not note else f"{note[0]} reported by the CPU machine-check subsystem"
     elif category is ErrorCategory.PAGE_OFFLINE:
-        frame: tuple[str, int] | None = top(name="page_frame")
+        frame: Optional[tuple[str, int]] = top(name="page_frame")
         text = f"Kernel soft-offlined memory page {frame[0] if frame else ''} (page retirement is containment, not a repair)".replace("  ", " ")
     elif category is ErrorCategory.PCIE:
-        device: tuple[str, int] | None = top(name="device")
+        device: Optional[tuple[str, int]] = top(name="device")
         text = f"{lead}{kind}PCIe bus {noun}{' on ' + device[0] if device else ''}"
     else:
         device = top(name="device")
@@ -250,13 +250,13 @@ def _build_incident(*, events: list[_Event], boots_seen: int, current_boot: str,
     recurrence: list[str] = []
     fields: list[tuple[str, str]] = []
     for name, label in _RECURRENCE_FIELDS:
-        common: tuple[str, int] | None = _top(events=events, name=name)
+        common: Optional[tuple[str, int]] = _top(events=events, name=name)
         if common is not None:
             fields.append((name, common[0]))
             if common[1] >= 2:
                 recurrence.append(f"same {label} {common[0]} ×{common[1]}")
     for name in ("controller", "socket", "severity", "type", "note"):
-        extra: tuple[str, int] | None = _top(events=events, name=name)
+        extra: Optional[tuple[str, int]] = _top(events=events, name=name)
         if extra is not None:
             fields.append((name, extra[0]))
     if boots_seen >= 2:
@@ -294,7 +294,7 @@ def _build_incidents(*, events: list[_Event], current_boot: str, now: datetime) 
     return tuple(sorted(incidents, key=lambda incident: incident.last_seen, reverse=True))
 
 
-def _counter_rows(*, rows: object) -> tuple[MemoryCounter, ...] | None:
+def _counter_rows(*, rows: object) -> Optional[tuple[MemoryCounter, ...]]:
     if not isinstance(rows, list):
         return None
     counters: list[MemoryCounter] = []
@@ -326,7 +326,7 @@ def _counter_rows(*, rows: object) -> tuple[MemoryCounter, ...] | None:
     return tuple(counters)
 
 
-def _ras_summary(*, text: str | None) -> tuple[int | None, int | None, int | None]:
+def _ras_summary(*, text: Optional[str]) -> tuple[Optional[int], Optional[int], Optional[int]]:
     """(corrected, uncorrected, MCE records) persisted by rasdaemon across reboots; all None if it is not installed."""
     if text is None:
         return None, None, None
@@ -343,7 +343,7 @@ def _ras_summary(*, text: str | None) -> tuple[int | None, int | None, int | Non
     return totals["corrected"], totals["uncorrected"], mce
 
 
-def _boot_records(*, rows: object, current_boot: str, boot_started: datetime | None, now: datetime) -> tuple[BootRecord, ...]:
+def _boot_records(*, rows: object, current_boot: str, boot_started: Optional[datetime], now: datetime) -> tuple[BootRecord, ...]:
     records: list[BootRecord] = []
     for row in rows if isinstance(rows, list) else []:
         if isinstance(row, Mapping) and (boot_id := as_text(value=row.get("boot_id"))):
@@ -356,7 +356,7 @@ def _boot_records(*, rows: object, current_boot: str, boot_started: datetime | N
                 )
             )
     if current_boot and not any(record.current for record in records):
-        started: str | None = None if boot_started is None else boot_started.isoformat()
+        started: Optional[str] = None if boot_started is None else boot_started.isoformat()
         records.append(BootRecord(boot_id=current_boot, first_seen=started, last_seen=now.isoformat(), current=True))
     return tuple(records)
 
@@ -364,9 +364,9 @@ def _boot_records(*, rows: object, current_boot: str, boot_started: datetime | N
 def _summarize(
     *,
     incidents: tuple[ErrorIncident, ...],
-    counters: tuple[MemoryCounter, ...] | None,
-    persisted_uncorrected: int | None,
-    persisted_corrected: int | None,
+    counters: Optional[tuple[MemoryCounter, ...]],
+    persisted_uncorrected: Optional[int],
+    persisted_corrected: Optional[int],
 ) -> tuple[HealthLevel, tuple[str, ...]]:
     findings: list[tuple[HealthLevel, str]] = []
     corrected: int = sum(counter.corrected for counter in counters or ())
@@ -396,15 +396,15 @@ def parse_hardware_errors(*, document: object) -> HardwareErrors:
         raise StatusSourceError("The hardware error probe returned an unexpected response.")
     now: datetime = _parse_time(value=document.get("now")) or datetime.now(UTC)
     current_boot: str = as_text(value=document.get("boot_id")) or ""
-    uptime: float | None = as_number(value=document.get("uptime_seconds"))
-    boot_started: datetime | None = None if uptime is None else now - timedelta(seconds=uptime)
+    uptime: Optional[float] = as_number(value=document.get("uptime_seconds"))
+    boot_started: Optional[datetime] = None if uptime is None else now - timedelta(seconds=uptime)
     event_rows: object = document.get("events")
     events: list[_Event] = sorted(
         (event for event in (_parse_event(row=row) for row in (event_rows if isinstance(event_rows, list) else [])) if event is not None),
         key=lambda event: event.timestamp,
     )
     incidents: tuple[ErrorIncident, ...] = _build_incidents(events=events, current_boot=current_boot, now=now)
-    counters: tuple[MemoryCounter, ...] | None = _counter_rows(rows=document.get("edac"))
+    counters: Optional[tuple[MemoryCounter, ...]] = _counter_rows(rows=document.get("edac"))
     persisted_corrected, persisted_uncorrected, persisted_mce = _ras_summary(text=as_text(value=document.get("ras_summary")))
     level, findings = _summarize(
         incidents=incidents, counters=counters, persisted_uncorrected=persisted_uncorrected, persisted_corrected=persisted_corrected

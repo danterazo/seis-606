@@ -4,10 +4,12 @@ import subprocess
 import threading
 from collections.abc import Sequence
 from datetime import UTC, datetime
-from typing import Any
+from pathlib import Path
+from typing import Any, Optional
 from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 
+import pytest
 import server
 from homelab_dashboard.activity_log import ActivityLog
 from homelab_dashboard.config import Settings
@@ -44,7 +46,7 @@ def test_dashboard_snapshot_includes_label_and_node_counts() -> None:
     assert snapshot["nodes"][0]["workload_count"] == 2
 
 
-def test_dev_version_reports_web_asset_changes_without_server_restart(tmp_path: Any, monkeypatch: Any) -> None:
+def test_dev_version_reports_web_asset_changes_without_server_restart(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     class UnavailablePve:
         def fetch(self) -> ClusterSnapshot:
             raise StatusSourceError("PVE unavailable")
@@ -85,7 +87,7 @@ def test_dev_version_reports_web_asset_changes_without_server_restart(tmp_path: 
 def test_devices_endpoint_is_independent_of_pve_and_can_force_refresh() -> None:
     calls: list[Sequence[str]] = []
 
-    def runner(command: Sequence[str], *, timeout: float, stdin: str | None = None) -> "subprocess.CompletedProcess[str]":
+    def runner(command: Sequence[str], *, timeout: float, stdin: Optional[str] = None) -> "subprocess.CompletedProcess[str]":
         calls.append(command)
         return subprocess.CompletedProcess(args=command, returncode=0, stdout="0 aa:bb:cc:dd:ee:ff 192.168.10.2 saru *", stderr="")
 
@@ -123,7 +125,7 @@ def test_devices_endpoint_is_independent_of_pve_and_can_force_refresh() -> None:
         thread.join(timeout=5)
 
 
-def test_activity_log_records_access_without_payload_and_can_be_cleared(tmp_path: Any) -> None:
+def test_activity_log_records_access_without_payload_and_can_be_cleared(tmp_path: Path) -> None:
     class UnavailablePve:
         def fetch(self) -> ClusterSnapshot:
             raise StatusSourceError("PVE unavailable")
@@ -192,7 +194,7 @@ def test_activity_log_records_access_without_payload_and_can_be_cleared(tmp_path
 def test_reboot_endpoint_checks_origin_and_validates_commands_before_ssh() -> None:
     calls: list[Sequence[str]] = []
 
-    def runner(command: Sequence[str], *, timeout: float, stdin: str | None = None) -> "subprocess.CompletedProcess[str]":
+    def runner(command: Sequence[str], *, timeout: float, stdin: Optional[str] = None) -> "subprocess.CompletedProcess[str]":
         calls.append(command)
         return subprocess.CompletedProcess(args=command, returncode=0, stdout="", stderr="")
 
