@@ -91,6 +91,13 @@ def test_healthy_pool() -> None:
     assert (pool.size_bytes, pool.dataset_available_bytes) == (1000, 400)
 
 
+@pytest.mark.parametrize(argnames=("scan", "expected"), argvalues=[("scrub", "Scrub Running"), ("resilver", "Resilver Running")])
+def test_pool_scan_in_progress_is_capitalized(scan: str, expected: str) -> None:
+    status: str = HEALTHY_STATUS.replace("scan: scrub repaired 0B in 00:10:00 with 0 errors on Sun", f"scan: {scan} in progress")
+    pool = parse_storage(document={"pools": [{"name": "rpool", "health": "ONLINE", "status": status}]}).pools[0]
+    assert pool.scan == expected
+
+
 def test_pool_problems() -> None:
     status: str = HEALTHY_STATUS.replace("rpool       ONLINE       0     0     0", "rpool       ONLINE       0     0     3").replace(
         "No known data errors", "Permanent errors have been detected"

@@ -178,7 +178,7 @@ def _pool_scan(*, status: str) -> str | None:
             return None
         label: str = kind.group(1).capitalize()
         if "in progress" in line:
-            return f"{label} running"
+            return f"{label} Running"
         when: re.Match[str] | None = re.search(r"\b(?:on|since) \w{3} (\w{3})\s+(\d+)", line)
         return label if when is None else f"{label} {when.group(1)} {when.group(2)}"
     return None
