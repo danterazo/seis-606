@@ -526,7 +526,7 @@ function timelineEntries(node, errors) {
   for (const boot of errors.boots) {
     entries.push({
       time: boot.first_seen,
-      label: "Boot started (uptime reset)",
+      label: "Boot (Uptime Reset)",
       detail: boot.current ? "Current boot" : "Earlier boot",
       level: "info",
       historical: !boot.current,
