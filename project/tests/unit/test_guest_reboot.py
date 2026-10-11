@@ -72,7 +72,9 @@ def test_missing_or_moved_guests_never_run_ssh(vmid: int, node: str) -> None:
         service.reboot(vmid=vmid, node_name=node)
 
 
-@pytest.mark.parametrize(argnames=("guest_state", "node_state"), argvalues=[(GuestState.STOPPED, NodeState.ONLINE), (GuestState.RUNNING, NodeState.OFFLINE)])
+@pytest.mark.parametrize(
+    argnames=("guest_state", "node_state"), argvalues=[(GuestState.STOPPED, NodeState.ONLINE), (GuestState.RUNNING, NodeState.OFFLINE)]
+)
 def test_unavailable_guests_never_run_ssh(guest_state: GuestState, node_state: NodeState) -> None:
     service = GuestRebooter(source=FakeSource(guest_state=guest_state, node_state=node_state), runner=forbidden_runner)
     with pytest.raises(expected_exception=ValueError, match="Only running"):

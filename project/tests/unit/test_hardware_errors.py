@@ -93,7 +93,9 @@ def test_earlier_boot_incidents_are_marked_historical_and_recurrence_spans_boots
 
 def test_cpu_internal_parity_reports_keep_cpu_bank_and_raw_status() -> None:
     message: str = "bank=0 status=90000040000f0005 Internal parity error Corrected_error cpu=5 socketid=0"
-    result: HardwareErrors = parse_hardware_errors(document=document(*(event(message=message, minute=minute, source="rasdaemon") for minute in range(3))))
+    result: HardwareErrors = parse_hardware_errors(
+        document=document(*(event(message=message, minute=minute, source="rasdaemon") for minute in range(3)))
+    )
     (incident,) = result.incidents
     assert incident.category is ErrorCategory.CPU_MCE and incident.classification is ErrorClass.CORRECTED
     assert dict(incident.fields).items() >= {"cpu": "5", "bank": "0", "status": "0x90000040000f0005", "socket": "0"}.items()
