@@ -484,6 +484,9 @@ const categoryLabel = (category) =>
     category
   ];
 
+/** @param {string} text */
+const sentenceCase = (text) => text.charAt(0).toUpperCase() + text.slice(1);
+
 /** Hardware errors, boots and currently flagged storage in one time-ordered list; nothing here asserts a cause. @param {PveNode} node @param {HardwareErrors} errors */
 function timelineEntries(node, errors) {
   /** @type {{ time: string | null, label: string, detail: string, level: HealthLevel | "info", historical: boolean }[]} */
@@ -575,7 +578,12 @@ function renderHardwareErrorsDialog(node) {
       el("td", { text: `${categoryLabel(incident.category)} · ${incident.classification}` }),
       el("td", {}, [
         el("div", { text: incident.title }),
-        el("small", { text: [...incident.recurrence, ...incident.fields.map(([name, value]) => `${name}=${value}`)].join(" · ") }),
+        el("small", {
+          text: [
+            ...incident.recurrence.map(sentenceCase),
+            ...incident.fields.map(([name, value]) => `${sentenceCase(name.replaceAll("_", " "))}: ${value}`),
+          ].join(" · "),
+        }),
         el("details", {}, [
           el("summary", { text: `Raw records (latest ${incident.raw.length} of ${incident.count})` }),
           el("pre", {
