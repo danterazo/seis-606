@@ -31,7 +31,6 @@ body {
   margin: 0;
   min-height: 100vh;
   background:
-    radial-gradient(48% 38% at 80% 49%, rgba(255, 132, 208, 0.62), transparent 76%),
     radial-gradient(44% 38% at 20% 60%, rgba(116, 255, 189, 0.46), transparent 74%),
     radial-gradient(120% 60% at 50% 105%, #60c849 0%, #93dc67 22%, transparent 55%),
     linear-gradient(180deg, #269de5 0%, #47b9e9 29%, #76d8d8 63%, #c5eafa 100%);
