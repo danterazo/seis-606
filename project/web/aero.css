@@ -87,13 +87,55 @@ button {
   opacity: 0.4;
   background: radial-gradient(ellipse at 50% 100%, rgba(200, 255, 179, 0.62), transparent 68%);
 }
+.haze {
+  position: absolute;
+  z-index: 0;
+  width: 86vw;
+  height: 27vh;
+  border-radius: 50%;
+  opacity: 0.5;
+  background: linear-gradient(
+    112deg,
+    transparent 4%,
+    var(--coral-mint) 26%,
+    rgba(118, 232, 224, 0.44) 45%,
+    var(--coral-lilac) 66%,
+    var(--coral-pink) 80%,
+    transparent 98%
+  );
+  filter: blur(26px);
+  mask-image: radial-gradient(ellipse at center, #000 14%, transparent 76%);
+  animation: haze-drift 30s ease-in-out infinite alternate;
+}
+.haze-one {
+  top: 3%;
+  left: -18%;
+}
+.haze-two {
+  top: 24%;
+  right: -22%;
+  width: 68vw;
+  height: 23vh;
+  opacity: 0.4;
+  background: linear-gradient(
+    248deg,
+    transparent 5%,
+    var(--coral-pink) 24%,
+    var(--coral-lilac) 46%,
+    rgba(118, 232, 224, 0.42) 65%,
+    var(--coral-mint) 82%,
+    transparent 97%
+  );
+  animation-delay: -13s;
+  animation-duration: 34s;
+}
 .coral {
   position: absolute;
-  bottom: -42px;
-  left: -28px;
-  width: clamp(280px, 32vw, 430px);
-  height: clamp(240px, 38vh, 410px);
-  opacity: 0.58;
+  bottom: -18px;
+  left: -48px;
+  width: clamp(340px, 42vw, 560px);
+  height: clamp(310px, 48vh, 500px);
+  opacity: 0.68;
   filter: drop-shadow(0 0 12px var(--coral-glow));
   transform-origin: bottom center;
   animation: coral-sway 7s ease-in-out infinite alternate;
@@ -111,22 +153,45 @@ button {
   --coral-glow: rgba(208, 126, 255, 0.48);
   right: -24px;
   left: auto;
-  width: clamp(250px, 29vw, 390px);
-  height: clamp(220px, 34vh, 360px);
-  opacity: 0.52;
+  width: clamp(310px, 38vw, 510px);
+  height: clamp(280px, 43vh, 450px);
+  opacity: 0.64;
   animation-delay: -3.4s;
   animation-duration: 8.5s;
 }
+.coral-base {
+  position: absolute;
+  z-index: 0;
+  bottom: -1%;
+  left: 4%;
+  width: 92%;
+  height: 38%;
+  border-radius: 56% 44% 16% 13% / 72% 68% 14% 12%;
+  background:
+    radial-gradient(circle at 14% 29%, rgba(255, 255, 255, 0.66) 0 2px, transparent 4px),
+    radial-gradient(circle at 31% 44%, rgba(255, 240, 255, 0.62) 0 2px, transparent 4px),
+    radial-gradient(circle at 54% 25%, rgba(255, 255, 255, 0.7) 0 2px, transparent 4px),
+    radial-gradient(circle at 76% 38%, rgba(255, 241, 255, 0.56) 0 2px, transparent 4px),
+    radial-gradient(circle at 88% 19%, rgba(255, 255, 255, 0.62) 0 2px, transparent 4px),
+    radial-gradient(circle at 42% 16%, rgba(255, 235, 252, 0.58) 0 2px, transparent 4px),
+    linear-gradient(110deg, var(--coral-shadow), var(--coral-mid) 48%, var(--coral-highlight));
+  box-shadow: inset 0 3px 8px rgba(255, 255, 255, 0.42), 0 0 16px var(--coral-glow);
+}
 .coral-branch {
   position: absolute;
-  bottom: 0;
+  z-index: 1;
+  bottom: var(--branch-bottom, 0%);
   left: var(--branch-position);
-  width: var(--branch-width, 12px);
+  width: var(--branch-width, 7px);
   height: var(--branch-height);
   border: 1px solid rgba(255, 255, 255, 0.28);
-  border-radius: 999px;
-  background: linear-gradient(90deg, var(--coral-shadow), var(--coral-mid) 55%, var(--coral-highlight));
-  box-shadow: inset 1px 0 3px rgba(255, 255, 255, 0.44), 0 0 8px var(--coral-glow);
+  border-radius: 56% 44% 38% 62% / 12% 16% 0 0;
+  background:
+    radial-gradient(ellipse at 50% 2px, var(--coral-highlight) 0 2px, transparent 5px),
+    linear-gradient(90deg, var(--coral-shadow), var(--coral-mid) 55%, var(--coral-highlight));
+  box-shadow:
+    inset 1px 0 3px rgba(255, 255, 255, 0.44),
+    0 0 8px var(--coral-glow);
   transform: rotate(var(--branch-lean));
   transform-origin: bottom center;
   animation: coral-branch-sway 4.8s ease-in-out infinite alternate;
@@ -134,12 +199,14 @@ button {
 .coral-branch::before,
 .coral-branch::after {
   position: absolute;
-  top: 20%;
-  width: 8px;
-  height: 46%;
-  border-radius: 999px;
+  top: 18%;
+  width: 6px;
+  height: 48%;
+  border-radius: 58% 42% 80% 20%;
   content: "";
-  background: linear-gradient(90deg, var(--coral-shadow), var(--coral-mid) 55%, var(--coral-highlight));
+  background:
+    radial-gradient(ellipse at 50% 2px, var(--coral-highlight) 0 2px, transparent 5px),
+    linear-gradient(90deg, var(--coral-shadow), var(--coral-mid) 55%, var(--coral-highlight));
   box-shadow: inset 1px 0 2px rgba(255, 255, 255, 0.38);
 }
 .coral-branch::before {
@@ -153,36 +220,90 @@ button {
   transform-origin: bottom center;
 }
 .branch-one {
-  --branch-position: 14%;
-  --branch-width: 10px;
-  --branch-height: 57%;
-  --branch-lean: -26deg;
+  --branch-position: 4%;
+  --branch-bottom: 20%;
+  --branch-width: 6px;
+  --branch-height: 45%;
+  --branch-lean: -35deg;
 }
 .branch-two {
-  --branch-position: 31%;
-  --branch-height: 76%;
-  --branch-lean: -14deg;
+  --branch-position: 13%;
+  --branch-bottom: 7%;
+  --branch-width: 7px;
+  --branch-height: 61%;
+  --branch-lean: -27deg;
   animation-delay: -1.2s;
 }
 .branch-three {
-  --branch-position: 48%;
-  --branch-width: 15px;
-  --branch-height: 92%;
-  --branch-lean: 0deg;
+  --branch-position: 22%;
+  --branch-bottom: 25%;
+  --branch-width: 6px;
+  --branch-height: 75%;
+  --branch-lean: -19deg;
   animation-delay: -2.1s;
 }
 .branch-four {
-  --branch-position: 66%;
-  --branch-height: 72%;
-  --branch-lean: 15deg;
+  --branch-position: 31%;
+  --branch-bottom: 11%;
+  --branch-height: 87%;
+  --branch-lean: -12deg;
   animation-delay: -0.7s;
 }
 .branch-five {
-  --branch-position: 83%;
-  --branch-width: 9px;
-  --branch-height: 54%;
-  --branch-lean: 28deg;
+  --branch-position: 40%;
+  --branch-bottom: 3%;
+  --branch-width: 7px;
+  --branch-height: 72%;
+  --branch-lean: -7deg;
   animation-delay: -2.8s;
+}
+.branch-six {
+  --branch-position: 49%;
+  --branch-bottom: 12%;
+  --branch-width: 9px;
+  --branch-height: 98%;
+  --branch-lean: 0deg;
+  animation-delay: -1.8s;
+}
+.branch-seven {
+  --branch-position: 58%;
+  --branch-bottom: 23%;
+  --branch-width: 7px;
+  --branch-height: 84%;
+  --branch-lean: 8deg;
+  animation-delay: -3.1s;
+}
+.branch-eight {
+  --branch-position: 67%;
+  --branch-bottom: 5%;
+  --branch-width: 6px;
+  --branch-height: 72%;
+  --branch-lean: 15deg;
+  animation-delay: -0.9s;
+}
+.branch-nine {
+  --branch-position: 76%;
+  --branch-bottom: 18%;
+  --branch-width: 7px;
+  --branch-height: 79%;
+  --branch-lean: 22deg;
+  animation-delay: -2.5s;
+}
+.branch-ten {
+  --branch-position: 85%;
+  --branch-bottom: 8%;
+  --branch-width: 6px;
+  --branch-height: 63%;
+  --branch-lean: 29deg;
+  animation-delay: -1.4s;
+}
+.branch-eleven {
+  --branch-position: 94%;
+  --branch-bottom: 21%;
+  --branch-width: 5px;
+  --branch-height: 48%;
+  --branch-lean: 36deg;
+  animation-delay: -3.3s;
 }
 .bubble {
   position: absolute;
@@ -722,6 +843,11 @@ button {
 @keyframes coral-sway {
   to {
     transform: rotate(4deg) translateY(-4px);
+  }
+}
+@keyframes haze-drift {
+  to {
+    transform: translate3d(10vw, 4vh, 0) rotate(7deg) scaleX(1.12);
   }
 }
 @keyframes coral-branch-sway {
