@@ -61,7 +61,9 @@ class GuestRebooter:
                 raise StatusSourceError(f"The {verb} command timed out. It may still be running; check the guest before retrying.") from error
             if completed.returncode != 0:
                 raise StatusSourceError(
-                    explain_ssh_failure(stderr=completed.stderr, destination=target.destination, action="Rebooting guest" if verb == "reboot" else "Starting guest")
+                    explain_ssh_failure(
+                        stderr=completed.stderr, destination=target.destination, action="Rebooting guest" if verb == "reboot" else "Starting guest"
+                    )
                 )
         finally:
             self._lock.release()

@@ -306,7 +306,12 @@ function tagChip(tag, guest) {
     chip.append(
       svg(
         "svg",
-        { viewBox: `${-icon.pad} ${-icon.pad} ${icon.box + 2 * icon.pad} ${icon.box + 2 * icon.pad}`, fill: "currentColor", "fill-rule": "evenodd", "aria-hidden": "true" },
+        {
+          viewBox: `${-icon.pad} ${-icon.pad} ${icon.box + 2 * icon.pad} ${icon.box + 2 * icon.pad}`,
+          fill: "currentColor",
+          "fill-rule": "evenodd",
+          "aria-hidden": "true",
+        },
         icon.paths.map((d) => svg("path", { d })),
       ),
     );
@@ -344,9 +349,11 @@ function statePill(state, label = stateLabel(state)) {
 
 /** Status as just the colored dot; the state name is in the tooltip. @param {string} state */
 function stateDot(state) {
-  return el("span", { className: `pill pill-${state} state-dot`, attrs: { title: stateLabel(state), role: "img", "aria-label": stateLabel(state) } }, [
-    el("i", { className: "orb", attrs: { "aria-hidden": "true" } }),
-  ]);
+  return el(
+    "span",
+    { className: `pill pill-${state} state-dot`, attrs: { title: stateLabel(state), role: "img", "aria-label": stateLabel(state) } },
+    [el("i", { className: "orb", attrs: { "aria-hidden": "true" } })],
+  );
 }
 
 /** Percent of total memory held by ZFS ARC, capped at what is in use; Proxmox counts ARC as used, not cached. @param {PveNode} node @returns {number | null} */
@@ -1249,7 +1256,12 @@ async function runGuestAction(vmid, nodeName, verb) {
     /** @type {unknown} */
     const payload = await response.json();
     if (!response.ok) throw new Error(errorMessage(payload));
-    guestActions.set(vmid, { pending: false, message: `${verb === "start" ? "Start" : "Reboot"} command submitted.`, error: false, retryAt: Date.now() + 30_000 });
+    guestActions.set(vmid, {
+      pending: false,
+      message: `${verb === "start" ? "Start" : "Reboot"} command submitted.`,
+      error: false,
+      retryAt: Date.now() + 30_000,
+    });
     void refresh({ force: true });
   } catch (error) {
     guestActions.set(vmid, {

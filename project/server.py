@@ -125,7 +125,9 @@ class DashboardHandler(SimpleHTTPRequestHandler):
         except StatusSourceError as error:
             self._send_json(status=HTTPStatus.SERVICE_UNAVAILABLE, payload={"error": str(error)})
         else:
-            self._send_json(status=HTTPStatus.OK, payload={"message": "Reboot command submitted." if verb == "reboot" else "Start command submitted."})
+            self._send_json(
+                status=HTTPStatus.OK, payload={"message": "Reboot command submitted." if verb == "reboot" else "Start command submitted."}
+            )
 
     def _is_local_same_origin_request(self, *, action: str) -> bool:
         host: str = self.headers.get("Host", "")

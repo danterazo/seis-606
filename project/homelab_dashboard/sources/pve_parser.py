@@ -23,13 +23,15 @@ _FALLBACK_PREFIX: Final[dict[GuestKind, str]] = {GuestKind.VM: "VM", GuestKind.C
 _HEX_COLOR: Final[re.Pattern[str]] = re.compile(r"[0-9a-fA-F]{6}")
 # Only these tags are shown, in this order; add a row to track another. Colors apply when the Proxmox web UI has none for the tag.
 TRACKED_TAGS: Final[tuple[TrackedTag, ...]] = (
-    TrackedTag(name="prod", letter="P", default_color="#d64545"),
-    TrackedTag(name="dev", letter="D", default_color="#2e9e4f"),
     TrackedTag(name="docker", letter="K", default_color="#2b7fd6"),
     TrackedTag(name="gpu", letter="G", default_color="#8e55c9"),
     TrackedTag(name="primary", letter="I", default_color="#0f8f94"),
     TrackedTag(name="secondary", letter="II", default_color="#a3174f"),
 )
+# Environment comes from the guest's resource pool, not from tags: members of this pool are prod, everything else is dev.
+PROD_POOL: Final[str] = "prod"
+PROD_TAG: Final[TrackedTag] = TrackedTag(name="prod", letter="P", default_color="#d64545")
+DEV_TAG: Final[TrackedTag] = TrackedTag(name="dev", letter="D", default_color="#2e9e4f")
 _TRACKED_BY_NAME: Final[dict[str, TrackedTag]] = {tracked.name: tracked for tracked in TRACKED_TAGS}
 _TRACKED_ORDER: Final[dict[str, int]] = {tracked.name: position for position, tracked in enumerate(TRACKED_TAGS)}
 
@@ -58,17 +60,16 @@ def _tag_style_colors(*, cluster_options: Optional[JsonObject]) -> dict[str, tup
 
 
 def _parse_tags(*, row: JsonObject, colors: Mapping[str, tuple[str, Optional[str]]]) -> tuple[GuestTag, ...]:
+    environment: TrackedTag = PROD_TAG if str(row.get("pool") or "").lower() == PROD_POOL else DEV_TAG
     names: list[str] = sorted(
         (name for name in re.split(r"[;, ]+", str(row.get("tags") or "")) if name.lower() in _TRACKED_ORDER),
         key=lambda name: _TRACKED_ORDER[name.lower()],
     )
+    tracked_tags: list[TrackedTag] = [environment, *(_TRACKED_BY_NAME[name.lower()] for name in names)]
     tags: list[GuestTag] = []
-    for name in names:
-        tracked: Optional[TrackedTag] = _TRACKED_BY_NAME.get(name.lower())
-        if tracked is None:
-            continue
+    for tracked in tracked_tags:
         background, foreground = colors.get(tracked.name, (tracked.default_color, None))
-        tags.append(GuestTag(name=name, letter=tracked.letter, color=background, text_color=foreground or _contrast_text(color=background)))
+        tags.append(GuestTag(name=tracked.name, letter=tracked.letter, color=background, text_color=foreground or _contrast_text(color=background)))
     return tuple(tags)
 
 
