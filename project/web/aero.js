@@ -230,7 +230,10 @@ const TAG_ICONS = {
 const GPU_BRANDS = [
   {
     pattern: /nvidia/i,
-    paths: ["M1.5 8c2-3.4 4.3-5 6.7-4.8 2.2.2 4.2 1.8 6.3 4.8-2.1 3-4.1 4.6-6.3 4.8-2.4.2-4.7-1.4-6.7-4.8zM8.3 5.4a2.6 2.6 0 1 0 0 5.2 2.6 2.6 0 0 0 0-5.2z", "M8.3 6.9a1.1 1.1 0 1 1 0 2.2 1.1 1.1 0 0 1 0-2.2z"],
+    paths: [
+      "M1.5 8c2-3.4 4.3-5 6.7-4.8 2.2.2 4.2 1.8 6.3 4.8-2.1 3-4.1 4.6-6.3 4.8-2.4.2-4.7-1.4-6.7-4.8zM8.3 5.4a2.6 2.6 0 1 0 0 5.2 2.6 2.6 0 0 0 0-5.2z",
+      "M8.3 6.9a1.1 1.1 0 1 1 0 2.2 1.1 1.1 0 0 1 0-2.2z",
+    ],
   },
   {
     pattern: /radeon|\bamd\b/i,
@@ -287,7 +290,14 @@ function tagChip(tag, guest) {
     attrs: { style: `background: ${background}; color: ${foreground}`, title: tag.name, "aria-label": `Tag ${tag.name}`, role: "img" },
   });
   if (paths === undefined) chip.textContent = tag.letter;
-  else chip.append(svg("svg", { viewBox: "0 0 16 16", fill: "currentColor", "fill-rule": "evenodd", "aria-hidden": "true" }, paths.map((d) => svg("path", { d }))));
+  else
+    chip.append(
+      svg(
+        "svg",
+        { viewBox: "0 0 16 16", fill: "currentColor", "fill-rule": "evenodd", "aria-hidden": "true" },
+        paths.map((d) => svg("path", { d })),
+      ),
+    );
   return chip;
 }
 
