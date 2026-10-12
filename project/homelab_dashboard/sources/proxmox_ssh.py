@@ -27,8 +27,13 @@ SSH_OPTIONS: Final[tuple[str, ...]] = (
 # The documents arrive over one connection; their order matters to the decoder.
 API_PATHS: Final[tuple[str, ...]] = ("/cluster/resources", "/cluster/status")
 # Without quorum Proxmox reports no figures for any node, so the queried node's own status is fetched too (best effort).
-LOCAL_STATUS_COMMAND: Final[str] = "{ pvesh get /nodes/$(hostname -s)/status --output-format json || true; }"
-REMOTE_COMMAND: Final[str] = " && ".join([*(f"pvesh get {path} --output-format json" for path in API_PATHS), LOCAL_STATUS_COMMAND])
+# Failures print `null` so each optional document keeps its position.
+LOCAL_STATUS_COMMAND: Final[str] = "{ pvesh get /nodes/$(hostname -s)/status --output-format json || echo null; }"
+# Holds the tag colors configured in the Proxmox web UI.
+CLUSTER_OPTIONS_COMMAND: Final[str] = "{ pvesh get /cluster/options --output-format json || echo null; }"
+REMOTE_COMMAND: Final[str] = " && ".join(
+    [*(f"pvesh get {path} --output-format json" for path in API_PATHS), LOCAL_STATUS_COMMAND, CLUSTER_OPTIONS_COMMAND]
+)
 
 _FAILURE_MESSAGES: Final[tuple[tuple[str, str], ...]] = (
     ("host key verification failed", "{target}'s SSH host key is not in this user's known_hosts file."),
@@ -97,13 +102,13 @@ def _decode_arrays(*, text: str, count: int) -> list[list[JsonObject]]:
     return arrays
 
 
-def _decode_local_status(*, text: str) -> Optional[JsonObject]:
-    """The third document, if the node returned one; anything unreadable is simply absent."""
+def _decode_optional(*, text: str, position: int) -> Optional[JsonObject]:
+    """The document at `position` (zero-based), if present; anything unreadable is simply absent."""
     decoder: json.JSONDecoder = json.JSONDecoder()
     index: int = 0
     document: object = None
     try:
-        for _ in range(len(API_PATHS) + 1):
+        for _ in range(position + 1):
             while index < len(text) and text[index].isspace():
                 index += 1
             document, index = decoder.raw_decode(text, index)
@@ -137,5 +142,6 @@ class ProxmoxSshSource:
             fetched_at=self.clock(),
             resources=resources,
             cluster_status=cluster_status,
-            local_status=_decode_local_status(text=completed.stdout),
+            local_status=_decode_optional(text=completed.stdout, position=len(API_PATHS)),
+            cluster_options=_decode_optional(text=completed.stdout, position=len(API_PATHS) + 1),
         )

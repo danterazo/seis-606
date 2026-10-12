@@ -53,6 +53,23 @@ class Resources:
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
+class TrackedTag:
+    name: str
+    letter: str
+    default_color: str
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class GuestTag:
+    """Colors are 6-digit hex with a leading #."""
+
+    name: str
+    letter: str
+    color: str
+    text_color: str
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
 class Guest:
     vmid: int
     name: str
@@ -60,6 +77,7 @@ class Guest:
     kind: GuestKind
     state: GuestState
     resources: Resources
+    tags: tuple[GuestTag, ...] = ()
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)

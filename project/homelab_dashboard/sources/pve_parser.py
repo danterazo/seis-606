@@ -1,9 +1,10 @@
+import re
 from collections import defaultdict
 from collections.abc import Mapping, Sequence
 from datetime import datetime
 from typing import Final, Optional
 
-from homelab_dashboard.models import ClusterSnapshot, Guest, GuestKind, GuestState, Node, NodeState, Resources
+from homelab_dashboard.models import ClusterSnapshot, Guest, GuestKind, GuestState, GuestTag, Node, NodeState, Resources, TrackedTag
 from homelab_dashboard.sources.json_values import as_integer, as_number, as_text
 
 JsonObject = Mapping[str, object]
@@ -19,6 +20,52 @@ _GUEST_STATES: Final[dict[str, GuestState]] = {
 _FALLBACK_PREFIX: Final[dict[GuestKind, str]] = {GuestKind.VM: "VM", GuestKind.CONTAINER: "LXC"}
 
 
+_HEX_COLOR: Final[re.Pattern[str]] = re.compile(r"[0-9a-fA-F]{6}")
+# Only these tags are shown; add a row to track another. Colors apply when the Proxmox web UI has none for the tag.
+TRACKED_TAGS: Final[tuple[TrackedTag, ...]] = (
+    TrackedTag(name="prod", letter="P", default_color="#d64545"),
+    TrackedTag(name="dev", letter="D", default_color="#2e9e4f"),
+    TrackedTag(name="docker", letter="K", default_color="#2b7fd6"),
+    TrackedTag(name="gpu", letter="G", default_color="#8e55c9"),
+)
+_TRACKED_BY_NAME: Final[dict[str, TrackedTag]] = {tracked.name: tracked for tracked in TRACKED_TAGS}
+
+
+def _contrast_text(*, color: str) -> str:
+    red, green, blue = (int(color[index : index + 2], 16) for index in (1, 3, 5))
+    return "#000000" if (red * 299 + green * 587 + blue * 114) / 1000 > 150 else "#ffffff"
+
+
+def _tag_style_colors(*, cluster_options: Optional[JsonObject]) -> dict[str, tuple[str, Optional[str]]]:
+    """Reads `tag-style` (`color-map=name:bg[:fg];...`), which pvesh may return as a string or an object."""
+    style: object = cluster_options.get("tag-style") if cluster_options is not None else None
+    color_map: object = None
+    if isinstance(style, Mapping):
+        color_map = style.get("color-map")
+    elif isinstance(style, str):
+        color_map = next((part[len("color-map=") :] for part in style.split(",") if part.startswith("color-map=")), None)
+    entries: list[str] = [str(item) for item in color_map] if isinstance(color_map, list) else str(color_map or "").split(";")
+    colors: dict[str, tuple[str, Optional[str]]] = {}
+    for entry in entries:
+        name, *shades = entry.strip().split(":")
+        if name and shades and _HEX_COLOR.fullmatch(shades[0]):
+            foreground: Optional[str] = f"#{shades[1]}" if len(shades) > 1 and _HEX_COLOR.fullmatch(shades[1]) else None
+            colors[name.lower()] = (f"#{shades[0].lower()}", foreground.lower() if foreground else None)
+    return colors
+
+
+def _parse_tags(*, row: JsonObject, colors: Mapping[str, tuple[str, Optional[str]]]) -> tuple[GuestTag, ...]:
+    names: list[str] = [name for name in re.split(r"[;, ]+", str(row.get("tags") or "")) if name]
+    tags: list[GuestTag] = []
+    for name in names:
+        tracked: Optional[TrackedTag] = _TRACKED_BY_NAME.get(name.lower())
+        if tracked is None:
+            continue
+        background, foreground = colors.get(tracked.name, (tracked.default_color, None))
+        tags.append(GuestTag(name=name, letter=tracked.letter, color=background, text_color=foreground or _contrast_text(color=background)))
+    return tuple(tags)
+
+
 def _resources(*, row: JsonObject) -> Resources:
     return Resources(
         cpu_ratio=as_number(value=row.get("cpu")),
@@ -28,7 +75,7 @@ def _resources(*, row: JsonObject) -> Resources:
     )
 
 
-def _parse_guest(*, row: JsonObject) -> Optional[Guest]:
+def _parse_guest(*, row: JsonObject, tag_colors: Mapping[str, tuple[str, Optional[str]]]) -> Optional[Guest]:
     kind: Optional[GuestKind] = _GUEST_KINDS.get(str(row.get("type")))
     vmid: Optional[int] = as_integer(value=row.get("vmid"))
     node: Optional[str] = as_text(value=row.get("node"))
@@ -41,6 +88,7 @@ def _parse_guest(*, row: JsonObject) -> Optional[Guest]:
         kind=kind,
         state=_GUEST_STATES.get(str(row.get("status")), GuestState.UNKNOWN),
         resources=_resources(row=row),
+        tags=_parse_tags(row=row, colors=tag_colors),
     )
 
 
@@ -97,6 +145,7 @@ def parse_snapshot(
     resources: Sequence[JsonObject],
     cluster_status: Sequence[JsonObject],
     local_status: Optional[JsonObject] = None,
+    cluster_options: Optional[JsonObject] = None,
 ) -> ClusterSnapshot:
     addresses: dict[str, str] = _node_addresses(cluster_status=cluster_status)
     # Without quorum the resources list marks even the reachable node "unknown"; the cluster status still knows it is up.
@@ -104,9 +153,10 @@ def parse_snapshot(
     local_names: set[str] = {str(row.get("name")) for row in cluster_status if row.get("type") == "node" and row.get("local") == 1}
     local_resources: Optional[Resources] = _local_resources(status=local_status)
 
+    tag_colors: dict[str, tuple[str, Optional[str]]] = _tag_style_colors(cluster_options=cluster_options)
     guests_by_node: defaultdict[str, list[Guest]] = defaultdict(list)
     for row in resources:
-        guest: Optional[Guest] = _parse_guest(row=row)
+        guest: Optional[Guest] = _parse_guest(row=row, tag_colors=tag_colors)
         if guest is not None:
             guests_by_node[guest.node].append(guest)
 

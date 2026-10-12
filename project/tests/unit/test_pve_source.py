@@ -72,6 +72,22 @@ def test_fetch_parses_nodes_guests_and_addresses() -> None:
     assert snapshot.fetched_at == FIXED_TIME
 
 
+def test_only_tracked_guest_tags_are_kept_and_use_pve_colors() -> None:
+    resources: list[dict[str, Any]] = [
+        {"type": "node", "node": "cerulean", "status": "online"},
+        {"type": "lxc", "vmid": 201, "node": "cerulean", "name": "dns", "status": "running", "tags": "dev;docker;lab;alt-arch"},
+    ]
+    options: dict[str, Any] = {"tag-style": "color-map=dev:FFFF00;lab:112233:EEEEEE,shape=full"}
+    stdout: str = documents(resources=resources, cluster_status=[]) + "\nnull\n" + json.dumps(options)
+
+    tags = make_source(stdout=stdout).fetch().nodes[0].guests[0].tags
+
+    assert [(tag.name, tag.letter, tag.color, tag.text_color) for tag in tags] == [
+        ("dev", "D", "#ffff00", "#000000"),
+        ("docker", "K", "#2b7fd6", "#ffffff"),
+    ]
+
+
 def test_offline_node_drops_stale_usage_but_keeps_capacity() -> None:
     snapshot = make_source(stdout=documents(resources=RESOURCES, cluster_status=CLUSTER_STATUS)).fetch()
 
@@ -116,7 +132,7 @@ def test_ssh_command_never_prompts_or_relaxes_host_checking() -> None:
     assert command[0] == "ssh"
     assert set(SSH_OPTIONS) <= set(command)
     assert "-oStrictHostKeyChecking=yes" in command
-    assert command[-1].count("pvesh get") == 3
+    assert command[-1].count("pvesh get") == 4
 
 
 def test_reachable_node_stays_online_and_keeps_its_figures_without_quorum() -> None:

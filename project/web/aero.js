@@ -3,7 +3,8 @@
 /**
  * @typedef {{ cpu_ratio: number | null, cpu_cores: number | null, memory_used_bytes: number | null, memory_total_bytes: number | null }} Resources
  * @typedef {"running" | "stopped" | "paused" | "unknown"} GuestState
- * @typedef {{ vmid: number, name: string, display_name?: string, node: string, kind: "vm" | "container", state: GuestState, resources: Resources }} Guest
+ * @typedef {{ name: string, letter: string, color: string, text_color: string }} GuestTag
+ * @typedef {{ vmid: number, name: string, display_name?: string, node: string, kind: "vm" | "container", state: GuestState, resources: Resources, tags?: GuestTag[] }} Guest
  * @typedef {{ cpu_model: string | null, cpu_cores: number | null, cpu_threads: number | null, ecc_supported?: boolean | null, zfs_arc_bytes?: number | null, zfs_arc_max_bytes?: number | null, storage?: StorageHealth | null, hardware_errors?: HardwareErrors | null, source: "live" | "expected" | "unknown" }} Hardware
  * @typedef {{ timestamp: string, boot_id: string, source: string, message: string }} RawEvent
  * @typedef {{ category: "ecc_memory" | "cpu_mce" | "page_offline" | "pcie" | "storage_path", classification: "corrected" | "uncorrected" | "unspecified", title: string, level: HealthLevel, count: number, first_seen: string, last_seen: string, last_hour: number, last_day: number, boot_id: string, current_boot: boolean, boots_seen: number, recurrence: string[], fields: [string, string][], raw: RawEvent[] }} ErrorIncident
@@ -34,6 +35,8 @@ const DEVICES_INTERVAL_MS = 10_000;
 const REFRESH_INTERVAL_MS = 1_000;
 const MAX_TOPOLOGY_GUESTS = 12;
 const TOPOLOGY_NAME_LIMIT = 22;
+const TOPOLOGY_TAG_RADIUS = 7;
+const TOPOLOGY_TAG_GAP = 3;
 const BYTES_PER_MIB = 1024 ** 2;
 const BYTES_PER_GIB = 1024 ** 3;
 const SVG_NS = "http://www.w3.org/2000/svg";
@@ -206,6 +209,87 @@ const safeColor = (color) => (color !== undefined && NODE_COLOR_PATTERN.test(col
 
 /** @param {string | undefined} color */
 const colorStyle = (color) => `--node-color: ${safeColor(color)}`;
+
+/** Logos for tags that have one; the rest show their letter. Paths are drawn on a 16x16 grid. */
+const TAG_ICONS = {
+  prod: ["M8 1.6l1.9 4 4.4.6-3.2 3.1.8 4.4L8 11.5l-3.9 2.2.8-4.4L1.7 6.2l4.4-.6z"],
+  dev: ["M5.5 4.2L1.5 8l4 3.8 1-1L3.6 8l2.9-2.8z", "M10.5 4.2l4 3.8-4 3.8-1-1L12.4 8 9.5 5.2z", "M9.3 3l1.2.4-3.8 9.6-1.2-.4z"],
+  docker: [
+    "M1 8.5h12.5c.6-.2 1.1-.7 1.3-1.5-.5-.2-1.1-.1-1.5.2-.1-.8-.6-1.3-1.2-1.7-.4.6-.5 1.3-.3 1.8H1z",
+    "M2.5 6h1.8v1.6H2.5zM4.6 6h1.8v1.6H4.6zM6.7 6h1.8v1.6H6.7zM4.6 4h1.8v1.6H4.6zM6.7 4h1.8v1.6H6.7zM8.8 6h1.8v1.6H8.8z",
+    "M1 9.2c.3 2.6 2.4 4.3 5.7 4.3 3.6 0 6-1.8 6.9-4.3z",
+  ],
+  gpu: [
+    "M4 4h8v8H4zM6 6v4h4V6z",
+    "M5.3 1.5h1.6V4H5.3zM9.1 1.5h1.6V4H9.1zM5.3 12h1.6v2.5H5.3zM9.1 12h1.6v2.5H9.1z",
+    "M1.5 5.3H4v1.6H1.5zM1.5 9.1H4v1.6H1.5zM12 5.3h2.5v1.6H12zM12 9.1h2.5v1.6H12z",
+  ],
+};
+
+/** Simplified brand marks for GPU guests, picked by words in the guest name; the first match wins. */
+const GPU_BRANDS = [
+  {
+    pattern: /nvidia/i,
+    paths: ["M1.5 8c2-3.4 4.3-5 6.7-4.8 2.2.2 4.2 1.8 6.3 4.8-2.1 3-4.1 4.6-6.3 4.8-2.4.2-4.7-1.4-6.7-4.8zM8.3 5.4a2.6 2.6 0 1 0 0 5.2 2.6 2.6 0 0 0 0-5.2z", "M8.3 6.9a1.1 1.1 0 1 1 0 2.2 1.1 1.1 0 0 1 0-2.2z"],
+  },
+  {
+    pattern: /radeon|\bamd\b/i,
+    paths: ["M2 2h8.5l-2.2 2.2H4.2v4.1L2 10.5z", "M14 5.5V14H5.5l2.2-2.2h4.1V7.7z", "M5.6 6.6h3.8v3.8H5.6z"],
+  },
+  {
+    pattern: /intel/i,
+    paths: [
+      "M7.6 2.5a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11zm0 1.7a3.8 3.8 0 1 1 0 7.6 3.8 3.8 0 0 1 0-7.6z",
+      "M12.6 1.8a1.3 1.3 0 1 0 0 2.6 1.3 1.3 0 0 0 0-2.6z",
+    ],
+  },
+];
+
+/** @param {GuestTag} tag @param {Guest} guest @returns {string[] | undefined} */
+function tagPaths(tag, guest) {
+  const key = tag.name.toLowerCase();
+  if (key === "gpu") {
+    const text = `${guest.name} ${guest.display_name ?? ""}`;
+    return GPU_BRANDS.find((brand) => brand.pattern.test(text))?.paths ?? TAG_ICONS.gpu;
+  }
+  return TAG_ICONS[/** @type {keyof typeof TAG_ICONS} */ (key)];
+}
+
+/** @param {Guest} guest @returns {Node[]} */
+function tagChips(guest) {
+  return (guest.tags ?? []).map((tag) => tagChip(tag, guest));
+}
+
+/** Topology pills are SVG, so each tag is a small disc with its logo or letter. @param {GuestTag} tag @param {Guest} guest @param {number} cx @param {number} cy */
+function topologyTag(tag, guest, cx, cy) {
+  const paths = tagPaths(tag, guest);
+  const foreground = NODE_COLOR_PATTERN.test(tag.text_color) ? tag.text_color : "#ffffff";
+  return svg("g", { class: "topo-tag" }, [
+    svg("title", {}, [tag.name]),
+    svg("circle", { cx, cy, r: TOPOLOGY_TAG_RADIUS, fill: safeColor(tag.color) }),
+    paths === undefined
+      ? svgText({ x: cx, y: cy + 3.5, text: tag.letter, className: "topo-tag-letter", fill: foreground })
+      : svg(
+          "g",
+          { transform: `translate(${cx - 6} ${cy - 6}) scale(0.75)`, fill: foreground, "fill-rule": "evenodd" },
+          paths.map((d) => svg("path", { d })),
+        ),
+  ]);
+}
+
+/** Colors come from Proxmox but go into a style attribute, so only plain hex passes. @param {GuestTag} tag @param {Guest} guest */
+function tagChip(tag, guest) {
+  const background = safeColor(tag.color);
+  const foreground = NODE_COLOR_PATTERN.test(tag.text_color) ? tag.text_color : "#ffffff";
+  const paths = tagPaths(tag, guest);
+  const chip = el("span", {
+    className: "guest-tag",
+    attrs: { style: `background: ${background}; color: ${foreground}`, title: tag.name, "aria-label": `Tag ${tag.name}`, role: "img" },
+  });
+  if (paths === undefined) chip.textContent = tag.letter;
+  else chip.append(svg("svg", { viewBox: "0 0 16 16", fill: "currentColor", "fill-rule": "evenodd", "aria-hidden": "true" }, paths.map((d) => svg("path", { d }))));
+  return chip;
+}
 
 /** @param {string} nodeName */
 const colorOfNode = (nodeName) => safeColor(state.snapshot?.nodes.find((node) => node.name === nodeName)?.color);
@@ -885,10 +969,10 @@ function renderOverview(nodes) {
 }
 
 /**
- * @param {{ x: number, y: number, text: string, className: string, anchor?: "start" | "middle" }} args
+ * @param {{ x: number, y: number, text: string, className: string, anchor?: "start" | "middle", fill?: string }} args
  */
-function svgText({ x, y, text, className, anchor = "middle" }) {
-  return svg("text", { x, y, class: className, "text-anchor": anchor }, [text]);
+function svgText({ x, y, text, className, anchor = "middle", fill }) {
+  return svg("text", { x, y, class: className, "text-anchor": anchor, ...(fill === undefined ? {} : { fill }) }, [text]);
 }
 
 /** @param {PveNode[]} nodes */
@@ -953,6 +1037,12 @@ function renderTopology(nodes) {
       const gy = guestTop + guestIndex * (pill.height + pill.gap);
       const kind = guest.kind === "vm" ? "vm" : "lxc";
       const dim = offline || guest.state !== "running";
+      const tags = guest.tags ?? [];
+      const tagStep = TOPOLOGY_TAG_RADIUS * 2 + TOPOLOGY_TAG_GAP;
+      const tagsRight = gx + pill.width - 30;
+      const tagsWidth = tags.length === 0 ? 0 : tags.length * tagStep - TOPOLOGY_TAG_GAP;
+      // About 6.5px per character of name text.
+      const nameLimit = Math.min(TOPOLOGY_NAME_LIMIT, Math.floor((pill.width - pill.badge - 8 - 30 - tagsWidth - 6) / 6.5));
       drawing.push(
         svg("g", { class: `topo-guest topo-${kind}${dim ? " is-dim" : ""}`, style: colorStyle(node.color) }, [
           svg("title", {}, [guestTooltip(guest)]),
@@ -965,10 +1055,14 @@ function renderTopology(nodes) {
           svgText({
             x: gx + pill.badge + 8,
             y: gy + 19.5,
-            text: truncate(guestLabel(guest), TOPOLOGY_NAME_LIMIT),
+            text: truncate(guestLabel(guest), nameLimit),
             className: "topo-guest-name",
             anchor: "start",
           }),
+          ...tags.map((tag, tagIndex) =>
+            topologyTag(tag, guest, tagsRight - TOPOLOGY_TAG_RADIUS - (tags.length - 1 - tagIndex) * tagStep, gy + pill.height / 2),
+          ),
+          ...(tags.length === 0 ? [] : [svg("circle", { class: "topo-tag-sep", cx: tagsRight + 6, cy: gy + pill.height / 2, r: 1.5 })]),
           svg("circle", { class: "topo-led", cx: gx + pill.width - 14, cy: gy + pill.height / 2, r: 4 }),
         ]),
       );
@@ -1078,7 +1172,10 @@ function renderGuests(nodes) {
           el("strong", { className: "guest-name", text: guestLabel(guest), attrs: { title: guestLabel(guest) } }),
           el("div", { className: "guest-state-actions" }, [rebootButton, statePill(guest.state)]),
         ]),
-        el("div", { className: "guest-sub" }, [el("small", { text: `${displayNodeName(guest.node)} · ID ${guest.vmid}` })]),
+        el("div", { className: "guest-sub" }, [
+          el("small", { text: `${displayNodeName(guest.node)} · ID ${guest.vmid}` }),
+          el("div", { className: "guest-tags" }, tagChips(guest)),
+        ]),
         ...(metrics === null
           ? []
           : [
