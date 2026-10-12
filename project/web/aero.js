@@ -383,10 +383,15 @@ function healthBadge(nodeName, level, text, title) {
   });
 }
 
+/** A non-interactive stand-in shown while a probe has not reported yet. @param {string} text */
+function pendingBadge(text) {
+  return el("span", { className: "health-badge health-pending", text, attrs: { title: "Gathering data…", "aria-busy": "true" } });
+}
+
 /** One SMART badge plus one badge per zpool, each coloured by its worst finding. @param {PveNode} node */
 function storageBadges(node) {
   const storage = node.hardware.storage;
-  if (!storage) return [];
+  if (!storage) return node.state === "online" ? [el("div", { className: "storage-badges" }, [pendingBadge("Storage: Checking…")])] : [];
   /** @type {HTMLElement[]} */
   const badges = [];
   if (!storage.smart_available) {
@@ -451,7 +456,7 @@ function storageBadges(node) {
 /** One badge for hardware error evidence, kept apart from the CPU and RAM utilization gauges. @param {PveNode} node */
 function hardwareErrorBadges(node) {
   const errors = node.hardware.hardware_errors;
-  if (!errors) return [];
+  if (!errors) return node.state === "online" ? [el("div", { className: "storage-badges" }, [pendingBadge("HW Errors: Checking…")])] : [];
   const current = errors.incidents.filter((incident) => incident.current_boot && incident.level !== "ok");
   const history = errors.incidents.filter((incident) => !incident.current_boot).length;
   const headline =

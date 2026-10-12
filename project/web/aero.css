@@ -395,6 +395,21 @@ span.health-badge[role="button"] {
   color: #4d5d67;
   background: rgba(236, 244, 248, 0.9);
 }
+.health-pending {
+  color: #4d5d67;
+  background: linear-gradient(90deg, rgba(236, 244, 248, 0.9) 30%, rgba(255, 255, 255, 0.95) 50%, rgba(236, 244, 248, 0.9) 70%) 0 0 / 200% 100%;
+  animation: badge-shimmer 1.4s linear infinite;
+}
+@keyframes badge-shimmer {
+  to {
+    background-position: -200% 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .health-pending {
+    animation: none;
+  }
+}
 #storage-dialog {
   width: min(1100px, calc(100vw - 28px));
 }
