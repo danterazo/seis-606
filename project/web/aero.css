@@ -12,6 +12,7 @@
   --green-deep: #2a8f1f;
   --amber: #f0a21c;
   --red: #e5483d;
+  --bubble-min-size: 26px;
   --font: "Frutiger", "Segoe UI", "Trebuchet MS", "Lucida Grande", "Helvetica Neue", Arial, sans-serif;
   font-family: var(--font);
   color: var(--ink);
@@ -59,9 +60,36 @@ button {
   pointer-events: none;
   overflow: hidden;
   z-index: 0;
+  isolation: isolate;
+}
+.sky::before,
+.sky::after {
+  position: absolute;
+  inset: -30% -20%;
+  content: "";
+  pointer-events: none;
+}
+.sky::before {
+  z-index: -1;
+  opacity: 0.42;
+  background: repeating-conic-gradient(from 200deg at 50% -8%, transparent 0deg 8deg, rgba(255, 255, 255, 0.13) 9deg 10deg, transparent 11deg 18deg);
+  mask-image: linear-gradient(180deg, #000, transparent 72%);
+  animation: caustic-drift 30s ease-in-out infinite alternate;
+}
+.sky::after {
+  z-index: -1;
+  inset: auto -10% -14%;
+  height: 38%;
+  opacity: 0.4;
+  background: radial-gradient(ellipse at 50% 100%, rgba(200, 255, 179, 0.62), transparent 68%);
 }
 .bubble {
   position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1;
+  width: max(var(--bubble-size), var(--bubble-min-size));
+  height: max(var(--bubble-size), var(--bubble-min-size));
   border-radius: 50%;
   background: radial-gradient(
     circle at 30% 28%,
@@ -73,39 +101,300 @@ button {
   box-shadow:
     inset 0 -6px 14px rgba(255, 255, 255, 0.35),
     0 4px 18px rgba(0, 80, 140, 0.18);
-  animation: float 9s ease-in-out infinite;
+  will-change: transform;
+  animation: bubble-bounce-one 150s linear infinite;
 }
 .b1 {
-  width: 120px;
-  height: 120px;
-  left: 3%;
-  top: 62%;
+  --bubble-size: 120px;
+  animation-duration: 162s;
 }
 .b2 {
-  width: 70px;
-  height: 70px;
-  right: 6%;
-  top: 20%;
-  animation-delay: -3s;
+  --bubble-size: 70px;
+  animation-name: bubble-bounce-two;
+  animation-duration: 132s;
+  animation-delay: -13s;
 }
 .b3 {
-  width: 190px;
-  height: 190px;
-  right: 3%;
-  bottom: -50px;
-  animation-delay: -5s;
+  --bubble-size: 190px;
+  animation-name: bubble-bounce-three;
+  animation-duration: 144s;
+  animation-delay: -17s;
   opacity: 0.8;
 }
 .b4 {
-  width: 46px;
-  height: 46px;
-  left: 42%;
-  top: 12%;
-  animation-delay: -7s;
+  --bubble-size: 46px;
+  animation-name: bubble-bounce-two;
+  animation-duration: 114s;
+  animation-delay: -11s;
 }
-@keyframes float {
+.b5 {
+  --bubble-size: 26px;
+  animation-duration: 102s;
+  animation-delay: -5s;
+}
+.b6 {
+  --bubble-size: 38px;
+  animation-name: bubble-bounce-three;
+  animation-duration: 126s;
+  animation-delay: -8s;
+}
+.b7 {
+  --bubble-size: 26px;
+  animation-name: bubble-bounce-two;
+  animation-duration: 90s;
+  animation-delay: -6s;
+}
+.light-shaft {
+  position: absolute;
+  top: -12%;
+  width: 18vw;
+  height: 72%;
+  opacity: 0.18;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.72), transparent 88%);
+  filter: blur(16px);
+  transform: rotate(18deg);
+  transform-origin: top;
+  animation: shaft-sway 22s ease-in-out infinite alternate;
+}
+.shaft-one {
+  left: 18%;
+}
+.shaft-two {
+  right: 14%;
+  width: 12vw;
+  opacity: 0.12;
+  animation-delay: -11s;
+  animation-duration: 28s;
+}
+.fish {
+  position: absolute;
+  z-index: 1;
+  width: 76px;
+  height: 34px;
+  border: 1px solid rgba(255, 255, 255, 0.72);
+  border-radius: 58% 42% 42% 58% / 55% 50% 50% 55%;
+  opacity: 0.78;
+  background:
+    repeating-linear-gradient(100deg, transparent 0 8px, var(--fish-stripe) 9px 12px, transparent 13px 18px),
+    linear-gradient(180deg, var(--fish-top), var(--fish-bottom));
+  box-shadow: inset 0 2px 4px rgba(255, 255, 255, 0.72), 0 4px 12px rgba(0, 77, 125, 0.2);
+  animation: fish-glide 32s linear infinite;
+}
+.fish::before {
+  position: absolute;
+  top: 27%;
+  left: -21%;
+  width: 25%;
+  height: 46%;
+  content: "";
+  background: var(--fish-fin);
+  clip-path: polygon(100% 50%, 0 0, 16% 50%, 0 100%);
+  transform-origin: 100% 50%;
+  animation: tail-beat 0.7s ease-in-out infinite alternate;
+}
+.fish::after {
+  position: absolute;
+  top: 31%;
+  right: 12%;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  content: "";
+  background: #17465b;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.68);
+}
+.fish-dorsal,
+.fish-pectoral,
+.fish-gill {
+  position: absolute;
+  pointer-events: none;
+}
+.fish-dorsal {
+  top: -24%;
+  left: 33%;
+  width: 37%;
+  height: 42%;
+  background: var(--fish-fin);
+  clip-path: polygon(0 100%, 19% 32%, 47% 0, 62% 34%, 100% 100%);
+}
+.fish-pectoral {
+  top: 45%;
+  left: 39%;
+  width: 27%;
+  height: 37%;
+  background: var(--fish-fin);
+  opacity: 0.78;
+  clip-path: polygon(0 0, 100% 32%, 33% 100%);
+}
+.fish-gill {
+  top: 25%;
+  left: 72%;
+  width: 7%;
+  height: 48%;
+  border-right: 1.5px solid rgba(36, 73, 81, 0.72);
+  border-radius: 50%;
+}
+.fish-one {
+  --fish-top: #fff5c9;
+  --fish-bottom: #f3a449;
+  --fish-stripe: rgba(197, 76, 34, 0.72);
+  --fish-fin: rgba(255, 209, 133, 0.92);
+  top: 37%;
+  left: -8%;
+}
+.fish-two {
+  --fish-top: #c9fff0;
+  --fish-bottom: #36aab7;
+  --fish-stripe: rgba(249, 228, 109, 0.9);
+  --fish-fin: rgba(255, 224, 119, 0.88);
+  top: 72%;
+  left: 0;
+  width: 58px;
+  height: 26px;
+  opacity: 0.72;
+  animation-delay: -17s;
+  animation-duration: 41s;
+  animation-name: fish-glide-reverse;
+}
+.fish-three {
+  --fish-top: #f5ffff;
+  --fish-bottom: #70c6e0;
+  --fish-stripe: rgba(44, 133, 175, 0.68);
+  --fish-fin: rgba(202, 244, 255, 0.9);
+  top: 22%;
+  left: -10%;
+  width: 42px;
+  height: 19px;
+  opacity: 0.62;
+  animation-delay: -28s;
+  animation-duration: 37s;
+}
+.kelp {
+  position: absolute;
+  z-index: 1;
+  bottom: -20px;
+  width: 120px;
+  height: 150px;
+  opacity: 0.22;
+  background: repeating-linear-gradient(78deg, transparent 0 15px, rgba(68, 176, 96, 0.7) 16px 19px, transparent 20px 32px);
+  mask-image: linear-gradient(0deg, #000 20%, transparent 100%);
+  transform-origin: bottom;
+  animation: kelp-sway 8s ease-in-out infinite alternate;
+}
+.kelp-left {
+  left: 3%;
+}
+.kelp-right {
+  right: 6%;
+  height: 190px;
+  animation-delay: -4s;
+}
+.water-glint {
+  position: absolute;
+  z-index: 1;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  opacity: 0.38;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0.22) 38%, transparent 76%);
+  filter: blur(1px);
+}
+.glint-one {
+  top: 31%;
+  left: 31%;
+}
+.glint-two {
+  top: 57%;
+  right: 27%;
+}
+@keyframes bubble-bounce-one {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  25% {
+    transform: translate3d(calc(100vw - var(--bubble-size)), calc(100vh - var(--bubble-size)), 0);
+  }
   50% {
-    transform: translateY(-16px);
+    transform: translate3d(0, calc(100vh - var(--bubble-size)), 0);
+  }
+  75% {
+    transform: translate3d(calc(100vw - var(--bubble-size)), 0, 0);
+  }
+}
+@keyframes bubble-bounce-two {
+  0%,
+  100% {
+    transform: translate3d(calc(100vw - var(--bubble-size)), 0, 0);
+  }
+  25% {
+    transform: translate3d(0, calc(100vh - var(--bubble-size)), 0);
+  }
+  50% {
+    transform: translate3d(calc(100vw - var(--bubble-size)), calc(100vh - var(--bubble-size)), 0);
+  }
+  75% {
+    transform: translate3d(0, 0, 0);
+  }
+}
+@keyframes bubble-bounce-three {
+  0%,
+  100% {
+    transform: translate3d(0, calc(100vh - var(--bubble-size)), 0);
+  }
+  25% {
+    transform: translate3d(calc(100vw - var(--bubble-size)), 0, 0);
+  }
+  50% {
+    transform: translate3d(0, 0, 0);
+  }
+  75% {
+    transform: translate3d(calc(100vw - var(--bubble-size)), calc(100vh - var(--bubble-size)), 0);
+  }
+}
+@keyframes fish-glide {
+  from {
+    transform: translate3d(-10vw, 0, 0);
+  }
+  to {
+    transform: translate3d(120vw, -24px, 0);
+  }
+}
+@keyframes fish-glide-reverse {
+  from {
+    transform: translate3d(120vw, 0, 0) scaleX(-1);
+  }
+  to {
+    transform: translate3d(-20vw, -24px, 0) scaleX(-1);
+  }
+}
+@keyframes tail-beat {
+  to {
+    transform: rotate(12deg);
+  }
+}
+@keyframes caustic-drift {
+  to {
+    transform: translate3d(4%, 2%, 0) rotate(3deg);
+  }
+}
+@keyframes shaft-sway {
+  to {
+    transform: rotate(24deg) translateX(3vw);
+  }
+}
+@keyframes kelp-sway {
+  to {
+    transform: rotate(5deg) scaleX(1.06);
+  }
+}
+@keyframes glint {
+  0%,
+  100% {
+    opacity: 0.28;
+  }
+  50% {
+    opacity: 0.42;
   }
 }
 
