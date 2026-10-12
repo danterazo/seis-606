@@ -1,8 +1,8 @@
 :root {
   --ink: #0f3a5c;
   --ink-soft: #3d6a8a;
-  --glass: rgba(255, 255, 255, 0.46);
-  --glass-strong: rgba(255, 255, 255, 0.7);
+  --glass: rgba(255, 255, 255, 0.4);
+  --glass-strong: rgba(255, 255, 255, 0.64);
   --edge: rgba(255, 255, 255, 0.85);
   --sky-top: #1c8fe8;
   --sky-mid: #6fcbf5;
@@ -90,10 +90,9 @@ button {
 .aurora {
   position: absolute;
   z-index: 0;
-  width: 82vw;
-  height: 30vh;
-  border-radius: 50%;
-  opacity: 0.68;
+  width: 92vw;
+  height: 27vh;
+  opacity: 0.5;
   background: linear-gradient(
     112deg,
     transparent 8%,
@@ -104,8 +103,8 @@ button {
     var(--aurora-pink) 74%,
     transparent 91%
   );
-  filter: blur(14px);
-  mask-image: radial-gradient(ellipse at center, #000 12%, transparent 74%);
+  clip-path: polygon(0 72%, 12% 45%, 24% 50%, 37% 28%, 52% 40%, 68% 18%, 82% 30%, 100% 7%, 100% 39%, 83% 58%, 68% 49%, 52% 68%, 37% 55%, 24% 78%, 12% 69%, 0 92%);
+  filter: blur(8px);
   animation: aurora-ribbon 24s ease-in-out infinite alternate;
 }
 .aurora-one {
@@ -117,7 +116,7 @@ button {
   right: -24%;
   width: 72vw;
   height: 24vh;
-  opacity: 0.56;
+  opacity: 0.44;
   background: linear-gradient(
     248deg,
     transparent 8%,
@@ -127,6 +126,7 @@ button {
     var(--aurora-mint) 76%,
     transparent 91%
   );
+  clip-path: polygon(0 18%, 15% 35%, 28% 25%, 43% 48%, 58% 35%, 74% 61%, 89% 47%, 100% 64%, 100% 91%, 88% 74%, 74% 90%, 58% 63%, 43% 78%, 28% 54%, 15% 70%, 0 53%);
   animation-delay: -12s;
   animation-duration: 29s;
 }
@@ -223,150 +223,42 @@ button {
   animation-delay: -5s;
   animation-duration: 19s;
 }
-.fish {
+.fish-gif {
   position: absolute;
   z-index: 1;
-  width: 76px;
-  height: 34px;
-  border: 1px solid rgba(255, 255, 255, 0.72);
-  border-radius: 58% 42% 42% 58% / 55% 50% 50% 55%;
-  opacity: 0.78;
-  background:
-    repeating-linear-gradient(100deg, transparent 0 8px, var(--fish-stripe) 9px 12px, transparent 13px 18px),
-    linear-gradient(180deg, var(--fish-top), var(--fish-bottom));
-  box-shadow: inset 0 2px 4px rgba(255, 255, 255, 0.72), 0 4px 12px rgba(0, 77, 125, 0.2);
-  animation: fish-glide 32s linear infinite;
-}
-.fish::before {
-  position: absolute;
-  top: 27%;
-  left: -21%;
-  width: 25%;
-  height: 46%;
-  content: "";
-  background: var(--fish-fin);
-  clip-path: polygon(100% 50%, 0 0, 16% 50%, 0 100%);
-  transform-origin: 100% 50%;
-  animation: tail-beat 0.7s ease-in-out infinite alternate;
-}
-.fish::after {
-  position: absolute;
-  top: 31%;
-  right: 12%;
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  content: "";
-  background: #17465b;
-  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.68);
-}
-.fish-dorsal,
-.fish-pectoral,
-.fish-gill {
-  position: absolute;
+  display: block;
+  height: auto;
   pointer-events: none;
+  filter: drop-shadow(0 5px 8px rgba(18, 78, 126, 0.2));
 }
-.fish-dorsal {
-  top: -24%;
-  left: 33%;
-  width: 37%;
-  height: 42%;
-  background: var(--fish-fin);
-  clip-path: polygon(0 100%, 19% 32%, 47% 0, 62% 34%, 100% 100%);
-}
-.fish-pectoral {
-  top: 45%;
-  left: 39%;
-  width: 27%;
-  height: 37%;
-  background: var(--fish-fin);
-  opacity: 0.78;
-  clip-path: polygon(0 0, 100% 32%, 33% 100%);
-}
-.fish-gill {
-  top: 25%;
-  left: 72%;
-  width: 7%;
-  height: 48%;
-  border-right: 1.5px solid rgba(36, 73, 81, 0.72);
-  border-radius: 50%;
-}
-.fish-one {
-  --fish-top: #fff5c9;
-  --fish-bottom: #f3a449;
-  --fish-stripe: rgba(197, 76, 34, 0.72);
-  --fish-fin: rgba(255, 209, 133, 0.92);
-  top: 37%;
-  left: -8%;
-}
-.fish-two {
-  --fish-top: #c9fff0;
-  --fish-bottom: #36aab7;
-  --fish-stripe: rgba(249, 228, 109, 0.9);
-  --fish-fin: rgba(255, 224, 119, 0.88);
-  top: 72%;
+.fish-gif-one {
+  top: 30%;
   left: 0;
-  width: 58px;
-  height: 26px;
-  opacity: 0.72;
-  animation-delay: -17s;
-  animation-duration: 41s;
-  animation-name: fish-glide-reverse;
+  width: clamp(105px, 10vw, 150px);
+  animation: fish-glide 62s linear infinite;
+  animation-delay: -12s;
 }
-.fish-three {
-  --fish-top: #f5ffff;
-  --fish-bottom: #70c6e0;
-  --fish-stripe: rgba(44, 133, 175, 0.68);
-  --fish-fin: rgba(202, 244, 255, 0.9);
-  top: 22%;
-  left: -10%;
-  width: 42px;
-  height: 19px;
-  opacity: 0.62;
-  animation-delay: -28s;
-  animation-duration: 37s;
+.fish-gif-two {
+  top: 49%;
+  left: 0;
+  width: clamp(130px, 12vw, 176px);
+  animation: fish-glide-reverse 74s linear infinite;
+  animation-delay: -27s;
 }
-.dolphin {
-  position: absolute;
-  z-index: 1;
-  width: 132px;
-  height: 66px;
+.fish-gif-three {
+  top: 68%;
+  left: 0;
+  width: clamp(126px, 11vw, 166px);
+  animation: fish-glide-reverse 82s linear infinite;
+  animation-delay: -51s;
+}
+.dolphin-gif {
+  top: 24%;
+  left: 0;
+  width: clamp(170px, 18vw, 250px);
   opacity: 0;
-  background: linear-gradient(180deg, #f2ffff 8%, #b4eaf0 42%, #75b8d4 68%, #6889bc 100%);
-  clip-path: polygon(0 37%, 7% 49%, 0 62%, 14% 60%, 29% 64%, 45% 54%, 51% 28%, 57% 43%, 73% 47%, 91% 48%, 100% 52%, 93% 57%, 77% 59%, 64% 67%, 58% 84%, 53% 70%, 46% 62%, 31% 66%, 16% 63%, 7% 58%);
-  filter: drop-shadow(0 4px 6px rgba(24, 70, 128, 0.24));
-  animation: dolphin-visit 100s linear infinite;
-}
-.dolphin::after {
-  position: absolute;
-  top: 47%;
-  right: 11%;
-  width: 4px;
-  height: 4px;
-  border-radius: 50%;
-  content: "";
-  background: #173858;
-  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.66);
-}
-.dolphin-flipper {
-  position: absolute;
-  top: 54%;
-  left: 45%;
-  width: 24%;
-  height: 28%;
-  background: rgba(91, 127, 177, 0.7);
-  clip-path: polygon(0 0, 100% 18%, 35% 100%);
-}
-.dolphin-one {
-  top: 27%;
-  animation-delay: -19s;
-}
-.dolphin-two {
-  top: 52%;
-  width: 104px;
-  height: 52px;
-  animation-delay: -69s;
-  animation-duration: 110s;
+  animation: dolphin-visit 112s linear infinite;
+  animation-delay: -39s;
 }
 .kelp {
   position: absolute;
@@ -520,10 +412,10 @@ button {
 }
 @keyframes fish-glide-reverse {
   from {
-    transform: translate3d(120vw, 0, 0) scaleX(-1);
+    transform: translate3d(120vw, 0, 0);
   }
   to {
-    transform: translate3d(-20vw, -24px, 0) scaleX(-1);
+    transform: translate3d(-20vw, -24px, 0);
   }
 }
 @keyframes dolphin-visit {
@@ -544,11 +436,6 @@ button {
   38% {
     opacity: 0;
     transform: translate3d(120vw, -4vh, 0);
-  }
-}
-@keyframes tail-beat {
-  to {
-    transform: rotate(12deg);
   }
 }
 @keyframes caustic-drift {
@@ -1099,7 +986,7 @@ span.health-badge[role="button"] {
     0 10px 28px rgba(0, 70, 130, 0.26),
     inset 0 1px 0 #fff,
     inset 0 -18px 30px rgba(120, 200, 245, 0.22);
-  backdrop-filter: blur(14px);
+  backdrop-filter: blur(5px);
 }
 .panel::before {
   content: "";
@@ -1768,7 +1655,7 @@ span.health-badge[role="button"] {
   padding: 8px 10px;
   border: 1px solid rgba(255, 255, 255, 0.9);
   border-radius: 12px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.85), rgba(215, 241, 255, 0.6));
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.8), rgba(215, 241, 255, 0.54));
   box-shadow: inset 0 1px 0 #fff;
 }
 .guest-body {
@@ -2098,6 +1985,9 @@ span.health-badge[role="button"] {
   *::after {
     animation: none !important;
     transition: none !important;
+  }
+  .fish-gif {
+    display: none;
   }
 }
 
