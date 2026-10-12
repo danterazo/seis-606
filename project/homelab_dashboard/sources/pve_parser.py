@@ -28,10 +28,8 @@ TRACKED_TAGS: Final[tuple[TrackedTag, ...]] = (
     TrackedTag(name="primary", letter="I", default_color="#0f8f94"),
     TrackedTag(name="secondary", letter="II", default_color="#a3174f"),
 )
-# the environment comes from the guest's resource pool, not from tags: members of this pool are prod, everything else is dev
-PROD_POOL: Final[str] = "prod"
-# guests that are prod but sit in another pool for alternate backup scheduling reasons
-PROD_VMID_EXCEPTIONS: Final[frozenset[int]] = frozenset({170, 171})
+# the environment comes from the guest's resource pool, not from tags: members of these pools are prod, everything else is dev
+PROD_POOLS: Final[frozenset[str]] = frozenset({"prod", "dense"})
 PROD_TAG: Final[TrackedTag] = TrackedTag(name="prod", letter="P", default_color="#d64545")
 DEV_TAG: Final[TrackedTag] = TrackedTag(name="dev", letter="D", default_color="#2e9e4f")
 _TRACKED_BY_NAME: Final[dict[str, TrackedTag]] = {tracked.name: tracked for tracked in TRACKED_TAGS}
@@ -62,7 +60,7 @@ def _tag_style_colors(*, cluster_options: Optional[JsonObject]) -> dict[str, tup
 
 
 def _parse_tags(*, row: JsonObject, colors: Mapping[str, tuple[str, Optional[str]]]) -> tuple[GuestTag, ...]:
-    is_prod: bool = str(row.get("pool") or "").lower() == PROD_POOL or as_integer(value=row.get("vmid")) in PROD_VMID_EXCEPTIONS
+    is_prod: bool = str(row.get("pool") or "").lower() in PROD_POOLS
     environment: TrackedTag = PROD_TAG if is_prod else DEV_TAG
     names: list[str] = sorted(
         (name for name in re.split(r"[;, ]+", str(row.get("tags") or "")) if name.lower() in _TRACKED_ORDER),
