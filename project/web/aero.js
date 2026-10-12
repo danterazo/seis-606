@@ -255,7 +255,7 @@ const GPU_BRANDS = [
   },
 ];
 
-/** @param {GuestTag} tag @param {Guest} guest @returns {{ paths: string[], box: number, pad: number } | undefined} */
+/** @param {GuestTag} tag @param {Guest} guest @returns {{ paths: string[], box: number, pad: number, transform?: string } | undefined} */
 function tagIcon(tag, guest) {
   const key = tag.name.toLowerCase();
   if (key === "gpu") {
@@ -263,7 +263,16 @@ function tagIcon(tag, guest) {
     return GPU_BRANDS.find((brand) => brand.pattern.test(text)) ?? { paths: TAG_ICONS.gpu, box: 16, pad: 0 };
   }
   const paths = TAG_ICONS[/** @type {keyof typeof TAG_ICONS} */ (key)];
-  return paths === undefined ? undefined : { paths, box: 16, pad: 0 };
+  if (paths === undefined) return undefined;
+  return key === "docker"
+    ? { paths, box: 16, pad: 0, transform: "translate(0.75 0) translate(0 -0.825) translate(8 8) scale(1.1) translate(-8 -8)" }
+    : { paths, box: 16, pad: 0 };
+}
+
+/** @param {{ paths: string[], transform?: string }} icon @returns {Node[]} */
+function tagIconPaths(icon) {
+  const paths = icon.paths.map((d) => svg("path", { d }));
+  return icon.transform === undefined ? paths : [svg("g", { transform: icon.transform }, paths)];
 }
 
 /** @param {Guest} guest @returns {Node[]} */
@@ -287,7 +296,7 @@ function topologyTag(tag, guest, cx, cy) {
             fill: foreground,
             "fill-rule": "evenodd",
           },
-          icon.paths.map((d) => svg("path", { d })),
+          tagIconPaths(icon),
         ),
   ]);
 }
@@ -312,7 +321,7 @@ function tagChip(tag, guest) {
           "fill-rule": "evenodd",
           "aria-hidden": "true",
         },
-        icon.paths.map((d) => svg("path", { d })),
+        tagIconPaths(icon),
       ),
     );
   return chip;
