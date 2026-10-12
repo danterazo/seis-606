@@ -1923,7 +1923,7 @@ span.health-badge[role="button"] {
   cursor: pointer;
 }
 .topo-node-body {
-  fill: #55697b;
+  fill: #b8c9d4;
   stroke: var(--node-color, #fff);
   stroke-width: 3.5;
   filter: drop-shadow(0 0 1.5px #3d444b);
@@ -1936,14 +1936,17 @@ span.health-badge[role="button"] {
 }
 .topo-node-led {
   fill: #67ec4d;
+  stroke: #245c42;
+  stroke-width: 1.25;
   filter: drop-shadow(0 0 3px #67ec4d);
 }
 .topo-node.is-down .topo-node-led {
   fill: var(--red);
+  stroke: #fff;
   filter: drop-shadow(0 0 3px var(--red));
 }
 .topo-node.is-down .topo-node-body {
-  fill: #8a97a3;
+  fill: #465b6d;
 }
 .topo-node.is-selected .topo-node-body {
   stroke: #ffe36b;
