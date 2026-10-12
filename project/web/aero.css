@@ -13,6 +13,9 @@
   --amber: #f0a21c;
   --red: #e5483d;
   --bubble-min-size: 26px;
+  --aurora-mint: rgba(75, 255, 179, 0.78);
+  --aurora-lilac: rgba(187, 117, 255, 0.76);
+  --aurora-pink: rgba(255, 126, 201, 0.68);
   --font: "Frutiger", "Segoe UI", "Trebuchet MS", "Lucida Grande", "Helvetica Neue", Arial, sans-serif;
   font-family: var(--font);
   color: var(--ink);
@@ -28,8 +31,10 @@ body {
   margin: 0;
   min-height: 100vh;
   background:
-    radial-gradient(120% 60% at 50% 105%, #5fc84a 0%, #8bd75a 22%, transparent 55%),
-    linear-gradient(180deg, var(--sky-top) 0%, #3fb2f0 30%, var(--sky-mid) 62%, #bfeaf8 100%);
+    radial-gradient(48% 38% at 80% 49%, rgba(255, 132, 208, 0.62), transparent 76%),
+    radial-gradient(44% 38% at 20% 60%, rgba(116, 255, 189, 0.46), transparent 74%),
+    radial-gradient(120% 60% at 50% 105%, #60c849 0%, #93dc67 22%, transparent 55%),
+    linear-gradient(180deg, #269de5 0%, #47b9e9 29%, #76d8d8 63%, #c5eafa 100%);
   background-attachment: fixed;
 }
 button,
@@ -82,6 +87,49 @@ button {
   height: 38%;
   opacity: 0.4;
   background: radial-gradient(ellipse at 50% 100%, rgba(200, 255, 179, 0.62), transparent 68%);
+}
+.aurora {
+  position: absolute;
+  z-index: 0;
+  width: 82vw;
+  height: 30vh;
+  border-radius: 50%;
+  opacity: 0.68;
+  background: linear-gradient(
+    112deg,
+    transparent 8%,
+    rgba(95, 255, 190, 0.05) 18%,
+    var(--aurora-mint) 36%,
+    rgba(102, 232, 209, 0.34) 50%,
+    var(--aurora-lilac) 66%,
+    var(--aurora-pink) 74%,
+    transparent 91%
+  );
+  filter: blur(14px);
+  mask-image: radial-gradient(ellipse at center, #000 12%, transparent 74%);
+  animation: aurora-ribbon 24s ease-in-out infinite alternate;
+}
+.aurora-one {
+  top: 13%;
+  left: -18%;
+}
+.aurora-two {
+  top: 38%;
+  right: -24%;
+  width: 72vw;
+  height: 24vh;
+  opacity: 0.56;
+  background: linear-gradient(
+    248deg,
+    transparent 8%,
+    var(--aurora-pink) 28%,
+    var(--aurora-lilac) 48%,
+    rgba(102, 232, 209, 0.42) 62%,
+    var(--aurora-mint) 76%,
+    transparent 91%
+  );
+  animation-delay: -12s;
+  animation-duration: 29s;
 }
 .bubble {
   position: absolute;
@@ -147,11 +195,11 @@ button {
 .light-shaft {
   position: absolute;
   top: -12%;
-  width: 18vw;
-  height: 72%;
-  opacity: 0.18;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.72), transparent 88%);
-  filter: blur(16px);
+  width: 26vw;
+  height: 86%;
+  opacity: 0.34;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(173, 255, 223, 0.24) 38%, transparent 88%);
+  filter: blur(12px);
   transform: rotate(18deg);
   transform-origin: top;
   animation: shaft-sway 22s ease-in-out infinite alternate;
@@ -161,10 +209,20 @@ button {
 }
 .shaft-two {
   right: 14%;
-  width: 12vw;
-  opacity: 0.12;
+  width: 17vw;
+  opacity: 0.26;
+  background: linear-gradient(180deg, rgba(255, 235, 255, 0.78), rgba(226, 166, 255, 0.28) 38%, transparent 88%);
   animation-delay: -11s;
-  animation-duration: 28s;
+  animation-duration: 20s;
+}
+.shaft-three {
+  left: 55%;
+  width: 12vw;
+  opacity: 0.25;
+  background: linear-gradient(180deg, rgba(232, 255, 246, 0.78), rgba(177, 219, 255, 0.26) 40%, transparent 88%);
+  transform: rotate(-14deg);
+  animation-delay: -5s;
+  animation-duration: 19s;
 }
 .fish {
   position: absolute;
@@ -269,25 +327,126 @@ button {
   animation-delay: -28s;
   animation-duration: 37s;
 }
+.dolphin {
+  position: absolute;
+  z-index: 1;
+  width: 132px;
+  height: 66px;
+  opacity: 0;
+  background: linear-gradient(180deg, #f2ffff 8%, #b4eaf0 42%, #75b8d4 68%, #6889bc 100%);
+  clip-path: polygon(0 37%, 7% 49%, 0 62%, 14% 60%, 29% 64%, 45% 54%, 51% 28%, 57% 43%, 73% 47%, 91% 48%, 100% 52%, 93% 57%, 77% 59%, 64% 67%, 58% 84%, 53% 70%, 46% 62%, 31% 66%, 16% 63%, 7% 58%);
+  filter: drop-shadow(0 4px 6px rgba(24, 70, 128, 0.24));
+  animation: dolphin-visit 100s linear infinite;
+}
+.dolphin::after {
+  position: absolute;
+  top: 47%;
+  right: 11%;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  content: "";
+  background: #173858;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.66);
+}
+.dolphin-flipper {
+  position: absolute;
+  top: 54%;
+  left: 45%;
+  width: 24%;
+  height: 28%;
+  background: rgba(91, 127, 177, 0.7);
+  clip-path: polygon(0 0, 100% 18%, 35% 100%);
+}
+.dolphin-one {
+  top: 27%;
+  animation-delay: -19s;
+}
+.dolphin-two {
+  top: 52%;
+  width: 104px;
+  height: 52px;
+  animation-delay: -69s;
+  animation-duration: 110s;
+}
 .kelp {
   position: absolute;
   z-index: 1;
-  bottom: -20px;
-  width: 120px;
-  height: 150px;
-  opacity: 0.22;
-  background: repeating-linear-gradient(78deg, transparent 0 15px, rgba(68, 176, 96, 0.7) 16px 19px, transparent 20px 32px);
-  mask-image: linear-gradient(0deg, #000 20%, transparent 100%);
-  transform-origin: bottom;
-  animation: kelp-sway 8s ease-in-out infinite alternate;
+  bottom: -12px;
+  width: 170px;
+  height: 220px;
+  opacity: 0.72;
+  transform-origin: bottom center;
+  animation: kelp-sway 3.6s ease-in-out infinite alternate;
+}
+.kelp::before {
+  position: absolute;
+  bottom: 0;
+  left: calc(50% - 2px);
+  width: 5px;
+  height: 100%;
+  border-radius: 100% 0;
+  content: "";
+  background: linear-gradient(0deg, rgba(37, 145, 83, 0.9), rgba(110, 224, 140, 0.7) 72%, transparent);
+  transform: rotate(-3deg);
+}
+.kelp::after {
+  position: absolute;
+  bottom: 91%;
+  left: 45%;
+  width: 22px;
+  height: 32px;
+  border-radius: 100% 0 100% 0;
+  content: "";
+  background: linear-gradient(140deg, var(--kelp-highlight), var(--kelp-leaf));
+  transform: rotate(-28deg);
+}
+.kelp-frond {
+  position: absolute;
+  z-index: 1;
+  left: 50%;
+  width: 67px;
+  height: 21px;
+  border: 1px solid rgba(228, 255, 221, 0.58);
+  border-radius: 100% 0 100% 0;
+  background: linear-gradient(130deg, var(--kelp-highlight), var(--kelp-leaf) 65%, rgba(93, 176, 211, 0.8));
+  box-shadow: inset 0 1px 4px rgba(255, 255, 255, 0.42), 0 2px 6px rgba(28, 104, 77, 0.18);
+  transform-origin: left center;
+  animation: kelp-frond-wave 2.2s ease-in-out infinite alternate;
+}
+.frond-left {
+  --frond-angle: -38deg;
+  --frond-flip: 1;
+}
+.frond-right {
+  --frond-angle: 38deg;
+  --frond-flip: -1;
+  animation-delay: -0.8s;
+}
+.frond-low {
+  bottom: 24%;
+}
+.frond-mid {
+  bottom: 48%;
+  animation-delay: -1.2s;
+}
+.frond-high {
+  bottom: 71%;
+  animation-delay: -0.4s;
 }
 .kelp-left {
-  left: 3%;
+  --kelp-leaf: #42d586;
+  --kelp-highlight: #d8ff9f;
+  left: 1%;
 }
 .kelp-right {
-  right: 6%;
-  height: 190px;
-  animation-delay: -4s;
+  --kelp-leaf: #62d3b1;
+  --kelp-highlight: #e5aaff;
+  right: 2%;
+  width: 145px;
+  height: 182px;
+  opacity: 0.62;
+  animation-delay: -1.4s;
 }
 .water-glint {
   position: absolute;
@@ -368,6 +527,26 @@ button {
     transform: translate3d(-20vw, -24px, 0) scaleX(-1);
   }
 }
+@keyframes dolphin-visit {
+  0%,
+  12%,
+  100% {
+    opacity: 0;
+    transform: translate3d(-20vw, 0, 0);
+  }
+  16% {
+    opacity: 0.82;
+    transform: translate3d(-6vw, 0, 0);
+  }
+  33% {
+    opacity: 0.82;
+    transform: translate3d(76vw, -3vh, 0);
+  }
+  38% {
+    opacity: 0;
+    transform: translate3d(120vw, -4vh, 0);
+  }
+}
 @keyframes tail-beat {
   to {
     transform: rotate(12deg);
@@ -385,7 +564,20 @@ button {
 }
 @keyframes kelp-sway {
   to {
-    transform: rotate(5deg) scaleX(1.06);
+    transform: rotate(8deg) scaleX(1.08);
+  }
+}
+@keyframes kelp-frond-wave {
+  from {
+    transform: rotate(var(--frond-angle)) scaleX(var(--frond-flip));
+  }
+  to {
+    transform: rotate(calc(var(--frond-angle) + 14deg)) scaleX(var(--frond-flip));
+  }
+}
+@keyframes aurora-ribbon {
+  to {
+    transform: translate3d(9vw, 5vh, 0) rotate(9deg) scaleX(1.12);
   }
 }
 @keyframes glint {
