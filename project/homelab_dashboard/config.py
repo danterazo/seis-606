@@ -25,7 +25,7 @@ class Settings:
     @classmethod
     def from_env(cls, *, environ: Mapping[str, str] = os.environ) -> "Settings":
         return cls(
-            host=environ.get("HOMELAB_HOST", "127.0.0.1"),
+            host=environ.get("HOMELAB_UI_HOST", "127.0.0.1"),
             port=int(environ.get("PORT", "8765")),
             ssh_host=environ.get("HOMELAB_PVE_SSH_HOST", DEFAULT_SSH_HOST),
             ssh_user=environ.get("HOMELAB_PVE_SSH_USER", DEFAULT_SSH_USER),

@@ -26,7 +26,7 @@ standard library and an OpenSSH client.
 | `HOMELAB_HW_ERRORS_CACHE_SECONDS` | `120` | Minimum seconds between hardware-error reads (EDAC counters, 14 days of kernel/rasdaemon journal, `ras-mc-ctl --summary`) of each online node, run in the background. Read-only; the last reading is kept and marked stale when a node is unreachable. Recurrence threshold lives in `sources/hwerrors_parser.py` |
 | `HOMELAB_ROUTER_SSH_USER` | `root` | Router SSH account (key authentication only) |
 | `HOMELAB_ROUTER_CACHE_SECONDS` | `60` | Router lease cache TTL, including failures; independent of PVE |
-| `HOMELAB_HOST` / `PORT` | `127.0.0.1` / `8765` | Where the dashboard listens                |
+| `HOMELAB_UI_HOST` / `PORT` | `127.0.0.1` / `8765` | Where the dashboard listens                |
 
 ### First Connection
 
