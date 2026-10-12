@@ -503,6 +503,19 @@ button {
   animation-duration: 114s;
   animation-delay: -26s;
 }
+.background-fish {
+  width: clamp(88px, 7vw, 120px);
+}
+.background-fish-east {
+  top: 20%;
+  animation: background-fish-pass-east 146s linear infinite;
+  animation-delay: -37s;
+}
+.background-fish-west {
+  top: 63%;
+  animation: background-fish-pass-west 158s linear infinite;
+  animation-delay: -103s;
+}
 .dolphin-gif {
   width: clamp(200px, 18vw, 270px);
 }
@@ -763,6 +776,46 @@ button {
   53% {
     opacity: 0;
     transform: translate3d(-22vw, -4vh, 0);
+  }
+}
+@keyframes background-fish-pass-east {
+  0%,
+  14%,
+  100% {
+    opacity: 0;
+    transform: translate3d(-20vw, 0, 0);
+  }
+  20% {
+    opacity: 0.56;
+    transform: translate3d(-6vw, 0, 0);
+  }
+  49% {
+    opacity: 0.56;
+    transform: translate3d(88vw, -1vh, 0);
+  }
+  55% {
+    opacity: 0;
+    transform: translate3d(120vw, -2vh, 0);
+  }
+}
+@keyframes background-fish-pass-west {
+  0%,
+  14%,
+  100% {
+    opacity: 0;
+    transform: translate3d(120vw, 0, 0);
+  }
+  20% {
+    opacity: 0.56;
+    transform: translate3d(100vw, 0, 0);
+  }
+  49% {
+    opacity: 0.56;
+    transform: translate3d(-6vw, -1vh, 0);
+  }
+  55% {
+    opacity: 0;
+    transform: translate3d(-20vw, -2vh, 0);
   }
 }
 @keyframes dolphin-visit-east {
