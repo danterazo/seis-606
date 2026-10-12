@@ -16,7 +16,7 @@ RESOURCES: Final[list[dict[str, Any]]] = [
     {"type": "node", "node": "cerulean", "status": "online", "cpu": 0.25, "mem": 8, "maxmem": 16},
     {"type": "node", "node": "violet", "status": "offline", "cpu": 0.9, "mem": 4, "maxmem": 8},
     {"type": "qemu", "vmid": 101, "node": "cerulean", "name": "web", "status": "running", "cpu": 0.1, "mem": 2, "maxmem": 4},
-    {"type": "lxc", "vmid": 201, "node": "cerulean", "name": "dns", "status": "stopped"},
+    {"type": "lxc", "vmid": 201, "node": "cerulean", "name": "caddy", "status": "stopped"},
     {"type": "qemu", "vmid": 900, "node": "cerulean", "name": "base", "status": "stopped", "template": 1},
     {"type": "storage", "id": "storage/cerulean/local"},
 ]
@@ -79,7 +79,7 @@ def test_only_tracked_guest_tags_are_kept_and_use_pve_colors() -> None:
             "type": "lxc",
             "vmid": 201,
             "node": "cerulean",
-            "name": "dns",
+            "name": "caddy",
             "status": "running",
             "pool": "prod",
             "tags": "secondary;dev;gpu;docker;lab;alt-arch",
@@ -98,10 +98,22 @@ def test_only_tracked_guest_tags_are_kept_and_use_pve_colors() -> None:
     ]
 
 
-def test_guest_outside_prod_pool_is_dev_with_pve_color() -> None:
+def test_dense_pool_guest_is_prod() -> None:
     resources: list[dict[str, Any]] = [
         {"type": "node", "node": "cerulean", "status": "online"},
-        {"type": "lxc", "vmid": 201, "node": "cerulean", "name": "dns", "status": "running", "pool": "lab", "tags": "prod"},
+        {"type": "qemu", "vmid": 170, "node": "cerulean", "name": "win", "status": "running", "pool": "dense"},
+    ]
+    stdout: str = documents(resources=resources, cluster_status=[])
+
+    tags = make_source(stdout=stdout).fetch().nodes[0].guests[0].tags
+
+    assert [tag.name for tag in tags] == ["prod"]
+
+
+def test_guest_outside_prod_pools_is_dev_with_pve_color() -> None:
+    resources: list[dict[str, Any]] = [
+        {"type": "node", "node": "cerulean", "status": "online"},
+        {"type": "lxc", "vmid": 201, "node": "cerulean", "name": "caddy", "status": "running", "pool": "other", "tags": "prod"},
     ]
     options: dict[str, Any] = {"tag-style": "color-map=dev:FFFF00"}
     stdout: str = documents(resources=resources, cluster_status=[]) + "\nnull\n" + json.dumps(options)
