@@ -1881,13 +1881,14 @@ span.health-badge[role="button"] {
 .topo-node-body {
   fill: #55697b;
   stroke: var(--node-color, #fff);
-  stroke-width: 3;
+  stroke-width: 3.5;
+  filter: drop-shadow(0 0 1.5px #3d444b);
 }
 .topo-node-slot {
   fill: var(--node-color, #2a3a48);
   fill-opacity: 0.72;
   stroke: #3d444b;
-  stroke-width: 1.25;
+  stroke-width: 1.5;
 }
 .topo-node-led {
   fill: #67ec4d;
