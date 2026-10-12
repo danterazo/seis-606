@@ -6,7 +6,7 @@ from typing import Any, Final, Optional
 
 import pytest
 from homelab_dashboard.config import Settings
-from homelab_dashboard.models import GuestKind, GuestState, NodeState
+from homelab_dashboard.models import ClusterSnapshot, GuestKind, GuestState, GuestTag, Node, NodeState
 from homelab_dashboard.sources.base import StatusSourceError
 from homelab_dashboard.sources.proxmox_ssh import SSH_OPTIONS, CommandRunner, ProxmoxSshSource, SshTarget
 
@@ -60,9 +60,10 @@ def documents(*, resources: Sequence[dict[str, Any]], cluster_status: Sequence[d
 
 
 def test_fetch_parses_nodes_guests_and_addresses() -> None:
-    snapshot = make_source(stdout=documents(resources=RESOURCES, cluster_status=CLUSTER_STATUS)).fetch()
+    snapshot: ClusterSnapshot = make_source(stdout=documents(resources=RESOURCES, cluster_status=CLUSTER_STATUS)).fetch()
 
-    cerulean, _violet = snapshot.nodes
+    cerulean: Node = snapshot.nodes[0]
+    _violet: Node = snapshot.nodes[1]
     assert (cerulean.name, cerulean.state, cerulean.address) == ("cerulean", NodeState.ONLINE, "192.168.20.43")
     assert cerulean.resources.cpu_ratio == 0.25
     assert [(guest.vmid, guest.kind, guest.state) for guest in cerulean.guests] == [
@@ -88,7 +89,7 @@ def test_only_tracked_guest_tags_are_kept_and_use_pve_colors() -> None:
     options: dict[str, Any] = {"tag-style": "color-map=dev:FFFF00;lab:112233:EEEEEE,shape=full"}
     stdout: str = documents(resources=resources, cluster_status=[]) + "\nnull\n" + json.dumps(options)
 
-    tags = make_source(stdout=stdout).fetch().nodes[0].guests[0].tags
+    tags: tuple[GuestTag, ...] = make_source(stdout=stdout).fetch().nodes[0].guests[0].tags
 
     assert [(tag.name, tag.letter, tag.color, tag.text_color) for tag in tags] == [
         ("prod", "P", "#d64545", "#ffffff"),
@@ -105,7 +106,7 @@ def test_dense_pool_guest_is_prod() -> None:
     ]
     stdout: str = documents(resources=resources, cluster_status=[])
 
-    tags = make_source(stdout=stdout).fetch().nodes[0].guests[0].tags
+    tags: tuple[GuestTag, ...] = make_source(stdout=stdout).fetch().nodes[0].guests[0].tags
 
     assert [tag.name for tag in tags] == ["prod"]
 
@@ -118,15 +119,15 @@ def test_guest_outside_prod_pools_is_dev_with_pve_color() -> None:
     options: dict[str, Any] = {"tag-style": "color-map=dev:FFFF00"}
     stdout: str = documents(resources=resources, cluster_status=[]) + "\nnull\n" + json.dumps(options)
 
-    tags = make_source(stdout=stdout).fetch().nodes[0].guests[0].tags
+    tags: tuple[GuestTag, ...] = make_source(stdout=stdout).fetch().nodes[0].guests[0].tags
 
     assert [(tag.name, tag.color) for tag in tags] == [("dev", "#ffff00")]
 
 
 def test_offline_node_drops_stale_usage_but_keeps_capacity() -> None:
-    snapshot = make_source(stdout=documents(resources=RESOURCES, cluster_status=CLUSTER_STATUS)).fetch()
+    snapshot: ClusterSnapshot = make_source(stdout=documents(resources=RESOURCES, cluster_status=CLUSTER_STATUS)).fetch()
 
-    violet = snapshot.nodes[1]
+    violet: Node = snapshot.nodes[1]
     assert violet.state is NodeState.OFFLINE
     assert violet.address is None
     assert violet.resources.cpu_ratio is None
@@ -136,7 +137,7 @@ def test_offline_node_drops_stale_usage_but_keeps_capacity() -> None:
 
 def test_missing_readings_stay_unknown_instead_of_zero() -> None:
     resources: list[dict[str, Any]] = [{"type": "node", "node": "cerulean", "status": "online"}]
-    snapshot = make_source(stdout=documents(resources=resources, cluster_status=[])).fetch()
+    snapshot: ClusterSnapshot = make_source(stdout=documents(resources=resources, cluster_status=[])).fetch()
 
     assert snapshot.nodes[0].resources.cpu_ratio is None
     assert snapshot.nodes[0].resources.memory_total_bytes is None
@@ -144,7 +145,7 @@ def test_missing_readings_stay_unknown_instead_of_zero() -> None:
 
 def test_unrecognised_status_is_reported_as_unknown() -> None:
     resources: list[dict[str, Any]] = [{"type": "node", "node": "cerulean", "status": "mystery"}]
-    snapshot = make_source(stdout=documents(resources=resources, cluster_status=[])).fetch()
+    snapshot: ClusterSnapshot = make_source(stdout=documents(resources=resources, cluster_status=[])).fetch()
 
     assert snapshot.nodes[0].state is NodeState.UNKNOWN
 
@@ -154,7 +155,7 @@ def test_guests_without_names_get_a_short_fallback() -> None:
         {"type": "node", "node": "violet", "status": "offline"},
         {"type": "lxc", "vmid": 7, "node": "violet", "status": "unknown"},
     ]
-    snapshot = make_source(stdout=documents(resources=resources, cluster_status=[])).fetch()
+    snapshot: ClusterSnapshot = make_source(stdout=documents(resources=resources, cluster_status=[])).fetch()
 
     assert snapshot.nodes[0].guests[0].name == "LXC 7"
 
@@ -163,7 +164,7 @@ def test_ssh_command_never_prompts_or_relaxes_host_checking() -> None:
     calls: list[Sequence[str]] = []
     make_source(stdout="[][]", calls=calls).fetch()
 
-    (command,) = calls
+    command: Sequence[str] = calls[0]
     assert command[0] == "ssh"
     assert set(SSH_OPTIONS) <= set(command)
     assert "-oStrictHostKeyChecking=yes" in command
@@ -182,7 +183,9 @@ def test_reachable_node_stays_online_and_keeps_its_figures_without_quorum() -> N
     local_status: dict[str, Any] = {"cpu": 0.25, "cpuinfo": {"cpus": 4}, "memory": {"used": 1, "total": 4}}
     stdout: str = documents(resources=resources, cluster_status=cluster_status) + "\n" + json.dumps(local_status)
 
-    cerulean, kex = make_source(stdout=stdout).fetch().nodes
+    snapshot: ClusterSnapshot = make_source(stdout=stdout).fetch()
+    cerulean: Node = snapshot.nodes[0]
+    kex: Node = snapshot.nodes[1]
 
     assert (cerulean.state, cerulean.resources.cpu_cores, cerulean.resources.memory_used_bytes) == (NodeState.ONLINE, 4, 1)
     assert kex.state is not NodeState.ONLINE and kex.resources.memory_used_bytes is None
@@ -195,9 +198,10 @@ def test_core_counts_are_kept_for_guests_and_for_offline_nodes() -> None:
         {"type": "lxc", "vmid": 100, "node": "cerulean", "name": "pocket-id", "status": "running", "maxcpu": 2, "cpu": 0.25},
         {"type": "lxc", "vmid": 101, "node": "cerulean", "name": "no-cores", "status": "running"},
     ]
-    snapshot = make_source(stdout=documents(resources=resources, cluster_status=[])).fetch()
+    snapshot: ClusterSnapshot = make_source(stdout=documents(resources=resources, cluster_status=[])).fetch()
 
-    cerulean, violet = snapshot.nodes
+    cerulean: Node = snapshot.nodes[0]
+    violet: Node = snapshot.nodes[1]
     assert cerulean.resources.cpu_cores == 4
     assert violet.resources.cpu_cores == 8
     assert violet.resources.cpu_ratio is None
