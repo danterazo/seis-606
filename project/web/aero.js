@@ -35,7 +35,8 @@ const DEVICES_INTERVAL_MS = 10_000;
 const REFRESH_INTERVAL_MS = 1_000;
 const MAX_TOPOLOGY_GUESTS = 12;
 const TOPOLOGY_NAME_LIMIT = 22;
-const TOPOLOGY_TAG_RADIUS = 7;
+const TOPOLOGY_TAG_RADIUS = 9;
+const TOPOLOGY_TAG_ICON = 14;
 const TOPOLOGY_TAG_GAP = 3;
 const BYTES_PER_MIB = 1024 ** 2;
 const BYTES_PER_GIB = 1024 ** 3;
@@ -213,14 +214,6 @@ const colorStyle = (color) => `--node-color: ${safeColor(color)}`;
 /** Logos for tags that have one; the rest show their letter. Paths are drawn on a 16x16 grid. */
 const TAG_ICONS = {
   prod: ["M8 1.6l1.9 4 4.4.6-3.2 3.1.8 4.4L8 11.5l-3.9 2.2.8-4.4L1.7 6.2l4.4-.6z"],
-  primary: [
-    "M8 2a6 6 0 1 0 0 12A6 6 0 0 0 8 2zm0 1.4a4.6 4.6 0 1 1 0 9.2 4.6 4.6 0 0 1 0-9.2z",
-    "M8 4.9a3.1 3.1 0 1 0 0 6.2 3.1 3.1 0 0 0 0-6.2z",
-  ],
-  secondary: [
-    "M8 2a6 6 0 1 0 0 12A6 6 0 0 0 8 2zm0 1.4a4.6 4.6 0 1 1 0 9.2 4.6 4.6 0 0 1 0-9.2z",
-    "M8 4.9a3.1 3.1 0 0 0 0 6.2z",
-  ],
   dev: ["M5.5 4.2L1.5 8l4 3.8 1-1L3.6 8l2.9-2.8z", "M10.5 4.2l4 3.8-4 3.8-1-1L12.4 8 9.5 5.2z", "M9.3 3l1.2.4-3.8 9.6-1.2-.4z"],
   docker: [
     "M1 8.5h12.5c.6-.2 1.1-.7 1.3-1.5-.5-.2-1.1-.1-1.5.2-.1-.8-.6-1.3-1.2-1.7-.4.6-.5 1.3-.3 1.8H1z",
@@ -234,25 +227,26 @@ const TAG_ICONS = {
   ],
 };
 
-/** Brand marks for GPU guests, picked by words in the guest name; the first match wins. NVIDIA and AMD are the Simple Icons (CC0) paths on a 24 grid. */
+/** Brand marks for GPU guests, picked by words in the guest name; the first match wins. `pad` shrinks a mark inside its badge. */
 const GPU_BRANDS = [
   {
     pattern: /nvidia/i,
     box: 24,
+    pad: 0,
     paths: [
       "M8.948 8.798v-1.43a6.7 6.7 0 0 1 .424-.018c3.922-.124 6.493 3.374 6.493 3.374s-2.774 3.851-5.75 3.851c-.398 0-.787-.062-1.158-.185v-4.346c1.528.185 1.837.857 2.747 2.385l2.04-1.714s-1.492-1.952-4-1.952a6.016 6.016 0 0 0-.796.035m0-4.735v2.138l.424-.027c5.45-.185 9.01 4.47 9.01 4.47s-4.08 4.964-8.33 4.964c-.37 0-.733-.035-1.095-.097v1.325c.3.035.61.062.91.062 3.957 0 6.82-2.023 9.593-4.408.459.371 2.34 1.263 2.73 1.652-2.633 2.208-8.772 3.984-12.253 3.984-.335 0-.653-.018-.971-.053v1.864H24V4.063zm0 10.326v1.131c-3.657-.654-4.673-4.46-4.673-4.46s1.758-1.944 4.673-2.262v1.237H8.94c-1.528-.186-2.73 1.245-2.73 1.245s.68 2.412 2.739 3.11M2.456 10.9s2.164-3.197 6.5-3.533V6.201C4.153 6.59 0 10.653 0 10.653s2.35 6.802 8.948 7.42v-1.237c-4.84-.6-6.492-5.936-6.492-5.936z",
     ],
   },
   {
     pattern: /radeon|\bamd\b/i,
-    box: 24,
-    paths: [
-      "M18.324 9.137l1.559 1.56h2.556v2.557L24 14.814V9.137zM2 9.52l-2 4.96h1.309l.37-.982H3.9l.408.982h1.338L3.432 9.52zm4.209 0v4.955h1.238v-3.092l1.338 1.562h.188l1.338-1.556v3.091h1.238V9.52H10.47l-1.592 1.845L7.287 9.52zm6.283 0v4.96h2.057c1.979 0 2.88-1.046 2.88-2.472 0-1.36-.937-2.488-2.747-2.488zm1.237.91h.792c1.17 0 1.63.711 1.63 1.57 0 .728-.372 1.572-1.616 1.572h-.806zm-10.985 5.273l.791 1.932H2.008zm17.137.307l-1.604 1.603v2.25h2.246l1.604-1.607h-2.246z",
-    ],
+    box: 334,
+    pad: 70,
+    paths: ["M2 0H334V330L241 240V90H92Z", "M92 110V240H227L136 334H0V200Z"],
   },
   {
     pattern: /intel/i,
     box: 16,
+    pad: 0,
     paths: [
       "M7.6 2.5a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11zm0 1.7a3.8 3.8 0 1 1 0 7.6 3.8 3.8 0 0 1 0-7.6z",
       "M12.6 1.8a1.3 1.3 0 1 0 0 2.6 1.3 1.3 0 0 0 0-2.6z",
@@ -260,15 +254,15 @@ const GPU_BRANDS = [
   },
 ];
 
-/** @param {GuestTag} tag @param {Guest} guest @returns {{ paths: string[], box: number } | undefined} */
+/** @param {GuestTag} tag @param {Guest} guest @returns {{ paths: string[], box: number, pad: number } | undefined} */
 function tagIcon(tag, guest) {
   const key = tag.name.toLowerCase();
   if (key === "gpu") {
     const text = `${guest.name} ${guest.display_name ?? ""}`;
-    return GPU_BRANDS.find((brand) => brand.pattern.test(text)) ?? { paths: TAG_ICONS.gpu, box: 16 };
+    return GPU_BRANDS.find((brand) => brand.pattern.test(text)) ?? { paths: TAG_ICONS.gpu, box: 16, pad: 0 };
   }
   const paths = TAG_ICONS[/** @type {keyof typeof TAG_ICONS} */ (key)];
-  return paths === undefined ? undefined : { paths, box: 16 };
+  return paths === undefined ? undefined : { paths, box: 16, pad: 0 };
 }
 
 /** @param {Guest} guest @returns {Node[]} */
@@ -287,7 +281,11 @@ function topologyTag(tag, guest, cx, cy) {
       ? svgText({ x: cx, y: cy + 3.5, text: tag.letter, className: "topo-tag-letter", fill: foreground })
       : svg(
           "g",
-          { transform: `translate(${cx - 6} ${cy - 6}) scale(${12 / icon.box})`, fill: foreground, "fill-rule": "evenodd" },
+          {
+            transform: `translate(${cx - TOPOLOGY_TAG_ICON / 2} ${cy - TOPOLOGY_TAG_ICON / 2}) scale(${TOPOLOGY_TAG_ICON / (icon.box + 2 * icon.pad)}) translate(${icon.pad} ${icon.pad})`,
+            fill: foreground,
+            "fill-rule": "evenodd",
+          },
           icon.paths.map((d) => svg("path", { d })),
         ),
   ]);
@@ -307,7 +305,7 @@ function tagChip(tag, guest) {
     chip.append(
       svg(
         "svg",
-        { viewBox: `0 0 ${icon.box} ${icon.box}`, fill: "currentColor", "fill-rule": "evenodd", "aria-hidden": "true" },
+        { viewBox: `${-icon.pad} ${-icon.pad} ${icon.box + 2 * icon.pad} ${icon.box + 2 * icon.pad}`, fill: "currentColor", "fill-rule": "evenodd", "aria-hidden": "true" },
         icon.paths.map((d) => svg("path", { d })),
       ),
     );
@@ -341,6 +339,13 @@ const stateLabel = (state) => state.charAt(0).toUpperCase() + state.slice(1);
 /** @param {string} state @param {string} label */
 function statePill(state, label = stateLabel(state)) {
   return el("span", { className: `pill pill-${state}` }, [el("i", { className: "orb", attrs: { "aria-hidden": "true" } }), label]);
+}
+
+/** Status as just the colored dot; the state name is in the tooltip. @param {string} state */
+function stateDot(state) {
+  return el("span", { className: `pill pill-${state} state-dot`, attrs: { title: stateLabel(state), role: "img", "aria-label": stateLabel(state) } }, [
+    el("i", { className: "orb", attrs: { "aria-hidden": "true" } }),
+  ]);
 }
 
 /** Percent of total memory held by ZFS ARC, capped at what is in use; Proxmox counts ARC as used, not cached. @param {PveNode} node @returns {number | null} */
@@ -1186,19 +1191,19 @@ function renderGuests(nodes) {
       Boolean(action?.pending) ||
       (action?.retryAt ?? 0) > Date.now();
     return el("li", { className: "guest", attrs: { style: colorStyle(colorOfNode(guest.node)) } }, [
-      el("span", { className: "guest-mark", attrs: { "aria-hidden": "true" } }, [
-        el("span", { className: `guest-icon guest-${guest.kind}`, text: kindLabel(guest.kind) }),
-        el("span", { className: "guest-badge", text: initialOfNode(guest.node) }),
+      el("div", { className: "guest-lead" }, [
+        el("span", { className: "guest-mark", attrs: { "aria-hidden": "true" } }, [
+          el("span", { className: `guest-icon guest-${guest.kind}`, text: kindLabel(guest.kind) }),
+          el("span", { className: "guest-badge", text: initialOfNode(guest.node) }),
+        ]),
+        stateDot(guest.state),
       ]),
       el("div", { className: "guest-body" }, [
         el("div", { className: "guest-header" }, [
           el("strong", { className: "guest-name", text: guestLabel(guest), attrs: { title: guestLabel(guest) } }),
-          el("div", { className: "guest-state-actions" }, [rebootButton, statePill(guest.state)]),
-        ]),
-        el("div", { className: "guest-sub" }, [
-          el("small", { text: `${displayNodeName(guest.node)} · ID ${guest.vmid}` }),
           el("div", { className: "guest-tags" }, tagChips(guest)),
         ]),
+        el("div", { className: "guest-sub" }, [el("small", { text: `${displayNodeName(guest.node)} · ID ${guest.vmid} ·` }), rebootButton]),
         ...(metrics === null
           ? []
           : [

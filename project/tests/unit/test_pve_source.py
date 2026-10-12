@@ -87,7 +87,7 @@ def test_only_tracked_guest_tags_are_kept_and_use_pve_colors() -> None:
         ("docker", "K", "#2b7fd6", "#ffffff"),
         ("gpu", "G", "#8e55c9", "#ffffff"),
         ("dev", "D", "#ffff00", "#000000"),
-        ("secondary", "2", "#6b7c8c", "#ffffff"),
+        ("secondary", "II", "#a3174f", "#ffffff"),
     ]
 
 

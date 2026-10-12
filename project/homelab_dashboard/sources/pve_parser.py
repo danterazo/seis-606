@@ -27,8 +27,8 @@ TRACKED_TAGS: Final[tuple[TrackedTag, ...]] = (
     TrackedTag(name="docker", letter="K", default_color="#2b7fd6"),
     TrackedTag(name="gpu", letter="G", default_color="#8e55c9"),
     TrackedTag(name="dev", letter="D", default_color="#2e9e4f"),
-    TrackedTag(name="primary", letter="1", default_color="#0f8f94"),
-    TrackedTag(name="secondary", letter="2", default_color="#6b7c8c"),
+    TrackedTag(name="primary", letter="I", default_color="#0f8f94"),
+    TrackedTag(name="secondary", letter="II", default_color="#a3174f"),
 )
 _TRACKED_BY_NAME: Final[dict[str, TrackedTag]] = {tracked.name: tracked for tracked in TRACKED_TAGS}
 _TRACKED_ORDER: Final[dict[str, int]] = {tracked.name: position for position, tracked in enumerate(TRACKED_TAGS)}
