@@ -45,7 +45,7 @@ const SVG_NS = "http://www.w3.org/2000/svg";
 
 /** @type {ReadonlyArray<ReadonlyArray<string>>} */
 const HEADER_HAIKUS = [
-  ["I turn off the rack", "There is nothing left to fix", "I have found my peace"],
+  ["I turn off the rack", "Now there’s nothing to work on", "I have found my peace"],
   ["I watch the lights blink", "I don't know what they tell me", "They blink anyway"],
   ["I cannot connect", "Of course, it was DNS", "There goes my evening"],
 ];
