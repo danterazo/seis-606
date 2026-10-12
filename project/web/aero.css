@@ -87,6 +87,32 @@ button {
   opacity: 0.4;
   background: radial-gradient(ellipse at 50% 100%, rgba(200, 255, 179, 0.62), transparent 68%);
 }
+.reef-art {
+  position: absolute;
+  z-index: 0;
+  bottom: -1px;
+  width: clamp(360px, 47vw, 690px);
+  height: auto;
+  opacity: 0.82;
+  pointer-events: none;
+  filter: drop-shadow(0 10px 18px rgba(8, 55, 76, 0.2));
+  transform-origin: bottom center;
+  animation: reef-drift 12s ease-in-out infinite alternate;
+}
+.reef-art-left {
+  left: -3%;
+}
+.reef-art-right {
+  right: -4%;
+  width: clamp(340px, 44vw, 650px);
+  opacity: 0.74;
+  animation-delay: -5s;
+}
+@keyframes reef-drift {
+  to {
+    transform: translateY(-5px);
+  }
+}
 .haze {
   position: absolute;
   z-index: 0;
@@ -2383,9 +2409,8 @@ span.health-badge[role="button"] {
     animation: none !important;
     transition: none !important;
   }
-  .fish-gif,
-  .vector-fish {
-    display: none;
+  .reef-art {
+    animation: none;
   }
 }
 
