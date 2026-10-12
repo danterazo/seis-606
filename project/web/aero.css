@@ -13,9 +13,9 @@
   --amber: #f0a21c;
   --red: #e5483d;
   --bubble-min-size: 26px;
-  --aurora-mint: rgba(75, 255, 179, 0.78);
-  --aurora-lilac: rgba(187, 117, 255, 0.76);
-  --aurora-pink: rgba(255, 126, 201, 0.68);
+  --coral-mint: rgba(75, 255, 179, 0.78);
+  --coral-lilac: rgba(187, 117, 255, 0.76);
+  --coral-pink: rgba(255, 126, 201, 0.68);
   --font: "Frutiger", "Segoe UI", "Trebuchet MS", "Lucida Grande", "Helvetica Neue", Arial, sans-serif;
   font-family: var(--font);
   color: var(--ink);
@@ -87,50 +87,102 @@ button {
   opacity: 0.4;
   background: radial-gradient(ellipse at 50% 100%, rgba(200, 255, 179, 0.62), transparent 68%);
 }
-.aurora {
+.coral {
   position: absolute;
-  z-index: 0;
-  width: 92vw;
-  height: 27vh;
-  border-radius: 48% 52% 43% 57% / 54% 39% 61% 46%;
-  opacity: 0.5;
-  background: linear-gradient(
-    112deg,
-    transparent 8%,
-    rgba(95, 255, 190, 0.05) 18%,
-    var(--aurora-mint) 36%,
-    rgba(102, 232, 209, 0.34) 50%,
-    var(--aurora-lilac) 66%,
-    var(--aurora-pink) 74%,
-    transparent 91%
-  );
-  filter: blur(8px);
-  mask-image: linear-gradient(180deg, transparent, #000 28%, #000 72%, transparent);
-  animation: aurora-ribbon 20s ease-in-out infinite alternate;
+  bottom: -42px;
+  left: -28px;
+  width: clamp(280px, 32vw, 430px);
+  height: clamp(240px, 38vh, 410px);
+  opacity: 0.58;
+  filter: drop-shadow(0 0 12px var(--coral-glow));
+  transform-origin: bottom center;
+  animation: coral-sway 7s ease-in-out infinite alternate;
 }
-.aurora-one {
-  top: 13%;
-  left: -18%;
+.coral-one {
+  --coral-highlight: #d1ffe9;
+  --coral-mid: #49d5ba;
+  --coral-shadow: #6976ce;
+  --coral-glow: rgba(104, 255, 207, 0.42);
 }
-.aurora-two {
-  top: 38%;
-  right: -24%;
-  width: 72vw;
-  height: 24vh;
-  border-radius: 57% 43% 52% 48% / 40% 57% 43% 60%;
-  opacity: 0.44;
-  background: linear-gradient(
-    248deg,
-    transparent 8%,
-    var(--aurora-pink) 28%,
-    var(--aurora-lilac) 48%,
-    rgba(102, 232, 209, 0.42) 62%,
-    var(--aurora-mint) 76%,
-    transparent 91%
-  );
-  mask-image: linear-gradient(180deg, transparent, #000 26%, #000 74%, transparent);
-  animation-delay: -12s;
-  animation-duration: 23s;
+.coral-two {
+  --coral-highlight: #fff0fa;
+  --coral-mid: #df75c4;
+  --coral-shadow: #8e70d4;
+  --coral-glow: rgba(208, 126, 255, 0.48);
+  right: -24px;
+  left: auto;
+  width: clamp(250px, 29vw, 390px);
+  height: clamp(220px, 34vh, 360px);
+  opacity: 0.52;
+  animation-delay: -3.4s;
+  animation-duration: 8.5s;
+}
+.coral-branch {
+  position: absolute;
+  bottom: 0;
+  left: var(--branch-position);
+  width: var(--branch-width, 12px);
+  height: var(--branch-height);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--coral-shadow), var(--coral-mid) 55%, var(--coral-highlight));
+  box-shadow: inset 1px 0 3px rgba(255, 255, 255, 0.44), 0 0 8px var(--coral-glow);
+  transform: rotate(var(--branch-lean));
+  transform-origin: bottom center;
+  animation: coral-branch-sway 4.8s ease-in-out infinite alternate;
+}
+.coral-branch::before,
+.coral-branch::after {
+  position: absolute;
+  top: 20%;
+  width: 8px;
+  height: 46%;
+  border-radius: 999px;
+  content: "";
+  background: linear-gradient(90deg, var(--coral-shadow), var(--coral-mid) 55%, var(--coral-highlight));
+  box-shadow: inset 1px 0 2px rgba(255, 255, 255, 0.38);
+}
+.coral-branch::before {
+  left: -16%;
+  transform: rotate(-39deg);
+  transform-origin: bottom center;
+}
+.coral-branch::after {
+  right: -16%;
+  transform: rotate(39deg);
+  transform-origin: bottom center;
+}
+.branch-one {
+  --branch-position: 14%;
+  --branch-width: 10px;
+  --branch-height: 57%;
+  --branch-lean: -26deg;
+}
+.branch-two {
+  --branch-position: 31%;
+  --branch-height: 76%;
+  --branch-lean: -14deg;
+  animation-delay: -1.2s;
+}
+.branch-three {
+  --branch-position: 48%;
+  --branch-width: 15px;
+  --branch-height: 92%;
+  --branch-lean: 0deg;
+  animation-delay: -2.1s;
+}
+.branch-four {
+  --branch-position: 66%;
+  --branch-height: 72%;
+  --branch-lean: 15deg;
+  animation-delay: -0.7s;
+}
+.branch-five {
+  --branch-position: 83%;
+  --branch-width: 9px;
+  --branch-height: 54%;
+  --branch-lean: 28deg;
+  animation-delay: -2.8s;
 }
 .bubble {
   position: absolute;
@@ -667,9 +719,14 @@ button {
     transform: rotate(calc(var(--frond-angle) + 14deg)) scaleX(var(--frond-flip));
   }
 }
-@keyframes aurora-ribbon {
+@keyframes coral-sway {
   to {
-    transform: translate3d(14vw, 7vh, 0) rotate(14deg) scaleX(1.16);
+    transform: rotate(4deg) translateY(-4px);
+  }
+}
+@keyframes coral-branch-sway {
+  to {
+    transform: rotate(calc(var(--branch-lean) + 4deg));
   }
 }
 @keyframes glint {
