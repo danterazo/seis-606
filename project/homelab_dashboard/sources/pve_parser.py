@@ -21,14 +21,17 @@ _FALLBACK_PREFIX: Final[dict[GuestKind, str]] = {GuestKind.VM: "VM", GuestKind.C
 
 
 _HEX_COLOR: Final[re.Pattern[str]] = re.compile(r"[0-9a-fA-F]{6}")
-# Only these tags are shown; add a row to track another. Colors apply when the Proxmox web UI has none for the tag.
+# Only these tags are shown, in this order; add a row to track another. Colors apply when the Proxmox web UI has none for the tag.
 TRACKED_TAGS: Final[tuple[TrackedTag, ...]] = (
     TrackedTag(name="prod", letter="P", default_color="#d64545"),
-    TrackedTag(name="dev", letter="D", default_color="#2e9e4f"),
     TrackedTag(name="docker", letter="K", default_color="#2b7fd6"),
     TrackedTag(name="gpu", letter="G", default_color="#8e55c9"),
+    TrackedTag(name="dev", letter="D", default_color="#2e9e4f"),
+    TrackedTag(name="primary", letter="1", default_color="#0f8f94"),
+    TrackedTag(name="secondary", letter="2", default_color="#6b7c8c"),
 )
 _TRACKED_BY_NAME: Final[dict[str, TrackedTag]] = {tracked.name: tracked for tracked in TRACKED_TAGS}
+_TRACKED_ORDER: Final[dict[str, int]] = {tracked.name: position for position, tracked in enumerate(TRACKED_TAGS)}
 
 
 def _contrast_text(*, color: str) -> str:
@@ -55,7 +58,10 @@ def _tag_style_colors(*, cluster_options: Optional[JsonObject]) -> dict[str, tup
 
 
 def _parse_tags(*, row: JsonObject, colors: Mapping[str, tuple[str, Optional[str]]]) -> tuple[GuestTag, ...]:
-    names: list[str] = [name for name in re.split(r"[;, ]+", str(row.get("tags") or "")) if name]
+    names: list[str] = sorted(
+        (name for name in re.split(r"[;, ]+", str(row.get("tags") or "")) if name.lower() in _TRACKED_ORDER),
+        key=lambda name: _TRACKED_ORDER[name.lower()],
+    )
     tags: list[GuestTag] = []
     for name in names:
         tracked: Optional[TrackedTag] = _TRACKED_BY_NAME.get(name.lower())

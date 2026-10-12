@@ -75,7 +75,7 @@ def test_fetch_parses_nodes_guests_and_addresses() -> None:
 def test_only_tracked_guest_tags_are_kept_and_use_pve_colors() -> None:
     resources: list[dict[str, Any]] = [
         {"type": "node", "node": "cerulean", "status": "online"},
-        {"type": "lxc", "vmid": 201, "node": "cerulean", "name": "dns", "status": "running", "tags": "dev;docker;lab;alt-arch"},
+        {"type": "lxc", "vmid": 201, "node": "cerulean", "name": "dns", "status": "running", "tags": "secondary;dev;gpu;docker;lab;alt-arch;prod"},
     ]
     options: dict[str, Any] = {"tag-style": "color-map=dev:FFFF00;lab:112233:EEEEEE,shape=full"}
     stdout: str = documents(resources=resources, cluster_status=[]) + "\nnull\n" + json.dumps(options)
@@ -83,8 +83,11 @@ def test_only_tracked_guest_tags_are_kept_and_use_pve_colors() -> None:
     tags = make_source(stdout=stdout).fetch().nodes[0].guests[0].tags
 
     assert [(tag.name, tag.letter, tag.color, tag.text_color) for tag in tags] == [
-        ("dev", "D", "#ffff00", "#000000"),
+        ("prod", "P", "#d64545", "#ffffff"),
         ("docker", "K", "#2b7fd6", "#ffffff"),
+        ("gpu", "G", "#8e55c9", "#ffffff"),
+        ("dev", "D", "#ffff00", "#000000"),
+        ("secondary", "2", "#6b7c8c", "#ffffff"),
     ]
 
 
