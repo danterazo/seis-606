@@ -9,7 +9,7 @@ import shutil
 import subprocess
 from typing import Any, Final, Optional
 
-# `-n standby` makes smartctl skip a spun-down disk instead of waking it.
+# `-n standby` makes smartctl skip a spun-down disk instead of waking it
 SMARTCTL_TIMEOUT_SECONDS: Final[float] = 20.0
 ZPOOL_TIMEOUT_SECONDS: Final[float] = 15.0
 NVME_FIELDS: Final[tuple[str, ...]] = ("critical_warning", "available_spare", "available_spare_threshold", "percentage_used", "media_errors")
@@ -24,7 +24,7 @@ def run(*, command: list[str], timeout: float) -> str:
 
 
 def run_json(*, command: list[str]) -> Optional[dict[str, Any]]:
-    # smartctl exits non-zero to flag SMART findings while still printing valid JSON, so ignore the exit status.
+    # smartctl exits non-zero to flag SMART findings while still printing valid JSON, so ignore the exit status
     try:
         document = json.loads(run(command=command, timeout=SMARTCTL_TIMEOUT_SECONDS))
     except ValueError:
@@ -75,7 +75,7 @@ def collect_disks() -> Optional[list[dict[str, Any]]]:
         if not isinstance(name, str):
             continue
         command = ["smartctl", "-a", "-j", "-n", "standby", name]
-        # Forcing `-d scsi` on a SATA disk behind an HBA hides its ATA data; auto-detection handles it.
+        # using `-d scsi` on a SATA disk behind an HBA hides its ATA data; auto-detection handles it
         if isinstance(entry.get("type"), str) and entry["type"] != "scsi":
             command[1:1] = ["-d", entry["type"]]
         disks.append(describe_disk(name=name, report=run_json(command=command)))

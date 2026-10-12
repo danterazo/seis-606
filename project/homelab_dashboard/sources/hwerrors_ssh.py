@@ -27,7 +27,7 @@ class HardwareErrorProbe(Protocol):
 @dataclass(frozen=True, slots=True, kw_only=True)
 class SshHardwareErrorProbe:
     user: str = DEFAULT_USER
-    # Scanning two weeks of journal can take a while on a node that is logging a storm.
+    # scanning two weeks of journal can take a while on a node that is logging a storm
     timeout_seconds: float = 60.0
     runner: CommandRunner = run_command
 

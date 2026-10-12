@@ -22,7 +22,7 @@ JOURNAL_DEADLINE_SECONDS: Final[float] = 25.0
 COMMAND_TIMEOUT_SECONDS: Final[float] = 15.0
 EDAC_ROOT: Final[Path] = Path("/sys/devices/system/edac/mc")
 
-# Deliberately broad; the dashboard decides which lines are real events.
+# deliberately broad; the dashboard decides which lines are real events
 INTERESTING: Final[re.Pattern[str]] = re.compile(
     r"mce|machine check|hardware error|edac|soft[- ]offlin|hwpoison|memory failure|pcie bus error|\baer\b"
     r"|nvme\d+|blk_update_request|i/o error|synchronize cache|rejecting i/o|detached scsi|\bata\d+(\.\d+)?:"

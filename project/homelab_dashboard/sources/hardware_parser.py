@@ -9,10 +9,11 @@ from homelab_dashboard.sources.json_values import as_integer, as_number, as_text
 JsonObject = Mapping[str, object]
 
 PASSTHROUGH_DRIVER: Final[str] = "vfio-pci"
-# Drivers whose utilization the probe knows how to read.
+
+# drivers whose utilization the probe knows how to read
 MONITORED_DRIVERS: Final[tuple[str, ...]] = ("amdgpu", "nvidia", "i915", "xe")
 
-# Marketing noise that adds length but no information to a CPU name.
+# marketing noise that adds length but no information to a CPU name
 _CPU_NOISE: Final[tuple[str, ...]] = (r"\(R\)", r"\(TM\)", r"@\s*[\d.]+\s*[GM]Hz")
 _CPU_FILLER: Final[tuple[str, ...]] = (r"\bCPU\b", r"\bProcessor\b", r"\b\d+-Cores?\b")
 
@@ -42,7 +43,7 @@ def _parse_gpu(*, row: object) -> Optional[Gpu]:
     if name is None:
         return None
     state: GpuState = _gpu_state(driver=as_text(value=row.get("driver")))
-    # A passed-through or driverless card has no readings the host can trust.
+    # a passed-through or driverless card has no readings the host can trust
     if state is not GpuState.ACTIVE:
         return Gpu(name=name, state=state)
     return Gpu(

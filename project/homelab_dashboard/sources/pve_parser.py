@@ -16,21 +16,21 @@ _GUEST_STATES: Final[dict[str, GuestState]] = {
     "stopped": GuestState.STOPPED,
     "paused": GuestState.PAUSED,
 }
-# Proxmox omits names for guests on unreachable nodes.
+# the Proxmox API omits names for guests on unreachable nodes
 _FALLBACK_PREFIX: Final[dict[GuestKind, str]] = {GuestKind.VM: "VM", GuestKind.CONTAINER: "LXC"}
 
 
 _HEX_COLOR: Final[re.Pattern[str]] = re.compile(r"[0-9a-fA-F]{6}")
-# Only these tags are shown, in this order; add a row to track another. Colors apply when the Proxmox web UI has none for the tag.
+# only these tags are shown, in this order; add a row to track another. Colors apply when the Proxmox web UI has none for the tag
 TRACKED_TAGS: Final[tuple[TrackedTag, ...]] = (
     TrackedTag(name="docker", letter="K", default_color="#2b7fd6"),
     TrackedTag(name="gpu", letter="G", default_color="#8e55c9"),
     TrackedTag(name="primary", letter="I", default_color="#0f8f94"),
     TrackedTag(name="secondary", letter="II", default_color="#a3174f"),
 )
-# Environment comes from the guest's resource pool, not from tags: members of this pool are prod, everything else is dev.
+# the environment comes from the guest's resource pool, not from tags: members of this pool are prod, everything else is dev
 PROD_POOL: Final[str] = "prod"
-# Guests that are prod but sit in another pool for alternate backup scheduling reasons
+# guests that are prod but sit in another pool for alternate backup scheduling reasons
 PROD_VMID_EXCEPTIONS: Final[frozenset[int]] = frozenset({170, 171})
 PROD_TAG: Final[TrackedTag] = TrackedTag(name="prod", letter="P", default_color="#d64545")
 DEV_TAG: Final[TrackedTag] = TrackedTag(name="dev", letter="D", default_color="#2e9e4f")
@@ -112,7 +112,7 @@ def _parse_node(
     reported: Resources = _resources(row=row)
     if local_resources is not None and reported.memory_used_bytes is None:
         reported = local_resources
-    # An unreachable node's cached usage figures are stale, so only its capacity is kept.
+    # an unreachable node's cached usage figures are stale, so only its capacity is kept
     resources: Resources = (
         reported if state is NodeState.ONLINE else Resources(cpu_cores=reported.cpu_cores, memory_total_bytes=reported.memory_total_bytes)
     )
@@ -158,7 +158,7 @@ def parse_snapshot(
     cluster_options: Optional[JsonObject] = None,
 ) -> ClusterSnapshot:
     addresses: dict[str, str] = _node_addresses(cluster_status=cluster_status)
-    # Without quorum the resources list marks even the reachable node "unknown"; the cluster status still knows it is up.
+    # without quorum the resources list marks even the reachable node "unknown"; the cluster status still knows it is up
     online_names: set[str] = {str(row.get("name")) for row in cluster_status if row.get("type") == "node" and row.get("online") == 1}
     local_names: set[str] = {str(row.get("name")) for row in cluster_status if row.get("type") == "node" and row.get("local") == 1}
     local_resources: Optional[Resources] = _local_resources(status=local_status)

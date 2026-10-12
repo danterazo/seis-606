@@ -27,7 +27,7 @@ class StorageProbe(Protocol):
 @dataclass(frozen=True, slots=True, kw_only=True)
 class SshStorageProbe:
     user: str = DEFAULT_USER
-    # Reading every disk's SMART data takes a few seconds, well beyond the hardware probe.
+    # reading every disk's SMART data takes a few seconds, well beyond the hardware probe
     timeout_seconds: float = 60.0
     runner: CommandRunner = run_command
 

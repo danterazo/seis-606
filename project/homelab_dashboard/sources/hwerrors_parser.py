@@ -18,7 +18,7 @@ from homelab_dashboard.models import (
 from homelab_dashboard.sources.base import StatusSourceError
 from homelab_dashboard.sources.json_values import as_integer, as_number, as_text
 
-# Events at one location this many times, or on more than one boot, count as recurring rather than isolated.
+# events at one location this many times, or on more than one boot, count as recurring rather than isolated
 RECURRENCE_THRESHOLD: Final[int] = 3
 RAW_EVENTS_PER_INCIDENT: Final[int] = 10
 PAGE_SHIFT: Final[int] = 12
@@ -239,7 +239,7 @@ def _title(*, category: ErrorCategory, classification: ErrorClass, events: list[
 def _incident_level(*, classification: ErrorClass, count: int, boots_seen: int, current: bool) -> HealthLevel:
     recurring: bool = count >= RECURRENCE_THRESHOLD or boots_seen >= 2
     level: HealthLevel = HealthLevel.CRITICAL if classification is ErrorClass.UNCORRECTED or recurring else HealthLevel.WARNING
-    # An earlier boot is history; it should be visible but must not mark the node as failing now.
+    # an earlier boot is history; it should be visible but must not mark the node as failing now
     return level if current else min(level, HealthLevel.WARNING, key=_SEVERITY.index)
 
 

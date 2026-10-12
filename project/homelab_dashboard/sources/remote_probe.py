@@ -39,7 +39,7 @@ def run(*, command: list[str], timeout: float = 4.0) -> str:
     try:
         completed = subprocess.run(command, capture_output=True, text=True, timeout=timeout, stdin=subprocess.DEVNULL, check=False)
     except subprocess.TimeoutExpired as error:
-        # intel_gpu_top is stopped with SIGINT by `timeout`; keep whatever it printed.
+        # intel_gpu_top is stopped with SIGINT by `timeout`; keep whatever it printed
         partial = error.stdout
         return partial.decode() if isinstance(partial, bytes) else (partial or "")
     except OSError:

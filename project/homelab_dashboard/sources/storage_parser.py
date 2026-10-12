@@ -6,18 +6,18 @@ from homelab_dashboard.models import Disk, HealthLevel, Pool, Storage
 from homelab_dashboard.sources.base import StatusSourceError
 from homelab_dashboard.sources.json_values import as_integer, as_text
 
-# (warning, critical) in degrees Celsius; spinning disks are rated far lower than flash.
+# (warning, critical) in degrees Celsius; spinning disks are rated far lower than flash
 HDD_TEMPERATURE_LIMITS: Final[tuple[int, int]] = (45, 50)
 SOLID_STATE_TEMPERATURE_LIMITS: Final[tuple[int, int]] = (70, 80)
 POOL_CAPACITY_LIMITS: Final[tuple[int, int]] = (80, 90)
 NVME_WEAR_WARNING_PERCENT: Final[int] = 90
 
-# ATA attributes whose raw count should be zero on a healthy disk.
+# the ATA attributes whose raw count should be zero on a healthy disk
 ATA_ZERO_EXPECTED: Final[tuple[int, ...]] = (5, 10, 184, 187, 196, 197, 198, 199)
 
 _SEVERITY: Final[tuple[HealthLevel, ...]] = (HealthLevel.OK, HealthLevel.UNKNOWN, HealthLevel.WARNING, HealthLevel.CRITICAL)
 _Finding = tuple[HealthLevel, str]
-# AVAIL (idle spare) and INUSE are intentionally excluded; they are not problems.
+# the AVAIL (idle spare) and INUSE fields are intentionally excluded; they are not problems
 _DEVICE_STATES: Final[tuple[str, ...]] = ("ONLINE", "DEGRADED", "FAULTED", "OFFLINE", "UNAVAIL", "REMOVED")
 
 
@@ -118,7 +118,7 @@ def _pool_status_findings(*, name: str, status: str) -> list[_Finding]:
     findings: list[_Finding] = []
     for line in status.splitlines():
         fields: list[str] = line.split()
-        # The pool's own row in the config table: NAME STATE READ WRITE CKSUM.
+        # the pool's own row in the config table: NAME STATE READ WRITE CKSUM
         if len(fields) == 5 and fields[0] == name and fields[2:] != ["0", "0", "0"]:
             findings.append((HealthLevel.WARNING, f"Device errors on pool: read {fields[2]}, write {fields[3]}, checksum {fields[4]}"))
         if len(fields) >= 5 and fields[0] != name and fields[1] in _DEVICE_STATES:

@@ -129,7 +129,7 @@ const truncate = (text, limit) => (text.length > limit ? `${text.slice(0, limit 
 /** @param {number} value @param {number} digits */
 const trimNumber = (value, digits) => value.toFixed(digits).replace(/\.0+$/, "");
 
-/** Memory under 1 GB reads better in MB. */
+/** memory under 1 GB reads better in MB */
 /** @param {number} total @returns {{ size: number, label: string, digits: number }} */
 const memoryUnit = (total) =>
   total < BYTES_PER_GIB ? { size: BYTES_PER_MIB, label: "MB", digits: 0 } : { size: BYTES_PER_GIB, label: "GB", digits: 1 };
@@ -140,7 +140,7 @@ function formatBytes(bytes) {
   return `${trimNumber(bytes / unit.size, unit.digits)} ${unit.label}`;
 }
 
-/** Pool sizes run to terabytes. @param {number | null} bytes */
+/** pool sizes run to terabytes @param {number | null} bytes */
 function formatPoolBytes(bytes) {
   if (bytes === null) return "—";
   return bytes >= BYTES_PER_GIB * 1024 ? `${trimNumber(bytes / (BYTES_PER_GIB * 1024), 2)} TB` : formatBytes(bytes);
@@ -158,7 +158,7 @@ function formatMemoryPair({ used, total }) {
   const unit = memoryUnit(total);
   const usedUnit = memoryUnit(used);
   let usedText = trimNumber(used / usedUnit.size, usedUnit.digits);
-  // A small but real reading should not be shown as zero.
+  // a small but real reading should not be shown as zero
   if (usedText === "0" && used > 0) usedText = trimNumber(used / usedUnit.size, 2);
   if (usedUnit.label !== unit.label) usedText += ` ${usedUnit.label}`;
   return `${usedText} / ${trimNumber(total / unit.size, unit.digits)} ${unit.label}`;
@@ -167,7 +167,7 @@ function formatMemoryPair({ used, total }) {
 /** @param {Resources} resources */
 const formatCores = ({ cpu_cores: cores }) => (cores === null ? "Cores Unknown" : `${cores} ${cores === 1 ? "Core" : "Cores"}`);
 
-/** Allotment, usage, then percentage: "3/8 GB (38%)". @param {Resources} resources */
+/** allotment, usage, then percentage: "3/8 GB (38%)" @param {Resources} resources */
 function formatRam(resources) {
   const { memory_used_bytes: used, memory_total_bytes: total } = resources;
   if (total === null) return "Unknown";
@@ -177,7 +177,7 @@ function formatRam(resources) {
 
 /** @typedef {{ percent: number | null, text: string }} GuestMetric */
 
-/** Stopped guests have nothing live to show, so they get no metrics at all. @param {Guest} guest @returns {{ cpu: GuestMetric, ram: GuestMetric } | null} */
+/** stopped guests have nothing live to show, so they get no metrics at all @param {Guest} guest @returns {{ cpu: GuestMetric, ram: GuestMetric } | null} */
 function guestMetrics(guest) {
   if (guest.state !== "running") return null;
   const { resources } = guest;
@@ -206,13 +206,13 @@ const guestSummary = (node) => `${plural(countKind(node, "vm"), "VM")} · ${plur
 const NODE_COLOR_PATTERN = /^#[0-9a-f]{6}$/i;
 const FALLBACK_NODE_COLOR = "#5b6b7a";
 
-/** The color is injected into a style attribute, so only plain hex values pass. @param {string | undefined} color */
+/** the color is injected into a style attribute, so only plain hex values pass @param {string | undefined} color */
 const safeColor = (color) => (color !== undefined && NODE_COLOR_PATTERN.test(color) ? color : FALLBACK_NODE_COLOR);
 
 /** @param {string | undefined} color */
 const colorStyle = (color) => `--node-color: ${safeColor(color)}`;
 
-/** Logos for tags that have one; the rest show their letter. Paths are drawn on a 16x16 grid. */
+/** logos for tags that have one; the rest show their letter. Paths are drawn on a 16x16 grid */
 const TAG_ICONS = {
   prod: ["M8 1.6l1.9 4 4.4.6-3.2 3.1.8 4.4L8 11.5l-3.9 2.2.8-4.4L1.7 6.2l4.4-.6z"],
   dev: ["M5.5 4.2L1.5 8l4 3.8 1-1L3.6 8l2.9-2.8z", "M10.5 4.2l4 3.8-4 3.8-1-1L12.4 8 9.5 5.2z", "M9.3 3l1.2.4-3.8 9.6-1.2-.4z"],
@@ -228,7 +228,7 @@ const TAG_ICONS = {
   ],
 };
 
-/** Brand marks for GPU guests, picked by words in the guest name; the first match wins. `pad` shrinks a mark inside its badge. */
+/** brand marks for GPU guests, picked by words in the guest name; the first match wins. `pad` shrinks a mark inside its badge */
 const GPU_BRANDS = [
   {
     pattern: /nvidia/i,
@@ -280,7 +280,7 @@ function tagChips(guest) {
   return (guest.tags ?? []).map((tag) => tagChip(tag, guest));
 }
 
-/** Topology pills are SVG, so each tag is a small disc with its logo or letter. @param {GuestTag} tag @param {Guest} guest @param {number} cx @param {number} cy */
+/** topology pills are SVG, so each tag is a small disc with its logo or letter @param {GuestTag} tag @param {Guest} guest @param {number} cx @param {number} cy */
 function topologyTag(tag, guest, cx, cy) {
   const icon = tagIcon(tag, guest);
   const foreground = NODE_COLOR_PATTERN.test(tag.text_color) ? tag.text_color : "#ffffff";
@@ -301,7 +301,7 @@ function topologyTag(tag, guest, cx, cy) {
   ]);
 }
 
-/** Colors come from Proxmox but go into a style attribute, so only plain hex passes. @param {GuestTag} tag @param {Guest} guest */
+/** colors come from Proxmox but go into a style attribute, so only plain hex passes @param {GuestTag} tag @param {Guest} guest */
 function tagChip(tag, guest) {
   const background = safeColor(tag.color);
   const foreground = NODE_COLOR_PATTERN.test(tag.text_color) ? tag.text_color : "#ffffff";
@@ -336,7 +336,7 @@ const initialOfNode = (nodeName) => state.snapshot?.nodes.find((node) => node.na
 /** @param {Guest["kind"]} kind */
 const kindLabel = (kind) => (kind === "vm" ? "VM" : "LXC");
 
-/** Capitalized name for display; the raw name stays the identifier. @param {PveNode} node */
+/** capitalized name for display; the raw name stays the identifier @param {PveNode} node */
 const nodeLabel = (node) => node.display_name || node.name;
 
 /** @param {Guest} guest */
@@ -356,7 +356,7 @@ function statePill(state, label = stateLabel(state)) {
   return el("span", { className: `pill pill-${state}` }, [el("i", { className: "orb", attrs: { "aria-hidden": "true" } }), label]);
 }
 
-/** Status as just the colored dot; the state name is in the tooltip. @param {string} state */
+/** status as just the colored dot; the state name is in the tooltip @param {string} state */
 function stateDot(state) {
   return el(
     "span",
@@ -365,7 +365,7 @@ function stateDot(state) {
   );
 }
 
-/** Percent of total memory held by ZFS ARC, capped at what is in use; Proxmox counts ARC as used, not cached. @param {PveNode} node @returns {number | null} */
+/** percent of total memory held by ZFS ARC, capped at what is in use; Proxmox counts ARC as used, not cached @param {PveNode} node @returns {number | null} */
 function arcPercent(node) {
   const { memory_used_bytes: used, memory_total_bytes: total } = node.resources;
   const arc = node.hardware.zfs_arc_bytes;
@@ -373,7 +373,7 @@ function arcPercent(node) {
   return clamp((Math.min(arc, used) / total) * 100);
 }
 
-/** Sums every pool with known capacity; used space comes from the pool's root dataset, so child datasets are counted once. @param {Pool[]} pools */
+/** sums every pool with known capacity; used space comes from the pool's root dataset, so child datasets are counted once @param {Pool[]} pools */
 function zfsTotals(pools) {
   const known = pools.filter((pool) => pool.size_bytes !== null && pool.size_bytes > 0 && pool.dataset_available_bytes !== null);
   if (known.length === 0) return null;
@@ -401,7 +401,7 @@ function gauge({ label, value, tone, arcValue = null, arcClass = "gauge-arc-zfs"
       "stroke-dasharray": `${(circumference * (percent ?? 0)) / 100} ${circumference}`,
       transform: "rotate(-90 28 28)",
     });
-  // The ARC arc sits underneath and spans all used memory; the green arc covers the non-ARC part.
+  // the ARC arc sits underneath and spans all used memory; the green arc covers the non-ARC part
   const arcs =
     arcValue === null || value === null
       ? [ringArc(`gauge-arc gauge-${tone}`, value)]
@@ -487,7 +487,7 @@ function renderNodeList(nodes) {
 const fact = (label, value) =>
   el("div", { className: "fact" }, [el("span", { className: "fact-label", text: label }), el("span", { className: "fact-value", text: value })]);
 
-/** CPU topology is polled and cached with the per-node hardware probe. @param {Hardware} hardware */
+/** CPU topology is polled and cached with the per-node hardware probe @param {Hardware} hardware */
 function cpuModelLine({ cpu_model: model, cpu_cores: cores, cpu_threads: threads, source }) {
   const expected = source !== "live";
   const displayModel = model?.replace("Ryzen Threadripper PRO", "Threadripper").replace("Ryzen Threadripper", "Threadripper") ?? "CPU";
@@ -503,7 +503,7 @@ const HEALTH_ORDER = ["ok", "unknown", "warning", "critical"];
 const worstLevel = (levels) =>
   levels.reduce((worst, level) => (HEALTH_ORDER.indexOf(level) > HEALTH_ORDER.indexOf(worst) ? level : worst), /** @type {HealthLevel} */ ("ok"));
 
-/** A badge that opens the node's storage details; a span because tiles are buttons and can't nest one. @param {string} nodeName @param {HealthLevel | "na"} level @param {string} text @param {string} title */
+/** a badge that opens the node's storage details; a span because tiles are buttons and can't nest one @param {string} nodeName @param {HealthLevel | "na"} level @param {string} text @param {string} title */
 function healthBadge(nodeName, level, text, title) {
   return el("span", {
     className: `health-badge health-${level}`,
@@ -512,12 +512,12 @@ function healthBadge(nodeName, level, text, title) {
   });
 }
 
-/** A non-interactive stand-in shown while a probe has not reported yet. @param {string} text */
+/** a non-interactive stand-in shown while a probe has not reported yet @param {string} text */
 function pendingBadge(text) {
   return el("span", { className: "health-badge health-pending", text, attrs: { title: "Gathering data…", "aria-busy": "true" } });
 }
 
-/** One SMART badge plus one badge per zpool, each coloured by its worst finding. @param {PveNode} node */
+/** one SMART badge plus one badge per zpool, each coloured by its worst finding @param {PveNode} node */
 function storageBadges(node) {
   const storage = node.hardware.storage;
   if (!storage) return node.state === "online" ? [el("div", { className: "storage-badges" }, [pendingBadge("Storage: Checking…")])] : [];
@@ -535,12 +535,12 @@ function storageBadges(node) {
       flagged.length === 0
         ? [`All ${plural(storage.disks.length, "Disk")} Healthy${Number.isFinite(hottest) ? `, Hottest ${hottest} °C` : ""}`]
         : flagged.map((disk) => `${disk.device}: ${disk.findings.join("; ")}`);
-    // Warnings and criticals both go red so a flagged disk stands out.
+    // warnings and criticals both go red so a flagged disk stands out
     badges.push(healthBadge(node.name, level === "warning" ? "critical" : level, text, lines.join("\n")));
   }
   if (storage.zfs_available) {
     for (const pool of storage.pools) {
-      // Capacity is already shown by the ZFS gauge.
+      // capacity is already shown by the ZFS gauge
       const headlineFindings = pool.findings.filter((finding) => !/% full$/i.test(finding));
       const reason = (pool.state !== "ONLINE" ? pool.state : (headlineFindings[0] ?? pool.state)).toUpperCase();
       const usage = poolUsage(pool);
@@ -548,7 +548,7 @@ function storageBadges(node) {
         pool.level === "ok" || (pool.state === "ONLINE" && headlineFindings.length === 0)
           ? `${pool.name} ${pool.state}`
           : `${pool.name} ${reason}${headlineFindings.length > 1 ? ` +${headlineFindings.length - 1}` : ""}`;
-      // Only tank carries the extra stats on its badge for now.
+      // only tank carries the extra stats on its badge for now
       const extras =
         pool.name === "tank"
           ? [
@@ -582,7 +582,7 @@ function storageBadges(node) {
   return badges.length === 0 ? [] : [el("div", { className: "storage-badges" }, badges)];
 }
 
-/** One badge for hardware error evidence, kept apart from the CPU and RAM utilization gauges. @param {PveNode} node */
+/** one badge for hardware error evidence, kept apart from the CPU and RAM utilization gauges @param {PveNode} node */
 function hardwareErrorBadges(node) {
   const errors = node.hardware.hardware_errors;
   if (!errors) return node.state === "online" ? [el("div", { className: "storage-badges" }, [pendingBadge("HW Errors: Checking…")])] : [];
@@ -653,7 +653,7 @@ const titleCase = (text) => {
     .join(" ");
 };
 
-/** Hardware errors, boots and currently flagged storage in one time-ordered list; nothing here asserts a cause. @param {PveNode} node @param {HardwareErrors} errors */
+/** hardware errors, boots and currently flagged storage in one time-ordered list; nothing here asserts a cause @param {PveNode} node @param {HardwareErrors} errors */
 function timelineEntries(node, errors) {
   /** @type {{ time: string | null, label: string, detail: string, level: HealthLevel | "info", historical: boolean }[]} */
   const entries = [];
@@ -813,7 +813,7 @@ function openHardwareErrorsDialog(nodeName) {
   syncHardwareErrorsDialog();
 }
 
-/** Keeps an open dialog current as new snapshots arrive. */
+/** keeps an open dialog current as new snapshots arrive */
 function syncHardwareErrorsDialog() {
   const dialog = required("#hwerrors-dialog");
   if (!(dialog instanceof HTMLDialogElement) || hwErrorsDialogNode === null) return;
@@ -822,7 +822,7 @@ function syncHardwareErrorsDialog() {
     dialog.close();
     return;
   }
-  // Re-rendering would collapse any raw-record sections the user has open.
+  // re-rendering would collapse any raw-record sections the user has open
   const signature = JSON.stringify([node.hardware.hardware_errors, node.hardware.storage]);
   if (dialog.open && signature === hwErrorsRendered) return;
   hwErrorsRendered = signature;
@@ -906,7 +906,7 @@ function openStorageDialog(nodeName) {
   syncStorageDialog();
 }
 
-/** Keeps an open dialog current as new snapshots arrive. */
+/** keeps an open dialog current as new snapshots arrive */
 function syncStorageDialog() {
   const dialog = required("#storage-dialog");
   if (!(dialog instanceof HTMLDialogElement) || storageDialogNode === null) return;
@@ -919,7 +919,7 @@ function syncStorageDialog() {
   if (!dialog.open) dialog.showModal();
 }
 
-/** Memory and error badges share the first row, storage badges the second, so a longer badge never reshuffles the rest. @param {HTMLElement[]} hardware @param {HTMLElement[]} storage */
+/** memory and error badges share the first row, storage badges the second, so a longer badge never reshuffles the rest @param {HTMLElement[]} hardware @param {HTMLElement[]} storage */
 function footerRows(hardware, storage) {
   const rows = [hardware, storage].filter((row) => row.length > 0).map((row) => el("div", { className: "footer-row" }, row));
   return el("div", { className: "tile-footer" }, rows);
@@ -940,7 +940,7 @@ function renderOverview(nodes) {
     if (zfs !== null) {
       const value = clamp((zfs.used / zfs.size) * 100);
       const title = `ZFS: ${formatPercent(value)} used · ${formatPoolBytes(zfs.used)} of ${formatPoolBytes(zfs.size)} across ${zfs.names.join(", ")}`;
-      // Purple is the data pools, orange the rpool tacked on at the end; the split only shows with several pools.
+      // purple is the data pools, orange the rpool tacked on at the end; the split only shows with several pools
       const rpoolIndex = zfs.names.indexOf("rpool");
       const rpoolPercent = zfs.names.length < 2 || rpoolIndex < 0 ? null : (zfs.usedByPool[rpoolIndex] / zfs.size) * 100;
       const detail = zfs.names.map((name, index) => `${name}: ${formatPoolBytes(zfs.usedByPool[index])}`).join(" · ");
@@ -949,7 +949,7 @@ function renderOverview(nodes) {
           label: "ZFS",
           value,
           tone: "storage",
-          // The purple arc spans everything; the orange rpool arc sits on top from the start, widened so a tiny rpool still shows.
+          // the purple arc spans everything; the orange rpool arc sits on top from the start, widened so a tiny rpool still shows
           arcValue: rpoolPercent === null ? null : value - Math.min(Math.max(rpoolPercent, 5), value),
           arcClass: "gauge-arc-pool",
           title: rpoolPercent === null ? title : `${title}\n${detail}`,
@@ -1086,7 +1086,7 @@ function renderTopology(nodes) {
       const tagStep = TOPOLOGY_TAG_RADIUS * 2 + TOPOLOGY_TAG_GAP;
       const tagsRight = gx + pill.width - 30;
       const tagsWidth = tags.length === 0 ? 0 : tags.length * tagStep - TOPOLOGY_TAG_GAP;
-      // About 6.5px per character of name text.
+      // about 6.5px per character of name text
       const nameLimit = Math.min(TOPOLOGY_NAME_LIMIT, Math.floor((pill.width - pill.badge - 8 - 30 - tagsWidth - 6) / 6.5));
       drawing.push(
         svg("g", { class: `topo-guest topo-${kind}${dim ? " is-dim" : ""}`, style: colorStyle(node.color) }, [
@@ -1130,7 +1130,7 @@ function renderTopology(nodes) {
 /** @type {Readonly<Record<GuestState, number>>} */
 const STATE_RANK = { running: 0, paused: 1, stopped: 2, unknown: 3 };
 
-/** Running guests first, then paused, stopped, unknown; the cluster-unique VM id orders each group. @param {Guest} a @param {Guest} b */
+/** running guests first, then paused, stopped, unknown; the cluster-unique VM id orders each group @param {Guest} a @param {Guest} b */
 const compareGuests = (a, b) => STATE_RANK[a.state] - STATE_RANK[b.state] || a.vmid - b.vmid;
 
 /** @param {Guest} guest @param {GuestFilter} filter */
@@ -1417,7 +1417,7 @@ function errorMessage(payload) {
 
 let refreshInFlight = false;
 
-/** Polls the local server, which shares one Proxmox query between callers; redraws only when something changed. @param {{ force?: boolean }} [options] */
+/** polls the local server, which shares one Proxmox query between callers; redraws only when something changed @param {{ force?: boolean }} [options] */
 async function refresh({ force = false } = {}) {
   if (refreshInFlight) return;
   refreshInFlight = true;
@@ -1438,7 +1438,7 @@ async function refresh({ force = false } = {}) {
     state.error = null;
     if (state.selectedNode !== null && !snapshot.nodes.some((node) => node.name === state.selectedNode)) state.selectedNode = null;
   } catch (error) {
-    // Keep the last good snapshot on screen; a single failed poll shouldn't blank the page.
+    // keep the last good snapshot on screen; a single failed poll shouldn't blank the page
     const message = error instanceof Error ? error.message : "Status is unavailable.";
     changed = state.error !== message;
     state.error = message;
@@ -1557,7 +1557,7 @@ void refreshDevices();
 window.setInterval(() => void refresh(), REFRESH_INTERVAL_MS);
 window.setInterval(() => void refreshDevices(), DEVICES_INTERVAL_MS);
 
-// Dev only: swap stylesheets in place and reload for assets that need re-execution.
+// dev only: swap stylesheets in place and reload for assets that need re-execution
 void (async () => {
   /** @returns {Promise<{version: string, assets: Record<string, number>} | null>} */
   const readVersion = async () => {

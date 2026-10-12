@@ -17,7 +17,7 @@ from homelab_dashboard.sources.proxmox_ssh import (
 )
 
 PROBE_SCRIPT: Final[str] = Path(__file__).with_name("remote_probe.py").read_text(encoding="utf-8")
-# Python reads the program from stdin, so nothing is written to the node's disk.
+# the Python program is read from stdin, so nothing is written to the node's disk
 REMOTE_COMMAND: Final[str] = "python3 -"
 
 

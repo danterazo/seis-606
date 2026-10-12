@@ -169,7 +169,7 @@ class DashboardHandler(SimpleHTTPRequestHandler):
         try:
             self.wfile.write(body)
         except (BrokenPipeError, ConnectionResetError):
-            # The browser navigated away or reloaded before the response finished.
+            # the browser navigated away or reloaded before the response finished
             return
 
 

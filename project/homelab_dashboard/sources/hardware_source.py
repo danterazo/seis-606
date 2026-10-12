@@ -125,7 +125,7 @@ class HardwareEnrichedSource:
         return _Entry(hardware=hardware, stored_at=self.clock(), checked_at=self.now())
 
     def _with_hardware(self, *, node: Node) -> Node:
-        # Hardware error history is kept even while the node is down; that is when it matters most.
+        # hardware error history is kept even while the node is down; that is when it matters most
         hardware_errors: Optional[HardwareErrors] = None
         if self.errors is not None:
             hardware_errors = self.errors.latest(node_name=node.name, reachable=self._is_probeable(node=node))

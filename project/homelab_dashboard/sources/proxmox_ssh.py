@@ -13,7 +13,7 @@ from homelab_dashboard.sources.pve_parser import JsonObject, parse_snapshot
 SOURCE_LABEL: Final[str] = "Proxmox VE via SSH"
 DEFAULT_USER: Final[str] = "root"
 
-# Public-key only, never prompts, and never relaxes host-key verification.
+# public-key only, never prompts, and never relaxes host-key verification
 SSH_OPTIONS: Final[tuple[str, ...]] = (
     "-oBatchMode=yes",
     "-oConnectTimeout=6",
@@ -24,12 +24,12 @@ SSH_OPTIONS: Final[tuple[str, ...]] = (
     "-oStrictHostKeyChecking=yes",
 )
 
-# The documents arrive over one connection; their order matters to the decoder.
+# the documents arrive over one connection; their order matters to the decoder
 API_PATHS: Final[tuple[str, ...]] = ("/cluster/resources", "/cluster/status")
-# Without quorum Proxmox reports no figures for any node, so the queried node's own status is fetched too (best effort).
-# Failures print `null` so each optional document keeps its position.
+# without quorum Proxmox reports no figures for any node, so the queried node's own status is fetched too (best effort)
+# failures print `null` so each optional document keeps its position
 LOCAL_STATUS_COMMAND: Final[str] = "{ pvesh get /nodes/$(hostname -s)/status --output-format json || echo null; }"
-# Holds the tag colors configured in the Proxmox web UI.
+# holds the tag colors configured in the Proxmox web UI
 CLUSTER_OPTIONS_COMMAND: Final[str] = "{ pvesh get /cluster/options --output-format json || echo null; }"
 REMOTE_COMMAND: Final[str] = " && ".join(
     [*(f"pvesh get {path} --output-format json" for path in API_PATHS), LOCAL_STATUS_COMMAND, CLUSTER_OPTIONS_COMMAND]

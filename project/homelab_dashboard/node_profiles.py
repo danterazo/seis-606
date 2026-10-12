@@ -25,12 +25,12 @@ def display_name_for(*, name: str) -> str:
 @dataclass(frozen=True, slots=True, kw_only=True)
 class NodeProfile:
     display_name: str
-    # One letter for the guest badge; set by hand because Kex and Kveikur both start with K.
+    # one letter for the guest badge; set by hand because Kex and Kveikur both start with K
     initial: str
     color: str
-    # When set, shown instead of whatever Proxmox reports (offline nodes report none).
+    # when set, shown instead of whatever Proxmox reports (offline nodes report none)
     address: Optional[str] = None
-    # Shown, marked as expected, while the node can't be probed (e.g. it is offline).
+    # shown, marked as expected, while the node can't be probed (e.g. it is offline)
     expected_cpu: Optional[str] = None
     memory_description: Optional[str] = None
     memory_ecc: Optional[bool] = None
@@ -65,7 +65,7 @@ NODE_PROFILES: Final[dict[str, NodeProfile]] = {
     ),
 }
 
-# Avoids the green and purple already used for LXC and VM.
+# avoids the green and purple already used for LXC and VM
 FALLBACK_PALETTE: Final[tuple[str, ...]] = ("#d6457f", "#c9a100", "#5b6b7a", "#8a5a2b")
 
 

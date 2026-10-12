@@ -5,7 +5,7 @@ from typing import Final, Optional
 IMAGE_URL_PREFIX: Final[str] = "/images/nodes"
 IMAGE_EXTENSIONS: Final[tuple[str, ...]] = (".png", ".jpg", ".jpeg", ".webp", ".gif")
 
-# Node names come from Proxmox, so keep them to a plain filename stem.
+# the node names come from Proxmox, so keep them to a plain filename stem
 _STEM_PATTERN: Final[str] = r"[A-Za-z0-9_-]+"
 
 
