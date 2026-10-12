@@ -29,6 +29,7 @@
 const STATUS_URL = "/api/status";
 const DEVICES_URL = "/api/devices";
 const REBOOT_URL = "/api/guests/reboot";
+const START_URL = "/api/guests/start";
 const LOGS_URL = "/api/logs";
 const CLEAR_LOGS_URL = "/api/logs/clear";
 const DEVICES_INTERVAL_MS = 10_000;
@@ -1171,22 +1172,25 @@ function renderGuests(nodes) {
   const rows = guests.map((guest) => {
     const metrics = guestMetrics(guest);
     const action = guestActions.get(guest.vmid);
-    const rebootButton = el(
+    const verb = guest.state === "stopped" ? "start" : "reboot";
+    const verbLabel = verb === "start" ? "Start" : "Reboot";
+    const actionButton = el(
       "button",
       {
-        className: `guest-reboot${action?.pending ? " is-loading" : ""}`,
+        className: `guest-reboot${verb === "start" ? " is-start" : ""}${action?.pending ? " is-loading" : ""}`,
         attrs: {
           type: "button",
-          "data-reboot-vmid": String(guest.vmid),
-          "data-reboot-node": guest.node,
-          title: `Reboot ${guestLabel(guest)} (ID ${guest.vmid}) on ${displayNodeName(guest.node)}`,
-          "aria-label": `Reboot ${guestLabel(guest)} (ID ${guest.vmid})`,
+          "data-guest-action": verb,
+          "data-guest-vmid": String(guest.vmid),
+          "data-guest-node": guest.node,
+          title: `${verbLabel} ${guestLabel(guest)} (ID ${guest.vmid}) on ${displayNodeName(guest.node)}`,
+          "aria-label": `${verbLabel} ${guestLabel(guest)} (ID ${guest.vmid})`,
         },
       },
-      [el("span", { className: "refresh-icon", text: "↻", attrs: { "aria-hidden": "true" } })],
+      [el("span", { className: "refresh-icon", text: verb === "start" ? "▶" : "↻", attrs: { "aria-hidden": "true" } })],
     );
-    rebootButton.disabled =
-      guest.state !== "running" ||
+    actionButton.disabled =
+      guest.state !== (verb === "start" ? "stopped" : "running") ||
       nodes.find((node) => node.name === guest.node)?.state !== "online" ||
       Boolean(action?.pending) ||
       (action?.retryAt ?? 0) > Date.now();
@@ -1196,14 +1200,14 @@ function renderGuests(nodes) {
           el("span", { className: `guest-icon guest-${guest.kind}`, text: kindLabel(guest.kind) }),
           el("span", { className: "guest-badge", text: initialOfNode(guest.node) }),
         ]),
-        stateDot(guest.state),
+        el("div", { className: "guest-controls" }, [stateDot(guest.state), actionButton]),
       ]),
       el("div", { className: "guest-body" }, [
         el("div", { className: "guest-header" }, [
           el("strong", { className: "guest-name", text: guestLabel(guest), attrs: { title: guestLabel(guest) } }),
           el("div", { className: "guest-tags" }, tagChips(guest)),
         ]),
-        el("div", { className: "guest-sub" }, [el("small", { text: `${displayNodeName(guest.node)} · ID ${guest.vmid} ·` }), rebootButton]),
+        el("div", { className: "guest-sub" }, [el("small", { text: `${displayNodeName(guest.node)} · ID ${guest.vmid}` })]),
         ...(metrics === null
           ? []
           : [
@@ -1222,36 +1226,35 @@ function renderGuests(nodes) {
   required("#guest-list").replaceChildren(...(rows.length ? rows : [el("li", { className: "empty", text: empty })]));
 }
 
-/** @param {number} vmid @param {string} nodeName */
-async function rebootGuest(vmid, nodeName) {
+/** @param {number} vmid @param {string} nodeName @param {"reboot" | "start"} verb */
+async function runGuestAction(vmid, nodeName, verb) {
   const existing = guestActions.get(vmid);
   if (existing?.pending || (existing?.retryAt ?? 0) > Date.now()) return;
   const node = state.snapshot?.nodes.find((candidate) => candidate.name === nodeName);
   const guest = node?.guests.find((candidate) => candidate.vmid === vmid);
-  if (!guest || node?.state !== "online" || guest.state !== "running") return;
-  if (
-    !window.confirm(
-      `Reboot ${guestLabel(guest)} (ID ${vmid}) on ${nodeLabel(node)}?\nThis interrupts services running in this ${kindLabel(guest.kind)}.`,
-    )
-  )
-    return;
-  guestActions.set(vmid, { pending: true, message: "Submitting reboot…", error: false, retryAt: 0 });
+  if (!guest || node?.state !== "online" || guest.state !== (verb === "start" ? "stopped" : "running")) return;
+  const confirmation =
+    verb === "start"
+      ? `Start ${guestLabel(guest)} (ID ${vmid}) on ${nodeLabel(node)}?`
+      : `Reboot ${guestLabel(guest)} (ID ${vmid}) on ${nodeLabel(node)}?\nThis interrupts services running in this ${kindLabel(guest.kind)}.`;
+  if (!window.confirm(confirmation)) return;
+  guestActions.set(vmid, { pending: true, message: `Submitting ${verb}…`, error: false, retryAt: 0 });
   renderGuests(state.snapshot?.nodes ?? []);
   try {
-    const response = await fetch(REBOOT_URL, {
+    const response = await fetch(verb === "start" ? START_URL : REBOOT_URL, {
       method: "POST",
-      headers: { "Content-Type": "application/json", "X-Homelab-Action": "reboot" },
+      headers: { "Content-Type": "application/json", "X-Homelab-Action": verb },
       body: JSON.stringify({ vmid, node: nodeName }),
     });
     /** @type {unknown} */
     const payload = await response.json();
     if (!response.ok) throw new Error(errorMessage(payload));
-    guestActions.set(vmid, { pending: false, message: "Reboot command submitted.", error: false, retryAt: Date.now() + 30_000 });
+    guestActions.set(vmid, { pending: false, message: `${verb === "start" ? "Start" : "Reboot"} command submitted.`, error: false, retryAt: Date.now() + 30_000 });
     void refresh({ force: true });
   } catch (error) {
     guestActions.set(vmid, {
       pending: false,
-      message: error instanceof Error ? error.message : "Reboot failed.",
+      message: error instanceof Error ? error.message : `${verb === "start" ? "Start" : "Reboot"} failed.`,
       error: true,
       retryAt: Date.now() + 30_000,
     });
@@ -1434,9 +1437,10 @@ function toggleNode(name) {
 
 document.addEventListener("click", (event) => {
   if (!(event.target instanceof Element)) return;
-  const rebootTarget = event.target.closest("[data-reboot-vmid]");
-  if (rebootTarget instanceof HTMLButtonElement && !rebootTarget.disabled) {
-    void rebootGuest(Number(rebootTarget.getAttribute("data-reboot-vmid")), rebootTarget.getAttribute("data-reboot-node") ?? "");
+  const actionTarget = event.target.closest("[data-guest-action]");
+  if (actionTarget instanceof HTMLButtonElement && !actionTarget.disabled) {
+    const verb = actionTarget.getAttribute("data-guest-action") === "start" ? "start" : "reboot";
+    void runGuestAction(Number(actionTarget.getAttribute("data-guest-vmid")), actionTarget.getAttribute("data-guest-node") ?? "", verb);
     return;
   }
   const hwErrorsBadge = event.target.closest("[data-hwerrors-node]");

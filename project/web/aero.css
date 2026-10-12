@@ -1293,8 +1293,40 @@ span.health-badge[role="button"] {
   align-items: center;
   align-self: stretch;
 }
-.guest-lead .pill {
+.guest-controls {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 3px;
   margin: auto 0;
+  padding-top: 6px;
+}
+.guest-controls .orb {
+  width: 14px;
+  height: 14px;
+}
+.guest-controls .guest-reboot {
+  width: 14px;
+  height: 14px;
+  margin: 0;
+}
+.guest-controls .guest-reboot .refresh-icon {
+  font-size: 10px;
+}
+.guest-controls .guest-reboot.is-start .refresh-icon {
+  font-size: 7px;
+}
+.guest-reboot.is-start {
+  border-color: #3d8f2a;
+  color: #1f5a12;
+  background: linear-gradient(180deg, #c9f5b4, #66c64b);
+}
+.guest-reboot.is-start:hover:not(:disabled) {
+  background: linear-gradient(180deg, #b9ef9f, #55b83a);
+}
+.guest-reboot.is-start .refresh-icon {
+  font-size: 8px;
+  padding-left: 1px;
 }
 .guest-header .pill {
   white-space: nowrap;

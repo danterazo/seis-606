@@ -98,3 +98,17 @@ def test_command_timeout_warns_against_blind_retries() -> None:
     service = GuestRebooter(source=FakeSource(), runner=runner)
     with pytest.raises(expected_exception=StatusSourceError, match="may still be running"):
         service.reboot(vmid=112, node_name="cerulean")
+
+
+@pytest.mark.parametrize(argnames=("kind", "expected"), argvalues=[(GuestKind.CONTAINER, "pct start 112"), (GuestKind.VM, "qm start 112")])
+def test_start_runs_only_for_stopped_guests(kind: GuestKind, expected: str) -> None:
+    calls: list[Sequence[str]] = []
+
+    def runner(command: Sequence[str], *, timeout: float, stdin: Optional[str] = None) -> "subprocess.CompletedProcess[str]":
+        calls.append(command)
+        return subprocess.CompletedProcess(args=command, returncode=0, stdout="", stderr="")
+
+    GuestRebooter(source=FakeSource(kind=kind, guest_state=GuestState.STOPPED), runner=runner).start(vmid=112, node_name="cerulean")
+    assert calls[0][-1] == expected
+    with pytest.raises(expected_exception=ValueError, match="Only stopped"):
+        GuestRebooter(source=FakeSource(kind=kind), runner=forbidden_runner).start(vmid=112, node_name="cerulean")

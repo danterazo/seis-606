@@ -32,6 +32,7 @@ NODE_IMAGE_DIR: Final[Path] = WEB_ROOT / "images" / "nodes"
 STATUS_PATH: Final[str] = "/api/status"
 DEVICES_PATH: Final[str] = "/api/devices"
 REBOOT_PATH: Final[str] = "/api/guests/reboot"
+START_PATH: Final[str] = "/api/guests/start"
 LOGS_PATH: Final[str] = "/api/logs"
 DEV_VERSION_PATH: Final[str] = "/__dev/version"
 BOOT_ID: Final[str] = str(time.time_ns())
@@ -94,10 +95,11 @@ class DashboardHandler(SimpleHTTPRequestHandler):
             self.activity_log.clear()
             self._send_json(status=HTTPStatus.OK, payload={"message": "Activity log cleared."})
             return
-        if request_path != REBOOT_PATH:
+        if request_path not in (REBOOT_PATH, START_PATH):
             self._send_json(status=HTTPStatus.NOT_FOUND, payload={"error": "Unknown action."})
             return
-        if not self._is_local_same_origin_request(action="reboot"):
+        verb: str = "reboot" if request_path == REBOOT_PATH else "start"
+        if not self._is_local_same_origin_request(action=verb):
             self._send_json(status=HTTPStatus.FORBIDDEN, payload={"error": "Guest controls require a same-origin localhost request."})
             return
         if self.headers.get("Content-Type", "").split(";", 1)[0].strip() != "application/json":
@@ -114,7 +116,8 @@ class DashboardHandler(SimpleHTTPRequestHandler):
             document: object = json.loads(self.rfile.read(length))
             if not isinstance(document, dict) or set(document) != {"vmid", "node"}:
                 raise ValueError("A guest ID and node name are required; no other fields are accepted.")
-            self.rebooter.reboot(vmid=document["vmid"], node_name=document["node"])
+            submit = self.rebooter.reboot if verb == "reboot" else self.rebooter.start
+            submit(vmid=document["vmid"], node_name=document["node"])
         except (ValueError, UnicodeDecodeError) as error:
             self._send_json(status=HTTPStatus.BAD_REQUEST, payload={"error": str(error)})
         except TimeoutError:
@@ -122,7 +125,7 @@ class DashboardHandler(SimpleHTTPRequestHandler):
         except StatusSourceError as error:
             self._send_json(status=HTTPStatus.SERVICE_UNAVAILABLE, payload={"error": str(error)})
         else:
-            self._send_json(status=HTTPStatus.OK, payload={"message": "Reboot command submitted."})
+            self._send_json(status=HTTPStatus.OK, payload={"message": "Reboot command submitted." if verb == "reboot" else "Start command submitted."})
 
     def _is_local_same_origin_request(self, *, action: str) -> bool:
         host: str = self.headers.get("Host", "")

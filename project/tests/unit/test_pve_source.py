@@ -84,9 +84,9 @@ def test_only_tracked_guest_tags_are_kept_and_use_pve_colors() -> None:
 
     assert [(tag.name, tag.letter, tag.color, tag.text_color) for tag in tags] == [
         ("prod", "P", "#d64545", "#ffffff"),
+        ("dev", "D", "#ffff00", "#000000"),
         ("docker", "K", "#2b7fd6", "#ffffff"),
         ("gpu", "G", "#8e55c9", "#ffffff"),
-        ("dev", "D", "#ffff00", "#000000"),
         ("secondary", "II", "#a3174f", "#ffffff"),
     ]
 
