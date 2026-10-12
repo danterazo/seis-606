@@ -1141,6 +1141,11 @@ span.health-badge[role="button"] {
   stroke: #ffe36b;
   stroke-width: 3;
 }
+.topo-column-separator {
+  stroke: #9bb0be;
+  stroke-opacity: 0.55;
+  stroke-width: 1.5;
+}
 .topo-label {
   fill: var(--ink);
   font-size: 13px;
@@ -1185,8 +1190,8 @@ span.health-badge[role="button"] {
 }
 .topo-guest-name {
   fill: var(--ink);
-  font-size: 12px;
-  font-weight: 600;
+  font-size: 13px;
+  font-weight: 700;
 }
 .topo-led {
   fill: #67ec4d;

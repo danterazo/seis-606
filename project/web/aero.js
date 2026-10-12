@@ -34,7 +34,7 @@ const LOGS_URL = "/api/logs";
 const CLEAR_LOGS_URL = "/api/logs/clear";
 const DEVICES_INTERVAL_MS = 10_000;
 const REFRESH_INTERVAL_MS = 1_000;
-const MAX_TOPOLOGY_GUESTS = 12;
+const MAX_TOPOLOGY_GUESTS = 15;
 const TOPOLOGY_NAME_LIMIT = 22;
 const TOPOLOGY_TAG_RADIUS = 9;
 const TOPOLOGY_TAG_ICON = 14;
@@ -1027,14 +1027,14 @@ function renderTopology(nodes) {
     host.replaceChildren(el("p", { className: "empty", text: "No nodes to draw." }));
     return;
   }
-  const column = 244;
-  const pill = { width: 214, height: 30, gap: 7, badge: 42, stripe: 6 };
+  const column = 260;
+  const pill = { width: 230, height: 30, gap: 7, badge: 42, stripe: 6 };
   const width = Math.max(520, nodes.length * column);
   const hub = { x: width / 2, y: 42 };
   const nodeY = 150;
   const guestTop = 238;
   const tallest = Math.max(...nodes.map((node) => Math.min(node.guests.length, MAX_TOPOLOGY_GUESTS)));
-  const height = guestTop + Math.max(1, tallest) * (pill.height + pill.gap) + 34;
+  const height = guestTop + Math.max(1, tallest) * (pill.height + pill.gap) + 54;
 
   /** @type {SVGElement[]} */
   const drawing = [
@@ -1044,6 +1044,20 @@ function renderTopology(nodes) {
     svg("circle", { class: "topo-hub", cx: hub.x, cy: hub.y, r: 22 }),
     svgText({ x: hub.x, y: hub.y - 28, text: "Cluster", className: "topo-label" }),
   );
+
+  const guestColumnBottom = guestTop + Math.max(1, tallest) * (pill.height + pill.gap) - pill.gap;
+  for (let index = 1; index < nodes.length; index += 1) {
+    const x = (width / nodes.length) * index;
+    drawing.push(
+      svg("line", {
+        class: "topo-column-separator",
+        x1: x,
+        y1: guestTop - 8,
+        x2: x,
+        y2: guestColumnBottom + 5,
+      }),
+    );
+  }
 
   nodes.forEach((node, index) => {
     const x = (width / nodes.length) * (index + 0.5);
@@ -1117,7 +1131,7 @@ function renderTopology(nodes) {
         svgText({
           x,
           y: guestTop + shown.length * (pill.height + pill.gap) + 10,
-          text: `+${node.guests.length - shown.length} more`,
+          text: `+${node.guests.length - shown.length} More`,
           className: "topo-sub",
         }),
       );
