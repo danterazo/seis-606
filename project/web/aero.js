@@ -1542,8 +1542,6 @@ const selectedHaiku = HEADER_HAIKUS[Math.floor(Math.random() * HEADER_HAIKUS.len
 required("#haiku").replaceChildren(
   ...selectedHaiku.map((line, index) => el("span", { text: index < selectedHaiku.length - 1 ? `${line} /` : line })),
 );
-const refreshSeconds = REFRESH_INTERVAL_MS / 1000;
-required("#refresh-note").textContent = `Guest controls · checks for updates every ${refreshSeconds === 1 ? "second" : `${refreshSeconds} seconds`}`;
 let overviewWidth = 0;
 new ResizeObserver(([entry]) => {
   if (entry.contentRect.width === overviewWidth) return;

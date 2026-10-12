@@ -21,7 +21,10 @@
         </span>
       </a>
       <div class="topbar-actions">
-        <span class="updated" id="updated" aria-live="polite">Connecting…</span>
+        <div class="update-status">
+          <span class="updated" id="updated" aria-live="polite">Connecting…</span>
+          <span class="refresh-cadence">Checks Every Second</span>
+        </div>
         <button class="aqua-button" id="refresh-button" type="button"><span class="refresh-icon" aria-hidden="true">↻</span> Refresh</button>
         <button class="aqua-button log-button" id="logs-button" type="button">Logs</button>
       </div>
@@ -78,15 +81,13 @@
         </aside>
         <aside class="panel haiku-panel" aria-labelledby="haiku-heading">
           <h2 id="haiku-heading">Homelab Haiku</h2>
-          <p class="haiku-poem" id="haiku">
-            <span>I turn off the rack /</span><span>Now there’s nothing to work on /</span><span>I have found my peace</span>
-          </p>
+          <p class="haiku-poem" id="haiku"></p>
         </aside>
       </div>
     </main>
 
     <footer class="footer">
-      <span id="source-label">—</span><span id="refresh-note">Guest controls</span>
+      <span id="source-label">—</span>
       <div class="dns-corner">
         <pre class="dns-cow" role="img" aria-label="A cow says: All's fair in LAN and war">
      ___________________________
