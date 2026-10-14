@@ -16,7 +16,7 @@
  * @typedef {{ name: string, state: string, level: HealthLevel, capacity_percent: number | null, size_bytes: number | null, dataset_available_bytes: number | null, allocated_bytes: number | null, free_bytes: number | null, fragmentation_percent: number | null, layout: string | null, scan: string | null, findings: string[] }} Pool
  * @typedef {{ disks: Disk[], pools: Pool[], smart_available: boolean, zfs_available: boolean }} StorageHealth
  * @typedef {{ name: string, display_name: string, state: "online" | "offline" | "unknown", address: string | null, image: string | null, initial: string, color: string, memory_description?: string | null, memory_ecc?: boolean | null, resources: Resources, guests: Guest[], hardware: Hardware }} PveNode
- * @typedef {{ source: string, fetched_at: string, nodes: PveNode[] }} Snapshot
+ * @typedef {{ source: string, fetched_at: string, nodes: PveNode[], quorate: boolean | null }} Snapshot
  * @typedef {"all" | "running" | "vm" | "container"} GuestFilter
  * @typedef {{ snapshot: Snapshot | null, error: string | null, selectedNode: string | null, filter: GuestFilter, query: string }} ViewState
  * @typedef {{ className?: string, text?: string, attrs?: Readonly<Record<string, string>> }} ElementOptions
@@ -441,10 +441,20 @@ function renderBanner() {
     content = { tone: "pending", title: "No Nodes Reported", detail: "Proxmox returned an empty cluster." };
   } else {
     const down = snapshot.nodes.filter((node) => node.state !== "online").length;
-    content =
-      down === 0
-        ? { tone: "ok", title: "All Systems Operational", detail: `${plural(snapshot.nodes.length, "node")} online` }
-        : { tone: "warn", title: `${down} of ${plural(snapshot.nodes.length, "Node")} Unavailable!`, detail: "Check the node list for details." };
+    const online = snapshot.nodes.length - down;
+    if (snapshot.quorate === false) {
+      content = { tone: "warn", title: "Cluster Quorum Lost", detail: `${plural(online, "node")} online; cluster operations may be limited.` };
+    } else if (down > 0) {
+      content = {
+        tone: "warn",
+        title: `${down} of ${plural(snapshot.nodes.length, "Node")} Unavailable!`,
+        detail: "Check the node list for details.",
+      };
+    } else if (snapshot.quorate !== true) {
+      content = { tone: "pending", title: "Quorum Unknown", detail: `${plural(online, "node")} online; Proxmox did not report quorum status.` };
+    } else {
+      content = { tone: "ok", title: "All Systems Operational", detail: `${plural(online, "node")} online · Quorum available` };
+    }
   }
   banner.className = `banner banner-${content.tone}`;
   banner.replaceChildren(
@@ -452,6 +462,16 @@ function renderBanner() {
     el("strong", { text: content.title }),
     el("span", { text: content.detail }),
   );
+}
+
+function renderTopologyQuorum() {
+  const indicator = required("#topology-quorum");
+  const quorate = state.snapshot?.quorate;
+  const stale = state.error !== null && state.snapshot !== null;
+  const status = quorate === true ? "Quorate" : quorate === false ? "Not quorate" : "Unknown";
+  const tone = stale ? "stale" : quorate === true ? "ok" : quorate === false ? "lost" : "unknown";
+  indicator.className = `topology-quorum quorum-${tone}`;
+  indicator.textContent = `Quorum: ${status}${stale ? " · last known" : ""}`;
 }
 
 /** @param {PveNode} node */
@@ -931,7 +951,7 @@ function renderOverview(nodes) {
     const online = node.state === "online";
     const arcBytes = node.hardware.zfs_arc_bytes ?? null;
     const arcMax = node.hardware.zfs_arc_max_bytes ?? null;
-    const ramTitle = arcBytes === null ? undefined : `ZFS ARC (amber): ${formatBytes(arcBytes)}`;
+    const ramTitle = arcBytes === null ? undefined : `ARC (amber): ${formatBytes(arcBytes)}`;
     const gauges = [
       gauge({ label: "CPU", value: cpuPercent(node.resources), tone: "cpu" }),
       gauge({ label: "RAM", value: memoryPercent(node.resources), tone: "memory", arcValue: arcPercent(node), title: ramTitle }),
@@ -996,7 +1016,7 @@ function renderOverview(nodes) {
                     fact("RAM", memoryText),
                     ...(arcBytes === null
                       ? []
-                      : [fact("ZFS ARC", arcMax ? formatMemoryPair({ used: arcBytes, total: arcMax }) : formatBytes(arcBytes))]),
+                      : [fact("ARC", arcMax ? formatMemoryPair({ used: arcBytes, total: arcMax }) : formatBytes(arcBytes))]),
                   ]),
                 ]),
               ]),
@@ -1404,6 +1424,7 @@ async function clearActivityLog() {
 function render() {
   const nodes = state.snapshot?.nodes ?? [];
   renderBanner();
+  renderTopologyQuorum();
   renderNodeList(nodes);
   renderOverview(nodes);
   renderTopology(nodes);
