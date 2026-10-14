@@ -50,8 +50,9 @@ def test_lookup_ignores_case() -> None:
         ("suika", "\u3059\u3044\u304b"),
         ("ichigo", "\u3044\u3061\u3054"),
         ("saru", "\u3055\u308b"),
-        ("ringoM4-wifi", "\u308a\u3093\u3054-m4"),
-        ("ringoA20", "\u308a\u3093\u3054-a20"),
+        ("ringoM4-wifi", "\u308a\u3093\u3054-M4"),
+        ("ringoA20", "\u308a\u3093\u3054-A20"),
+        ("ringo-A20", "\u308a\u3093\u3054-A20"),
     ],
 )
 def test_shared_name_map_applies_to_future_nodes(name: str, display_name: str) -> None:
@@ -62,7 +63,6 @@ def test_shared_name_map_applies_to_future_nodes(name: str, display_name: str) -
 def test_unmapped_device_names_are_preserved() -> None:
     assert display_name_for(name="My-Device") == "My-Device"
     assert display_name_for(name="ringo-M4") == "ringo-M4"
-    assert display_name_for(name="ringo-A20") == "ringo-A20"
 
 
 def test_node_order_uses_ip_addresses_including_new_nodes() -> None:

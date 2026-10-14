@@ -91,7 +91,8 @@ browser action tests intercept requests and do not reboot real guests.
 
 Edit `DISPLAY_NAMES` in `homelab_dashboard/node_profiles.py` to configure display names.
 This is the only naming map: the router's `ringoM4-wifi` and `ringoA20` are matched
-directly to their hiragana display names, with no intermediate alias resolution.
+directly to their hiragana display names. The hyphenated `ringo-A20` spelling is an
+alias for the same display name; no intermediate alias resolution is used.
 The case-insensitive map is shared by node cards, topology, guest cards/search, and
 DHCP devices; raw hostnames and IDs stay unchanged. The Japanese entries render as
 hiragana using the exact labels configured in the map. Future aliases do not create
