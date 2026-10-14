@@ -64,7 +64,6 @@ SSH commands run as `root` by default on both Proxmox and the router, so comprom
 dashboard process or its local account carriies superuser privileges. I settled for this because
 PVE, by default, uses `root` as the primary user. If remote machines offer non-root accounts with sufficient privileges, consider using them instead to reduce the risk associated with `root`.
 
-
 ### Guest Reboots
 
 The round orange arrow beside each guest's status submits a reboot after confirmation.
