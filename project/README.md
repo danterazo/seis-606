@@ -41,6 +41,30 @@ ssh-keyscan -H -t ed25519 192.168.20.43 >> ~/.ssh/known_hosts
 Connections use `root` by default. To use another account, set `HOMELAB_PVE_SSH_USER`;
 a non-root account needs the `PVEAuditor` role to read cluster resources.
 
+## Security
+
+This is a single-user dashboard intended to run on the local machine. It uses plain
+HTTP and has no user login. The status, DHCP lease, and activity-log read endpoints
+are available to any client that can reach the server; they can reveal node and guest
+details, device names, IP/MAC addresses, and request metadata. Keep the default
+`HOMELAB_UI_HOST=127.0.0.1` for local access. Do not bind it to a LAN or public interface, or expose it through a proxy or tunnel, without first adding authentication and HTTPS.
+
+Guest start/reboot and log-clear requests are restricted to loopback clients with a
+matching localhost Host and Origin plus an app-specific action header. These checks
+help prevent remote and cross-origin writes; they are not user authentication. Other
+processes or users on the same machine should be treated as trusted with the dashboard.
+
+SSH uses the machine's OpenSSH client with public-key authentication only. Password
+and keyboard-interactive authentication are disabled, interactive prompts are disabled,
+and strict host-key checking is enabled. This is an inherited security measure provided
+by OpenSSH, and my existing SSH config, keys, and `known_hosts` file. The app does not handle SSH
+passwords. Independently verify each host-key fingerprint before trusting it, like I have did when initially configuring these servers. **DON'T** commit private keys to this repository.
+
+SSH commands run as `root` by default on both Proxmox and the router, so compromise of the
+dashboard process or its local account carriies superuser privileges. I settled for this because
+PVE, by default, uses `root` as the primary user. If remote machines offer non-root accounts with sufficient privileges, consider using them instead to reduce the risk associated with `root`.
+
+
 ### Guest Reboots
 
 The round orange arrow beside each guest's status submits a reboot after confirmation.
