@@ -12,6 +12,7 @@ from typing import Any, Final, Optional
 
 from homelab_dashboard.node_profiles import display_name_for
 from homelab_dashboard.sources.base import StatusSourceError
+from homelab_dashboard.sources.mac_manufacturer import MacManufacturerLookup
 from homelab_dashboard.sources.proxmox_ssh import SSH_EXECUTABLE, SSH_OPTIONS, CommandRunner, SshTarget, explain_ssh_failure, run_command
 
 LAN_NETWORK: Final[ipaddress.IPv4Network] = ipaddress.IPv4Network("192.168.0.0/16")
@@ -28,10 +29,11 @@ class DhcpLease:
     hostname: Optional[str]
     expires_at: Optional[datetime]
 
-    def to_payload(self) -> dict[str, Any]:
+    def to_payload(self, *, manufacturer: Optional[str] = None) -> dict[str, Any]:
         return {
             "address": self.address,
             "mac": self.mac.upper(),
+            "manufacturer": manufacturer,
             "hostname": self.hostname,
             "display_name": display_name_for(name=self.hostname) if self.hostname is not None else self.address,
             "network_group": "lan" if ipaddress.IPv4Address(self.address) in LAN_NETWORK else "guest_iot",
@@ -224,6 +226,7 @@ class OpenWrtLeaseSource:
     resolver: Callable[[str], str] = socket.gethostbyname
     clock: Callable[[], float] = time.monotonic
     now: Callable[[], datetime] = _utc_now
+    manufacturer_lookup: MacManufacturerLookup = field(default_factory=MacManufacturerLookup)
     _lock: threading.Lock = field(default_factory=threading.Lock, init=False)
     _stored_at: Optional[float] = field(default=None, init=False)
     _fetched_at: Optional[datetime] = field(default=None, init=False)
@@ -268,6 +271,11 @@ class OpenWrtLeaseSource:
                     self._error = str(error)
                 self._stored_at = self.clock()
             now: datetime = self.now()
+            lease_payloads: list[dict[str, Any]] = [
+                lease.to_payload(manufacturer=self.manufacturer_lookup.lookup(mac=lease.mac))
+                for lease in self._leases
+                if lease.expires_at is None or lease.expires_at > now
+            ]
             return {
                 "source": "OpenWRT",
                 "router": self.target.host,
@@ -276,8 +284,5 @@ class OpenWrtLeaseSource:
                 "fetched_at": self._fetched_at.isoformat(timespec="seconds") if self._fetched_at is not None else None,
                 "stale": self._error is not None,
                 "error": self._error,
-                "leases": sorted(
-                    [lease.to_payload() for lease in self._leases if lease.expires_at is None or lease.expires_at > now],
-                    key=_device_sort_key,
-                ),
+                "leases": sorted(lease_payloads, key=_device_sort_key),
             }

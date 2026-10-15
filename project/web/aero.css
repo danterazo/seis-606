@@ -1547,6 +1547,9 @@ span.health-badge[role="button"] {
 .devices-router .version-unavailable {
   color: #a65300;
 }
+.devices-inline-status {
+  color: #a65300;
+}
 .empty.devices-unavailable {
   color: #43545b;
 }
@@ -1590,7 +1593,7 @@ span.health-badge[role="button"] {
 }
 .device-fields {
   display: grid;
-  grid-template-columns: 36px minmax(0, 1fr);
+  grid-template-columns: max-content minmax(0, 1fr);
   column-gap: 8px;
   row-gap: 6px;
   margin: 0;
@@ -1605,10 +1608,8 @@ span.health-badge[role="button"] {
   font-family: "Cascadia Mono", "DejaVu Sans Mono", monospace;
   font-size: 11px;
   line-height: 1.4;
-  overflow-wrap: anywhere;
-}
-.device-mac {
   color: var(--ink-soft);
+  overflow-wrap: anywhere;
 }
 .center {
   display: grid;

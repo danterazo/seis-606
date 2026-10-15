@@ -18,7 +18,7 @@ Open the printed URL (default `http://127.0.0.1:8765`). The server needs only th
 | `HOMELAB_SSH_TIMEOUT`             |         `15`         | Seconds to wait for Proxmox                                                                                                                                                                                                                                                                                       |
 | `HOMELAB_CACHE_SECONDS`           |         `10`         | Minimum seconds between Proxmox queries (one costs ~2 CPU-seconds on a node); the page itself polls every second                                                                                                                                                                                                  |
 | `HOMELAB_HARDWARE_CACHE_SECONDS`  |         `3`          | Minimum seconds between CPU/firmware ECC probes of each online node (a tiny read-only Python script sent over the same SSH connection settings; nothing is installed or written on the node)                                                                                                                      |
-| `HOMELAB_ROUTER_SSH_HOST`         |       `flint2`       | OpenWRT router for DHCPv4 leases                                                                                                                                                                                                                                                                                 |
+| `HOMELAB_ROUTER_SSH_HOST`         |       `flint`        | OpenWRT router for DHCPv4 leases; displayed as Flint2                                                                                                                                                                                                                                                              |
 | `HOMELAB_STORAGE_CACHE_SECONDS`   |        `300`         | Minimum seconds between SMART / `zpool` reads of each online node, run in the background (needs `smartctl`; disks in standby are not woken). Thresholds live in `sources/storage_parser.py` (HDD warn 45 °C / critical 50 °C)                                                                                     |
 | `HOMELAB_HW_ERRORS_CACHE_SECONDS` |        `120`         | Minimum seconds between hardware-error reads (EDAC counters, 14 days of kernel/rasdaemon journal, `ras-mc-ctl --summary`) of each online node, run in the background. Read-only; the last reading is kept and marked stale when a node is unreachable. Recurrence threshold lives in `sources/hwerrors_parser.py` |
 | `HOMELAB_ROUTER_SSH_USER`         |        `root`        | Router SSH account (key authentication only)                                                                                                                                                                                                                                                                      |
@@ -27,7 +27,7 @@ Open the printed URL (default `http://127.0.0.1:8765`). The server needs only th
 
 ### First Connection
 
-Run `make init-ssh-trust` to check the cluster node hostnames and the configured router SSH host (`flint2` by default):
+Run `make init-ssh-trust` to check the cluster node hostnames and the configured router SSH host (`flint` by default):
 
 ```bash
 make init-ssh-trust
@@ -40,7 +40,9 @@ records can map them to LAN addresses on the desktop and Tailscale addresses on 
 hostname resolution.
 
 WSL does not import custom Windows hosts-file entries into its generated `/etc/hosts`. This WSL setup resolves `flint2` through Tailscale DNS to
-`100.100.10.1`, despite the Windows hosts-file mapping to `192.168.10.1`. To have WSL use the same per-machine mappings, change
+`100.100.10.1`, despite the Windows hosts-file mapping to `192.168.10.1`. The dashboard defaults to the reachable LAN hostname `flint` instead;
+both names display as Flint2 without changing the SSH destination. Override `HOMELAB_ROUTER_SSH_HOST` when a different route is needed.
+To have WSL use the same per-machine mappings, change
 `generateHosts=true` to `generateHosts=false` under `[network]` in `/etc/wsl.conf`, then run `wsl --shutdown` from Windows PowerShell. After reopening
 the distro, link WSL's hosts file to Windows' file:
 
@@ -48,7 +50,7 @@ the distro, link WSL's hosts file to Windows' file:
 sudo cp -a /etc/hosts /etc/hosts.wsl-backup
 sudo rm /etc/hosts
 sudo ln -s /mnt/c/Windows/System32/drivers/etc/hosts /etc/hosts
-getent ahostsv4 flint2 kex cerulean kveikur
+getent ahostsv4 flint kex cerulean kveikur
 ```
 
 The lookup should show the Windows-file addresses. Repeat with each machine's own Windows hosts file so the desktop and laptop resolve the same names
@@ -115,13 +117,18 @@ ties alphabetically. The node list, overview, topology, and node filters use thi
 ordering rather than a fixed profile rank. Online topology links use longer, thicker moving dashes; offline links remain static gray dashes. Motion
 indicates node availability, not measured network traffic.
 
-The LAN Devices and Guest / IoT panels below Nodes read dnsmasq's default `/tmp/dhcp.leases` over SSH through `/api/devices`. Each panel identifies
-the router by its configured SSH host (displayed as Flint2 for `flint2`) and OpenWrt release version. Unavailable router details appear in orange;
-connection errors are available by hovering over the router line instead of repeating the failure beneath it. Cards show the name directly above labeled IPv4 and
-uppercase MAC rows, with no redundant hostname heading. Only devices with IPv4 leases are listed; IPv6-only devices
-and addresses are omitted. The active collector does not query IPv6 leases or neighbors. Standalone IPv6 parsing and correlation helpers remain tested
+The LAN Devices and Guest / IoT panels below Nodes read `dnsmasq`'s default `/tmp/dhcp.leases` over SSH through `/api/devices`. Each panel identifies
+the router by its configured SSH host (displayed as Flint2 for `flint`, due to it being a GL.iNet Flint 2) and OpenWrt release version. Unavailable router details appear in orange;
+connection errors are available by hovering over the router line instead of repeating the failure beneath it. Cards show the name directly above
+labeled IPv4 and uppercase MAC rows, with no redundant hostname heading. When a MAC prefix is registered, the server shows its IEEE-registered
+manufacturer from the public OUI registry. The registry is downloaded and cached server-side; individual MAC addresses are not sent to a lookup
+service. Locally administered/randomized MACs and unmatched prefixes have no manufacturer line, and registry/network failures do not block leases.
+Only devices with IPv4 leases are listed; IPv6-only devices and addresses are omitted. The active collector does not query IPv6 leases or neighbors.
+Standalone IPv6 parsing and correlation helpers remain tested
 for potential future use but are not invoked. Read timestamps and expiry dates remain hidden. Expiry stays internal for filtering. It polls the local
-cache every 10 seconds; Refresh forces both sources independently. Router errors retain unexpired last-known leases with an explicit stale/error
+cache every 10 seconds; Refresh forces both sources independently. Router errors retain unexpired last-known leases with an inline
+`Showing last-known leases` status after the router/version, separated by a dot only when present. Manufacturer rows appear directly below MAC as
+`Vendor`, with the same label in the tooltip and accessible name. Router errors retain an explicit stale/error
 indication and do not block PVE status. Leases are not proof of current connectivity. Static-IPv4-only discovery and Wi-Fi association data are not
 implemented yet.
 
@@ -131,8 +138,8 @@ connectivity or VLAN claim.
 
 Before leases can load, verify the router's SSH host-key fingerprint against its console or another trusted channel, then trust it in this machine's
 `known_hosts` and configure SSH key authentication. For example, inspect a candidate ED25519 fingerprint with
-`ssh-keyscan -t ed25519 flint2 | ssh-keygen -lf -`; this network scan alone does not establish trust. Only after independently confirming it,
-connect with `ssh root@flint2` to accept the verified key. The application never disables host-key checking, modifies `known_hosts`, or handles
+`ssh-keyscan -t ed25519 flint | ssh-keygen -lf -`; this network scan alone does not establish trust. Only after independently confirming it,
+connect with `ssh root@flint` to accept the verified key. The application never disables host-key checking, modifies `known_hosts`, or handles
 passwords.
 
 ## Layout
@@ -233,11 +240,11 @@ details without claiming live readings. CPU fallbacks remain italicized with an 
 
 ### Further OpenWRT Discovery
 
-- The DHCPv4 collector reads `root@flint2` over SSH with key authentication, verified host keys, an 8-second timeout, and an independent
+- The DHCPv4 collector reads `root@flint` over SSH with key authentication, verified host keys, an 8-second timeout, and an independent
       60-second cache. It reads DHCPv4 leases when the configured router hostname is reachable.
 - [ ] Inspect `ubus -v list` for methods supported by the router's OpenWRT version and packages.
 - [ ] Prefer structured `ubus` JSON and `ip -j neigh` where available; BusyBox `ip` may need `ip-full` for JSON output.
-- [ ] Read `ubus call dhcp ipv4leases` / `ipv6leases` where supported; otherwise parse dnsmasq's `/tmp/dhcp.leases`.
+- [ ] Read `ubus call dhcp ipv4leases` / `ipv6leases` where supported; otherwise parse `dnsmasq`'s `/tmp/dhcp.leases`.
 - [ ] Read Wi-Fi associations from each `hostapd.*` object's `get_clients` method when available.
 - [ ] Join lease and association data by MAC/interface and retain expiry and observation times.
 - Keep DHCP leases distinct from current connectivity: neighbors are not a complete wired census, and static-IP devices may have no lease. Show leases

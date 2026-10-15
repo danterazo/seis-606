@@ -6,6 +6,7 @@ from typing import Optional
 import pytest
 from homelab_dashboard.node_profiles import DISPLAY_NAMES
 from homelab_dashboard.sources.base import StatusSourceError
+from homelab_dashboard.sources.mac_manufacturer import MacManufacturerLookup
 from homelab_dashboard.sources.openwrt_ssh import (
     REMOTE_COMMAND,
     ROUTER_LEASES_SEPARATOR,
@@ -31,6 +32,43 @@ def test_dnsmasq_leases_preserve_identity_and_use_shared_names() -> None:
     assert unnamed.hostname is None
     assert unnamed.to_payload()["display_name"] == "192.168.10.24"
     assert parse_leases(text="\n") == ()
+
+
+def test_mac_manufacturer_lookup_uses_the_most_specific_registered_prefix() -> None:
+    registry: str = (
+        "Registry,Assignment,Organization Name,Organization Address\n"
+        'MA-L,001122,"Base Manufacturer",Address\n'
+        'MA-M,001122A,"Medium Manufacturer",Address\n'
+        'MA-S,001122ABC,"Specific Manufacturer",Address\n'
+    )
+    lookup = MacManufacturerLookup(fetch_registry=lambda: registry)
+
+    assert lookup.lookup(mac="00:11:22:AB:CD:EF") == "Specific Manufacturer"
+    assert lookup.lookup(mac="00:11:22:AF:CD:EF") == "Medium Manufacturer"
+    assert lookup.lookup(mac="00:11:22:BC:CD:EF") == "Base Manufacturer"
+
+
+def test_mac_manufacturer_skips_locally_administered_addresses() -> None:
+    called: bool = False
+
+    def fetch_registry() -> str:
+        nonlocal called
+        called = True
+        raise AssertionError("A locally administered MAC should not query the registry.")
+
+    lookup = MacManufacturerLookup(fetch_registry=fetch_registry)
+
+    assert lookup.lookup(mac="02:11:22:AB:CD:EF") is None
+    assert called is False
+
+
+def test_mac_manufacturer_registry_failure_is_non_blocking() -> None:
+    def fetch_registry() -> str:
+        raise OSError("Registry unavailable")
+
+    lookup = MacManufacturerLookup(fetch_registry=fetch_registry)
+
+    assert lookup.lookup(mac="00:11:22:AB:CD:EF") is None
 
 
 @pytest.mark.parametrize(
@@ -110,6 +148,21 @@ def test_router_source_exposes_resolved_address_and_openwrt_version() -> None:
 
     runner.stdout = LEASES
     assert source.fetch(force=True)["router_version"] == "25.12.5"
+
+
+def test_router_source_adds_registered_manufacturer_to_lease_payload() -> None:
+    runner = FakeRunner()
+    runner.stdout = "0 00:11:22:AB:CD:EF 192.168.10.2 suika *"
+    registry: str = "Registry,Assignment,Organization Name,Organization Address\nMA-L,001122,Test Manufacturer,Address\n"
+    source = OpenWrtLeaseSource(
+        target=SshTarget(host="router"),
+        runner=runner,
+        manufacturer_lookup=MacManufacturerLookup(fetch_registry=lambda: registry),
+    )
+
+    payload = source.fetch()
+
+    assert payload["leases"][0]["manufacturer"] == "Test Manufacturer"
 
 
 def test_first_failure_has_no_fake_leases_or_success_timestamp() -> None:

@@ -20,7 +20,7 @@
  * @typedef {"all" | "running" | "vm" | "container"} GuestFilter
  * @typedef {{ snapshot: Snapshot | null, error: string | null, selectedNode: string | null, filter: GuestFilter, query: string }} ViewState
  * @typedef {{ className?: string, text?: string, attrs?: Readonly<Record<string, string>> }} ElementOptions
- * @typedef {{ address: string, mac: string, hostname: string | null, display_name: string, network_group: "lan" | "guest_iot", expires_at: string | null }} DhcpLease
+ * @typedef {{ address: string, mac: string, manufacturer: string | null, hostname: string | null, display_name: string, network_group: "lan" | "guest_iot", expires_at: string | null }} DhcpLease
  * @typedef {{ source: string, router: string, router_address: string | null, router_version: string | null, fetched_at: string | null, stale: boolean, error: string | null, leases: DhcpLease[] }} DevicesSnapshot
  * @typedef {{ pending: boolean, message: string, error: boolean, retryAt: number }} GuestActionState
  * @typedef {{ timestamp: string, method: string, path: string, status: number, client: string }} ActivityLogEntry
@@ -1460,10 +1460,22 @@ function renderDevices() {
     const status = required(`#${prefix}-devices-status`);
     routerLabel.classList.remove("is-stale");
     routerLabel.title = error ?? "";
+    const statusText = error
+      ? devicesSnapshot?.fetched_at
+        ? "Showing last-known leases"
+        : ""
+      : devicesSnapshot === null
+        ? "Loading DHCP leases…"
+        : "";
+    const inlineStatus = Boolean(statusText && error && devicesSnapshot?.fetched_at);
     if (devicesSnapshot === null) {
       routerLabel.textContent = devicesError ? "Router details unavailable." : "Loading router details…";
     } else {
-      const router = devicesSnapshot.router.toLowerCase() === "flint2" ? "Flint2" : devicesSnapshot.router;
+      const routerName = devicesSnapshot.router.toLowerCase();
+      const router =
+        routerName === "flint" || routerName === "flint2"
+          ? "Flint2"
+          : `${devicesSnapshot.router.slice(0, 1).toUpperCase()}${devicesSnapshot.router.slice(1)}`;
       routerLabel.replaceChildren(document.createTextNode(`${router} · `));
       if (devicesSnapshot.router_version) {
         routerLabel.append(document.createTextNode(`OpenWRT Version ${devicesSnapshot.router_version}`));
@@ -1475,16 +1487,15 @@ function renderDevices() {
           }),
         );
       }
+      if (inlineStatus) {
+        routerLabel.append(
+          document.createTextNode(" · "),
+          el("span", { className: "devices-inline-status", text: statusText }),
+        );
+      }
     }
     status.classList.toggle("is-stale", Boolean(stale));
-    const statusText = error
-      ? devicesSnapshot?.fetched_at
-        ? "Showing last-known leases."
-        : ""
-      : devicesSnapshot === null
-        ? "Loading DHCP leases…"
-        : "";
-    status.hidden = statusText === "";
+    status.hidden = statusText === "" || inlineStatus;
     status.textContent = statusText;
     const leases = (devicesSnapshot?.leases ?? []).filter((lease) => lease.network_group === group && typeof lease.address === "string");
     const rows = leases.map((lease) =>
@@ -1495,6 +1506,16 @@ function renderDevices() {
           el("dd", { className: "device-address", text: lease.address ?? "Not reported" }),
           el("dt", { className: "device-field-label", text: "MAC" }),
           el("dd", { className: "device-mac", text: lease.mac?.toUpperCase() ?? "Not reported" }),
+          ...(lease.manufacturer
+            ? [
+                el("dt", {
+                  className: "device-field-label",
+                  text: "Vendor",
+                  attrs: { "aria-label": "Vendor", title: "Vendor" },
+                }),
+                el("dd", { text: lease.manufacturer }),
+              ]
+            : []),
         ]),
       ]),
     );

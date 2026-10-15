@@ -8,7 +8,7 @@ hosts=(
   kex
   cerulean
   kveikur
-  "${HOMELAB_ROUTER_SSH_HOST:-flint2}"
+  "${HOMELAB_ROUTER_SSH_HOST:-flint}"
 )
 
 mkdir -p "$ssh_dir"
