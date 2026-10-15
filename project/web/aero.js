@@ -95,6 +95,15 @@ function el(tag, options = {}, children = []) {
 }
 
 /**
+ * bolds shell commands inside plain UI copy
+ * @param {string} text
+ * @returns {Array<Node | string>}
+ */
+function withCommands(text) {
+  return text.split(/(pvecm status|smartctl|zpool)/).map((part, index) => (index % 2 === 1 ? el("strong", { text: part }) : part));
+}
+
+/**
  * @param {string} tag
  * @param {Readonly<Record<string, string | number>>} [attrs]
  * @param {ReadonlyArray<Node | string>} [children]
@@ -579,7 +588,7 @@ function renderQuorumDialog() {
       el("strong", { className: "quorum-state", text: summary }),
       el("span", { text: ` · ${voteSummary}` }),
     ]),
-    el("p", { className: "hw-status", text: "Read-only cluster status from pvecm status." }),
+    el("p", { className: "hw-status" }, withCommands("Read-only cluster status from pvecm status.")),
     el("h3", { text: "Cluster" }),
     fieldTable(["Name", "Config Version", "Transport", "Secure auth", "Nodes"]),
     el("h3", { text: "Quorum" }),
@@ -591,7 +600,11 @@ function renderQuorumDialog() {
       ? el("p", { className: "empty", text: "No QDevice is configured." })
       : membership.length > 0
         ? membershipTable()
-        : el("p", { className: "empty", text: details ? "No QDevice membership details reported." : "pvecm status details are unavailable." }),
+        : el(
+            "p",
+            { className: "empty" },
+            withCommands(details ? "No QDevice membership details reported." : "pvecm status details are unavailable."),
+          ),
   );
 }
 
@@ -855,7 +868,7 @@ function renderHardwareErrorsDialog(node) {
   /** @param {string[]} headers @param {HTMLElement[]} rows @param {string} empty */
   const table = (headers, rows, empty) =>
     rows.length === 0
-      ? el("p", { className: "empty", text: empty })
+      ? el("p", { className: "empty" }, withCommands(empty))
       : el("table", { className: "storage-table" }, [
           el("thead", {}, [
             el(
@@ -1022,7 +1035,7 @@ function renderStorageDialog(node) {
   /** @param {string[]} headers @param {HTMLElement[]} rows @param {string} empty */
   const table = (headers, rows, empty) =>
     rows.length === 0
-      ? el("p", { className: "empty", text: empty })
+      ? el("p", { className: "empty" }, withCommands(empty))
       : el("table", { className: "storage-table" }, [
           el("thead", {}, [
             el(
