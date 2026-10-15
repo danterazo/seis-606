@@ -32,7 +32,7 @@ def test_other_payload_fields_are_preserved(tmp_path: Path) -> None:
     assert presented["fetched_at"] == "2026-10-07T00:00:00+00:00"
 
 
-def test_shared_names_apply_to_nodes_and_guests_without_changing_identity(tmp_path: Path) -> None:
+def test_formatted_names_apply_to_nodes_and_guests_without_changing_identity(tmp_path: Path) -> None:
     payload = make_payload(nodes=[{"name": "suika", "address": None, "guests": [{"name": "saru", "vmid": 101}]}])
     node = present_payload(payload=payload, image_dir=tmp_path)["nodes"][0]
     assert node["name"] == "suika"

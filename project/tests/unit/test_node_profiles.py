@@ -39,24 +39,49 @@ def test_lookup_ignores_case() -> None:
 @pytest.mark.parametrize(
     argnames=("name", "display_name"),
     argvalues=[
-        ("OVEDUR-10G", "\u00f3ve\u00f0ur-10g"),
-        ("CREALITY-K1C-WIFI", "var\u00f0eldur"),
+        ("ovedur-10G", "\u00d3ve\u00f0ur (10G)"),
+        ("\u00f3ve\u00f0ur-10g", "\u00d3ve\u00f0ur (10G)"),
+        ("vardeldur-wifi", "Var\u00f0eldur WiFi"),
+        ("VARDELDUR-ETH", "Var\u00f0eldur Eth"),
+        ("saeglopur", "S\u00e6gl\u00f3pur"),
+        ("saeglopur-wifi", "S\u00e6gl\u00f3pur WiFi"),
+        ("hoppipolla", "Hopp\u00edpolla"),
+        ("creality-k1c-wifi", "Creality (K1C) WiFi"),
+        ("ringoM4-wifi", "\u308a\u3093\u3054 (M4) WiFi"),
+        ("ringom4-wifi", "\u308a\u3093\u3054 (M4) WiFi"),
+        ("ringoA20", "\u308a\u3093\u3054 (A20)"),
+        ("ringoa20", "\u308a\u3093\u3054 (A20)"),
+        ("ringo-a20", "\u308a\u3093\u3054 (A20)"),
         ("suika", "\u3059\u3044\u304b"),
         ("ichigo", "\u3044\u3061\u3054"),
         ("saru", "\u3055\u308b"),
-        ("ringoM4-wifi", "\u308a\u3093\u3054-M4"),
-        ("ringoA20", "\u308a\u3093\u3054-A20"),
-        ("ringo-A20", "\u308a\u3093\u3054-A20"),
+        ("10g", "(10G)"),
+        ("gp", "GP"),
+        ("HP", "HP"),
+        ("delta3", "EcoFlow DELTA 3 Plus"),
+        ("delta3-server-rack", "EcoFlow DELTA 3 Plus (Server Rack)"),
+        ("delta3-plus-garage", "EcoFlow DELTA 3 Plus (Garage)"),
+        ("ECOFLOW-delta3-plus", "EcoFlow DELTA 3 Plus"),
+        ("ecoflow", "EcoFlow DELTA 3 Plus (Server Rack)"),
+        ("ecoflow-server-rack", "EcoFlow DELTA 3 Plus (Server Rack)"),
+        ("ecoflow-bedroom", "EcoFlow DELTA 3 Plus (Bedroom)"),
+        ("ecoflow-delta3-plus-server-rack", "EcoFlow DELTA 3 Plus (Server Rack)"),
+        ("nerd-qaxe", "NerdQAxe++"),
+        ("NERD-QAXE", "NerdQAxe++"),
+        ("nerdqaxe", "NerdQAxe++"),
+        ("qaxe", "QAxe"),
+        ("kp125m", "Kasa KP125M"),
+        ("kp125m-ovedur", "Kasa KP125M (\u00d3ve\u00f0ur)"),
+        ("KP125M-bedroom-lights", "Kasa KP125M (Bedroom Lights)"),
+        ("kp125m-ovedur-10g", "Kasa KP125M (\u00d3ve\u00f0ur 10G)"),
+        ("kp125m-nerd-qaxe", "Kasa KP125M (NerdQAxe++)"),
+        ("kp125m-qaxe", "Kasa KP125M (QAxe)"),
+        ("new-node", "New Node"),
     ],
 )
-def test_shared_name_map_applies_to_future_nodes(name: str, display_name: str) -> None:
+def test_hostnames_are_formatted_dynamically(name: str, display_name: str) -> None:
     assert display_name_for(name=name) == display_name
     assert profile_for_node(node_name=name).display_name == display_name
-
-
-def test_unmapped_device_names_are_preserved() -> None:
-    assert display_name_for(name="My-Device") == "My-Device"
-    assert display_name_for(name="ringo-M4") == "ringo-M4"
 
 
 def test_node_order_uses_ip_addresses_including_new_nodes() -> None:
@@ -83,7 +108,7 @@ def test_unknown_nodes_get_a_stable_capitalized_profile() -> None:
 
     assert first == profile_for_node(node_name="new-node")
     assert first.color in FALLBACK_PALETTE
-    assert first.display_name == "New-node"
+    assert first.display_name == "New Node"
 
 
 def test_every_color_is_a_plain_hex_value() -> None:

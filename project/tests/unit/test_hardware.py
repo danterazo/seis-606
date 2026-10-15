@@ -278,8 +278,6 @@ def test_ssh_probe_sends_the_script_on_stdin_with_strict_host_keys() -> None:
 
 def test_ssh_probe_reports_failures_and_malformed_output() -> None:
     with pytest.raises(expected_exception=StatusSourceError, match="refused"):
-        SshHardwareProbe(runner=make_runner(stderr="Permission denied (publickey)", returncode=255, calls=[])).probe(
-            node_name="x", host="x"
-        )
+        SshHardwareProbe(runner=make_runner(stderr="Permission denied (publickey)", returncode=255, calls=[])).probe(node_name="x", host="x")
     with pytest.raises(expected_exception=StatusSourceError, match="malformed"):
         SshHardwareProbe(runner=make_runner(stdout="not json", calls=[])).probe(node_name="x", host="x")

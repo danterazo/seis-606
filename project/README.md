@@ -106,11 +106,16 @@ read-only. Automated tests use fake SSH; browser action tests intercept requests
 
 ### Device Names and Leases
 
-Edit `DISPLAY_NAMES` in `homelab_dashboard/node_profiles.py` to configure display names. This is the only naming map: the router's `ringoM4-wifi` and
-`ringoA20` are matched directly to their hiragana display names. The hyphenated `ringo-A20` spelling is an alias for the same display name; no
-intermediate alias resolution is used. The case-insensitive map is shared by node cards, topology, guest cards/search, and DHCP devices; raw hostnames
-and IDs stay unchanged. The Japanese entries render as hiragana using the exact labels configured in the map. Future aliases do not create placeholder
-nodes; they apply when a node or lease is discovered.
+Hostnames are formatted dynamically for display: hyphens and camel-case boundaries become spaces, each word is capitalized, WiFi is rendered as `WiFi`,
+and alphanumeric model codes such as `10G`, `M4`, and `A20` are uppercased in parentheses. Product names such as `QAxe` and `NerdQAxe++` retain
+their canonical spelling. Two-letter acronyms remain uppercase. Product prefixes use a parenthesized purpose suffix, such as `Kasa KP125M (Bedroom Lights)`
+or `EcoFlow DELTA 3 Plus (Server Rack)` (matched from `ecoflow` or `delta3` hostnames). The bare `ecoflow` hostname defaults to `Server Rack`; future EcoFlow units can provide their own suffix.
+Icelandic hostname parts such as `ovedur`, `vardeldur`, `saeglopur`, and
+`hoppipolla` retain their proper spelling (`Óveður`, `Varðeldur`, `Sæglópur`, and `Hoppípolla`). The Japanese
+hostname parts `ringo`, `suika`, `ichigo`, and `saru` render in hiragana (for example, `りんご (M4)`). The `ovedur` and `vardeldur` hostname parts keep
+their Icelandic spelling (`Óveður` and `Varðeldur`). This shared
+formatter is used by node cards, topology, guest cards/search, and DHCP devices; raw hostnames and IDs stay unchanged. New names need no map entry and do
+not create placeholder nodes; they are formatted when a node or lease is discovered.
 
 Cluster nodes are ordered numerically by their locally resolved IP address, with IPv4 before IPv6. Missing or invalid addresses sort last; names break
 ties alphabetically. The node list, overview, topology, and node filters use this

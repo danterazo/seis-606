@@ -1488,10 +1488,7 @@ function renderDevices() {
         );
       }
       if (inlineStatus) {
-        routerLabel.append(
-          document.createTextNode(" · "),
-          el("span", { className: "devices-inline-status", text: statusText }),
-        );
+        routerLabel.append(document.createTextNode(" · "), el("span", { className: "devices-inline-status", text: statusText }));
       }
     }
     status.classList.toggle("is-stale", Boolean(stale));

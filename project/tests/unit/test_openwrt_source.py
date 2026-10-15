@@ -4,7 +4,6 @@ from datetime import UTC, datetime
 from typing import Optional
 
 import pytest
-from homelab_dashboard.node_profiles import DISPLAY_NAMES
 from homelab_dashboard.sources.base import StatusSourceError
 from homelab_dashboard.sources.mac_manufacturer import MacManufacturerLookup
 from homelab_dashboard.sources.openwrt_ssh import (
@@ -26,7 +25,7 @@ def test_dnsmasq_leases_preserve_identity_and_use_shared_names() -> None:
     assert named.mac == "aa:bb:cc:dd:ee:ff"
     assert named.to_payload()["mac"] == "AA:BB:CC:DD:EE:FF"
     assert named.hostname == "ringom4-wifi"
-    assert named.to_payload()["display_name"] == DISPLAY_NAMES["ringom4-wifi"]
+    assert named.to_payload()["display_name"] == "\u308a\u3093\u3054 (M4) WiFi"
     assert named.expires_at == datetime.fromtimestamp(timestamp=2000000000, tz=UTC)
     assert unnamed.expires_at is None
     assert unnamed.hostname is None
@@ -213,7 +212,8 @@ def test_named_devices_precede_ip_only_devices_in_both_panels() -> None:
 0 aa:bb:cc:dd:ee:07 172.16.0.112 KP125M *
 0 aa:bb:cc:dd:ee:08 192.168.10.3 192.168.10.3 *"""
     source = OpenWrtLeaseSource(target=SshTarget(host="router"), runner=runner)
-    addresses = [lease["address"] for lease in source.fetch()["leases"]]
+    leases = source.fetch()["leases"]
+    addresses = [lease["address"] for lease in leases]
     assert addresses == [
         "192.168.10.10",
         "192.168.10.2",
@@ -224,6 +224,7 @@ def test_named_devices_precede_ip_only_devices_in_both_panels() -> None:
         "172.16.0.2",
         "172.16.0.3",
     ]
+    assert next(lease["display_name"] for lease in leases if lease["address"] == "172.16.0.238") == "EcoFlow DELTA 3 Plus (Server Rack)"
 
 
 @pytest.mark.parametrize(argnames="error", argvalues=[FileNotFoundError(), subprocess.TimeoutExpired(cmd="ssh", timeout=8)])

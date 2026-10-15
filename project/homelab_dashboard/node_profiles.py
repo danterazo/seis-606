@@ -1,26 +1,92 @@
 import ipaddress
+import re
 import zlib
 from dataclasses import dataclass
 from typing import Final, Optional
 
 from homelab_dashboard.models import Hardware, HardwareSource
 
-# hardcode standardizations & display names
-DISPLAY_NAMES: Final[dict[str, str]] = {
-    "ovedur-10G": "óveður-10g",
-    "creality-k1c-wifi": "varðeldur",
-    "ringom4-wifi": "りんご-M4",
-    "ringoa20": "りんご-A20",
-    "ringo-a20": "りんご-A20",
+JAPANESE_NAME_PARTS: Final[dict[str, str]] = {
+    "ringo": "りんご",
     "suika": "すいか",
     "ichigo": "いちご",
     "saru": "さる",
 }
+ICELANDIC_NAME_PARTS: Final[dict[str, str]] = {
+    "ovedur": "óveður",
+    "vardeldur": "varðeldur",
+    "saeglopur": "sæglópur",
+    "hoppipolla": "hoppípolla",
+}
+PRODUCT_NAME_PREFIXES: Final[tuple[tuple[str, str], ...]] = (
+    ("ecoflow-delta3-plus", "EcoFlow DELTA 3 Plus"),
+    ("ecoflow", "EcoFlow DELTA 3 Plus"),
+    ("delta3-plus", "EcoFlow DELTA 3 Plus"),
+    ("delta3", "EcoFlow DELTA 3 Plus"),
+    ("kp125m", "Kasa KP125M"),
+)
+PRODUCT_DEFAULT_PURPOSES: Final[dict[str, str]] = {"ecoflow": "Server Rack"}
 
 
 def display_name_for(*, name: str) -> str:
-    key: str = name.casefold()
-    return next((display_name for hostname, display_name in DISPLAY_NAMES.items() if hostname.casefold() == key), name)
+    hostname: str = name.strip()
+    for prefix, product_name in PRODUCT_NAME_PREFIXES:
+        product_prefix: Optional[re.Match[str]] = re.match(rf"^{re.escape(prefix)}(?:-|$)", hostname, flags=re.IGNORECASE)
+        if product_prefix is None:
+            continue
+        remainder: str = hostname[product_prefix.end() :].strip("- ")
+        if remainder:
+            purpose: str = _format_hostname_words(name=remainder, parenthesize_codes=False)
+            return f"{product_name} ({purpose})"
+        default_purpose: Optional[str] = PRODUCT_DEFAULT_PURPOSES.get(prefix)
+        if default_purpose is not None:
+            return f"{product_name} ({default_purpose})"
+        return product_name
+    return _format_hostname_words(name=hostname, parenthesize_codes=True)
+
+
+def _format_hostname_words(*, name: str, parenthesize_codes: bool) -> str:
+    words: list[str] = []
+    separated_name: str = re.sub(r"(?<=[a-z])(?=[A-Z])", " ", name).replace("-", " ")
+    for word in separated_name.split():
+        if word.casefold() == "delta3":
+            words.append("Delta3")
+            continue
+        model_suffix: Optional[re.Match[str]] = re.fullmatch(r"([A-Za-z]+?)([A-Za-z]\d+)", word)
+        words.extend(model_suffix.groups() if model_suffix is not None else (word,))
+    formatted_words: list[str] = []
+    word_index: int = 0
+    while word_index < len(words):
+        word: str = words[word_index]
+        if word.casefold() == "nerd" and word_index + 1 < len(words) and words[word_index + 1].casefold() == "qaxe":
+            formatted_words.append("NerdQAxe++")
+            word_index += 2
+            continue
+        if word.casefold() == "nerdqaxe":
+            formatted_words.append("NerdQAxe++")
+            word_index += 1
+            continue
+        japanese_name: Optional[str] = JAPANESE_NAME_PARTS.get(word.casefold())
+        if japanese_name is not None:
+            formatted_words.append(japanese_name)
+        elif word == "Delta3":
+            formatted_words.append(word)
+        elif word.casefold() == "qaxe":
+            formatted_words.append("QAxe")
+        else:
+            icelandic_name: Optional[str] = ICELANDIC_NAME_PARTS.get(word.casefold())
+            if icelandic_name is not None:
+                formatted_words.append(icelandic_name.title())
+            elif word.casefold() == "wifi":
+                formatted_words.append("WiFi")
+            elif re.fullmatch(r"(?=.*[A-Za-z])(?=.*\d)[A-Za-z0-9]+", word):
+                formatted_words.append(f"({word.upper()})" if parenthesize_codes else word.upper())
+            elif word.isalpha() and len(word) == 2:
+                formatted_words.append(word.upper())
+            else:
+                formatted_words.append(word.title())
+        word_index += 1
+    return " ".join(formatted_words)
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)

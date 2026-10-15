@@ -2,9 +2,10 @@ import csv
 import re
 import threading
 import time
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from io import StringIO
-from typing import Callable, Final, Optional, cast
+from typing import Final, Optional, cast
 from urllib.request import Request, urlopen
 
 IEEE_OUI_REGISTRY_URL: Final[str] = "https://standards-oui.ieee.org/oui/oui.csv"
