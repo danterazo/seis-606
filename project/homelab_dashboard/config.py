@@ -16,7 +16,7 @@ class Settings:
     ssh_timeout_seconds: float
     cache_seconds: float
     hardware_cache_seconds: float
-    router_ssh_host: str = "192.168.10.1"
+    router_ssh_host: str = "flint"
     router_ssh_user: str = "root"
     router_cache_seconds: float = 60.0
     storage_cache_seconds: float = 300.0
@@ -32,7 +32,7 @@ class Settings:
             ssh_timeout_seconds=float(environ.get("HOMELAB_SSH_TIMEOUT", "15")),
             cache_seconds=float(environ.get("HOMELAB_CACHE_SECONDS", "10")),
             hardware_cache_seconds=float(environ.get("HOMELAB_HARDWARE_CACHE_SECONDS", "3")),
-            router_ssh_host=environ.get("HOMELAB_ROUTER_SSH_HOST", "192.168.10.1"),
+            router_ssh_host=environ.get("HOMELAB_ROUTER_SSH_HOST", "flint"),
             router_ssh_user=environ.get("HOMELAB_ROUTER_SSH_USER", "root"),
             router_cache_seconds=float(environ.get("HOMELAB_ROUTER_CACHE_SECONDS", "60")),
             storage_cache_seconds=float(environ.get("HOMELAB_STORAGE_CACHE_SECONDS", "300")),

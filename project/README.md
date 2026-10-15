@@ -18,7 +18,7 @@ Open the printed URL (default `http://127.0.0.1:8765`). The server needs only th
 | `HOMELAB_SSH_TIMEOUT`             |         `15`         | Seconds to wait for Proxmox                                                                                                                                                                                                                                                                                       |
 | `HOMELAB_CACHE_SECONDS`           |         `10`         | Minimum seconds between Proxmox queries (one costs ~2 CPU-seconds on a node); the page itself polls every second                                                                                                                                                                                                  |
 | `HOMELAB_HARDWARE_CACHE_SECONDS`  |         `3`          | Minimum seconds between CPU/firmware ECC probes of each online node (a tiny read-only Python script sent over the same SSH connection settings; nothing is installed or written on the node)                                                                                                                      |
-| `HOMELAB_ROUTER_SSH_HOST`         |       `flint2`       | OpenWRT router for DHCPv4 leases. Alias for `192.168.10.1`                                                                                                                                                                                                                                                        |
+| `HOMELAB_ROUTER_SSH_HOST`         |       `flint`        | OpenWRT router for DHCPv4 leases. Alias for `192.168.10.1`                                                                                                                                                                                                                                                        |
 | `HOMELAB_STORAGE_CACHE_SECONDS`   |        `300`         | Minimum seconds between SMART / `zpool` reads of each online node, run in the background (needs `smartctl`; disks in standby are not woken). Thresholds live in `sources/storage_parser.py` (HDD warn 45 °C / critical 50 °C)                                                                                     |
 | `HOMELAB_HW_ERRORS_CACHE_SECONDS` |        `120`         | Minimum seconds between hardware-error reads (EDAC counters, 14 days of kernel/rasdaemon journal, `ras-mc-ctl --summary`) of each online node, run in the background. Read-only; the last reading is kept and marked stale when a node is unreachable. Recurrence threshold lives in `sources/hwerrors_parser.py` |
 | `HOMELAB_ROUTER_SSH_USER`         |        `root`        | Router SSH account (key authentication only)                                                                                                                                                                                                                                                                      |
@@ -31,7 +31,7 @@ Trust Cerulean's host key once, after confirming the fingerprints match:
 
 ```bash
 ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub        # on Cerulean's console
-ssh-keyscan -t ed25519 cerulean | ssh-keygen -lf -  # on this machine
+ssh-keyscan -t ed25519 cerulean | ssh-keygen -lf -      # on this machine
 ssh-keyscan -H -t ed25519 cerulean >> ~/.ssh/known_hosts
 ```
 
@@ -109,8 +109,8 @@ connectivity or VLAN claim.
 
 Before leases can load, verify the router's SSH host-key fingerprint against its console or another trusted channel, then trust it in this machine's
 `known_hosts` and configure SSH key authentication. For example, inspect a candidate ED25519 fingerprint with
-`ssh-keyscan -t ed25519 192.168.10.1 | ssh-keygen -lf -`; this network scan alone does not establish trust. Only after independently confirming it,
-connect with `ssh root@192.168.10.1` to accept the verified key. The application never disables host-key checking or handles passwords. No router
+`ssh-keyscan -t ed25519 flint | ssh-keygen -lf -`; this network scan alone does not establish trust. Only after independently confirming it,
+connect with `ssh root@flint` to accept the verified key. The application never disables host-key checking or handles passwords. No router
 trust changes have been performed.
 
 ## Layout
@@ -211,7 +211,7 @@ details without claiming live readings. CPU fallbacks remain italicized with an 
 
 ### Further OpenWRT Discovery
 
-- The DHCPv4 collector reads `root@192.168.10.1` over SSH with key authentication, verified host keys, an 8-second timeout, and an independent
+- The DHCPv4 collector reads `root@flint` over SSH with key authentication, verified host keys, an 8-second timeout, and an independent
   60-second cache. It has successfully read DHCPv4 leases; the application has not changed SSH trust.
 - [ ] Inspect `ubus -v list` for methods supported by the router's OpenWRT version and packages.
 - [ ] Prefer structured `ubus` JSON and `ip -j neigh` where available; BusyBox `ip` may need `ip-full` for JSON output.
