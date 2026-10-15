@@ -18,10 +18,6 @@ run:
 	DASHBOARD_DEV=1 PORT=8766 poetry run watchfiles --filter python --grace-period 0.5 'python3 project/app.py' project/homelab_dashboard project/server.py project/app.py
 
 upgrade:
-	sudo apt update
-	sudo apt full-upgrade -y
-	sudo apt clean
-	sudo apt autoremove --purge -y
 	uv tool upgrade --all
 
 verify-gpu:
