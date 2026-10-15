@@ -493,7 +493,7 @@ function renderTopologyQuorum() {
     .filter(Boolean)
     .join(" · ");
   indicator.className = `topology-quorum quorum-${tone}`;
-  const buttonContents = [el("span", { text: "Quorum:" }), el("strong", { className: "quorum-button-state", text: status })];
+  const buttonContents = [el("span", { text: "Cluster:" }), el("strong", { className: "quorum-button-state", text: status })];
   if (stale) buttonContents.push(el("span", { text: "· Last Known" }));
   indicator.replaceChildren(...buttonContents);
   indicator.setAttribute("aria-label", `Cluster Quorum: ${summaryState}. Open Details.`);
