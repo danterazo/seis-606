@@ -178,7 +178,7 @@ def parse_quorum_details(*, status_output: str) -> Optional[str]:
                 qdevice_rows.append(re.sub("qdevice", "QDevice", line, flags=re.IGNORECASE))
             continue
         if line.lower().startswith("nodeid") and "votes" in line.lower():
-            membership_header = line
+            membership_header = re.sub(r"\bnodeid\b", "NodeID", line, flags=re.IGNORECASE)
             in_membership = True
             continue
         if ":" not in line:

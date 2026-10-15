@@ -122,7 +122,7 @@ Nodeid Votes Qdevice Name
     assert "Total votes: 3" in snapshot.quorum_details
     assert "Quorum: 2" in snapshot.quorum_details
     assert "Flags: Quorate QDevice" in snapshot.quorum_details
-    assert "Nodeid Votes QDevice Name" in snapshot.quorum_details
+    assert "NodeID Votes QDevice Name" in snapshot.quorum_details
     assert "0x00000000 1 QDevice" in snapshot.quorum_details
 
 

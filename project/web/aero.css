@@ -1406,18 +1406,20 @@ span.health-badge[role="button"] {
   width: 42%;
   font-weight: 600;
 }
-.quorum-membership {
+.quorum-membership-wrap {
   overflow-x: auto;
   margin: 4px 0;
-  padding: 10px;
   border: 1px solid rgba(15, 90, 150, 0.14);
   border-radius: 5px;
   background: rgba(15, 90, 150, 0.06);
-  font:
-    12px/1.5 "Cascadia Mono",
-    "DejaVu Sans Mono",
-    monospace;
-  white-space: pre;
+}
+.quorum-membership-table {
+  min-width: 420px;
+}
+.quorum-membership-table th,
+.quorum-membership-table td {
+  padding: 6px 10px;
+  white-space: nowrap;
 }
 .hw-status {
   margin: 4px 0;

@@ -543,6 +543,36 @@ function renderQuorumDialog() {
       ? el("p", { className: "empty", text: "No details reported." })
       : el("table", { className: "storage-table quorum-table" }, [el("tbody", {}, rows)]);
   };
+  const membershipTable = () => {
+    const sourceColumns = (membership[0] ?? "")
+      .trim()
+      .split(/\s+/)
+      .map((column) => (column.toLowerCase() === "nodeid" ? "NodeID" : column));
+    const nodeIdIndex = sourceColumns.findIndex((column) => column.toLowerCase() === "nodeid");
+    const votesIndex = sourceColumns.findIndex((column) => column.toLowerCase() === "votes");
+    const nameIndex = sourceColumns.findIndex((column) => column.toLowerCase() === "name");
+    const rows = membership.slice(1).map((line) => {
+      const values = line.trim().split(/\s+/);
+      const name = nameIndex >= 0 ? values.slice(nameIndex).join(" ") : "";
+      const annotatedVotes = /\(votes\s+(\d+)\)/i.exec(name)?.[1];
+      const nodeId = values[nodeIdIndex] ?? "";
+      const votes = annotatedVotes ?? values[votesIndex] ?? "";
+      return el("tr", {}, [el("td", { text: nodeId }), el("td", { text: votes })]);
+    });
+    const columns = ["NodeID", "Votes"];
+    return el("div", { className: "quorum-membership-wrap" }, [
+      el("table", { className: "storage-table quorum-table quorum-membership-table" }, [
+        el("thead", {}, [
+          el(
+            "tr",
+            {},
+            columns.map((column) => el("th", { text: column, attrs: { scope: "col" } })),
+          ),
+        ]),
+        el("tbody", {}, rows),
+      ]),
+    ]);
+  };
 
   required("#quorum-body").replaceChildren(
     el("p", { className: `quorum-summary quorum-summary-${tone}` }, [
@@ -554,13 +584,13 @@ function renderQuorumDialog() {
     fieldTable(["Name", "Config Version", "Transport", "Secure auth", "Nodes"]),
     el("h3", { text: "Quorum" }),
     fieldTable(["Quorum provider", "Node ID", "Ring ID", "Quorate"]),
-    el("h3", { text: "Votequorum" }),
+    el("h3", { text: "Vote Quorum" }),
     fieldTable(["Expected votes", "Highest expected", "Total votes", "Quorum", "Flags"]),
     el("h3", { text: "QDevice" }),
     fields.get("QDevice") === "Not configured"
       ? el("p", { className: "empty", text: "No QDevice is configured." })
       : membership.length > 0
-        ? el("pre", { className: "quorum-membership", text: membership.join("\n") })
+        ? membershipTable()
         : el("p", { className: "empty", text: details ? "No QDevice membership details reported." : "pvecm status details are unavailable." }),
   );
 }
