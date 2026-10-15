@@ -34,8 +34,8 @@ Trust Cerulean's host key once, after confirming the fingerprints match:
 
 ```bash
 ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub        # on Cerulean's console
-ssh-keyscan -t ed25519 192.168.20.43 | ssh-keygen -lf -  # on this machine
-ssh-keyscan -H -t ed25519 192.168.20.43 >> ~/.ssh/known_hosts
+ssh-keyscan -t ed25519 cerulean | ssh-keygen -lf -  # on this machine
+ssh-keyscan -H -t ed25519 cerulean >> ~/.ssh/known_hosts
 ```
 
 Connections use `root` by default. To use another account, set `HOMELAB_PVE_SSH_USER`;

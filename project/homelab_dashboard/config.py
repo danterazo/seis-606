@@ -3,7 +3,7 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Final
 
-DEFAULT_SSH_HOST: Final[str] = "192.168.20.43"
+DEFAULT_SSH_HOST: Final[str] = "cerulean"
 DEFAULT_SSH_USER: Final[str] = "root"
 
 

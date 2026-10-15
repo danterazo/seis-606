@@ -22,17 +22,17 @@ Open `http://127.0.0.1:8765`. SSH uses public-key authentication in `BatchMode`;
 it does not ask for a password or disable host-key checking. If you have a
 configured host alias, set `HOMELAB_PVE_SSH_TARGET` to that alias. For the
 manual fallback, run `HOMELAB_STATUS_SOURCE=manual python3 project/app.py`.
-If Cerulean expects another account, use an alias or
-`user@192.168.20.43`; SSH still uses existing WSL identities.
+If Cerulean expects another account, set `HOMELAB_PVE_SSH_USER`; SSH still
+uses existing WSL identities.
 
 On first connection, compare the fingerprint from
-`ssh-keyscan -t ed25519 192.168.20.43 | ssh-keygen -lf -` with the fingerprint
+`ssh-keyscan -t ed25519 cerulean | ssh-keygen -lf -` with the fingerprint
 shown on Cerulean's local console by
 `ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub`. Only after they match, add
 the verified host key with:
 
 ```bash
-ssh-keyscan -H -t ed25519 192.168.20.43 >> ~/.ssh/known_hosts
+ssh-keyscan -H -t ed25519 cerulean >> ~/.ssh/known_hosts
 ```
 
 Never use `StrictHostKeyChecking=no` or accept an unverified key.
