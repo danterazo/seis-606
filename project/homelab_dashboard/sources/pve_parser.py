@@ -133,6 +133,71 @@ def _node_addresses(*, cluster_status: Sequence[JsonObject]) -> dict[str, str]:
     return addresses
 
 
+def _cluster_quorum(*, cluster_status: Sequence[JsonObject]) -> Optional[bool]:
+    for row in cluster_status:
+        if row.get("type") != "cluster":
+            continue
+        quorate: object = row.get("quorate")
+        if isinstance(quorate, bool):
+            return quorate
+        if isinstance(quorate, int) and quorate in (0, 1):
+            return quorate == 1
+    return None
+
+
+def parse_quorum_details(*, status_output: str) -> Optional[str]:
+    summary_fields: Final[frozenset[str]] = frozenset(
+        {
+            "Name",
+            "Config Version",
+            "Transport",
+            "Secure auth",
+            "Quorum provider",
+            "Nodes",
+            "Node ID",
+            "Ring ID",
+            "Quorate",
+            "Expected votes",
+            "Highest expected",
+            "Total votes",
+            "Quorum",
+            "Flags",
+        }
+    )
+    details: list[str] = []
+    membership_header: Optional[str] = None
+    qdevice_rows: list[str] = []
+    in_membership: bool = False
+
+    for raw_line in status_output.splitlines():
+        line: str = raw_line.strip()
+        if not line:
+            continue
+        if in_membership:
+            if membership_header is not None and "qdevice" in membership_header.lower() and "qdevice" in line.lower():
+                qdevice_rows.append(re.sub("qdevice", "QDevice", line, flags=re.IGNORECASE))
+            continue
+        if line.lower().startswith("nodeid") and "votes" in line.lower():
+            membership_header = line
+            in_membership = True
+            continue
+        if ":" not in line:
+            continue
+        key, value = (part.strip() for part in line.split(":", maxsplit=1))
+        if key in summary_fields and value:
+            normalized_value: str = re.sub("qdevice", "QDevice", value, flags=re.IGNORECASE)
+            details.append(f"{key}: {normalized_value}")
+
+    if not details:
+        return None
+    if membership_header is None or "qdevice" not in membership_header.lower():
+        details.append("QDevice: Not configured")
+    else:
+        details.extend(("QDevice membership:", re.sub("qdevice", "QDevice", membership_header, flags=re.IGNORECASE)))
+        details.extend(qdevice_rows or ["No QDevice membership row reported"])
+    return "\n".join(details)
+
+
 def _local_resources(*, status: Optional[JsonObject]) -> Optional[Resources]:
     if status is None:
         return None
@@ -154,6 +219,7 @@ def parse_snapshot(
     cluster_status: Sequence[JsonObject],
     local_status: Optional[JsonObject] = None,
     cluster_options: Optional[JsonObject] = None,
+    quorum_details: Optional[str] = None,
 ) -> ClusterSnapshot:
     addresses: dict[str, str] = _node_addresses(cluster_status=cluster_status)
     # without quorum the resources list marks even the reachable node "unknown"; the cluster status still knows it is up
@@ -187,4 +253,6 @@ def parse_snapshot(
         source=source,
         fetched_at=fetched_at,
         nodes=tuple(sorted(nodes, key=lambda node: node.name)),
+        quorate=_cluster_quorum(cluster_status=cluster_status),
+        quorum_details=quorum_details,
     )

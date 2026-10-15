@@ -8,7 +8,7 @@ import pytest
 from homelab_dashboard.config import Settings
 from homelab_dashboard.models import ClusterSnapshot, GuestKind, GuestState, GuestTag, Node, NodeState
 from homelab_dashboard.sources.base import StatusSourceError
-from homelab_dashboard.sources.proxmox_ssh import SSH_OPTIONS, CommandRunner, ProxmoxSshSource, SshTarget
+from homelab_dashboard.sources.proxmox_ssh import QUORUM_STATUS_MARKER, SSH_OPTIONS, CommandRunner, ProxmoxSshSource, SshTarget
 
 FIXED_TIME: Final[datetime] = datetime(year=2026, month=10, day=6, hour=12, minute=0, tzinfo=UTC)
 
@@ -21,7 +21,7 @@ RESOURCES: Final[list[dict[str, Any]]] = [
     {"type": "storage", "id": "storage/cerulean/local"},
 ]
 CLUSTER_STATUS: Final[list[dict[str, Any]]] = [
-    {"type": "cluster", "name": "home"},
+    {"type": "cluster", "name": "home", "quorate": 1},
     {"type": "node", "name": "cerulean", "ip": "192.168.20.43"},
 ]
 
@@ -71,6 +71,59 @@ def test_fetch_parses_nodes_guests_and_addresses() -> None:
         (201, GuestKind.CONTAINER, GuestState.STOPPED),
     ]
     assert snapshot.fetched_at == FIXED_TIME
+    assert snapshot.quorate is True
+
+
+def test_cluster_quorum_is_false_when_proxmox_reports_no_quorum() -> None:
+    cluster_status: list[dict[str, Any]] = [{"type": "cluster", "name": "home", "quorate": 0}]
+
+    snapshot: ClusterSnapshot = make_source(stdout=documents(resources=RESOURCES, cluster_status=cluster_status)).fetch()
+
+    assert snapshot.quorate is False
+
+
+def test_cluster_quorum_is_unknown_when_proxmox_does_not_report_it() -> None:
+    snapshot: ClusterSnapshot = make_source(stdout=documents(resources=RESOURCES, cluster_status=[])).fetch()
+
+    assert snapshot.quorate is None
+
+
+def test_fetch_parses_pvecm_vote_and_qdevice_details() -> None:
+    pvecm_status: str = """Cluster information
+Name: home
+Config Version: 3
+Transport: knet
+Secure auth: on
+
+Quorum information
+Quorum provider: corosync_votequorum
+Nodes: 3
+Node ID: 0x00000001
+Quorate: Yes
+
+Votequorum information
+Expected votes: 3
+Highest expected: 3
+Total votes: 3
+Quorum: 2
+Flags: Quorate Qdevice
+
+Membership information
+Nodeid Votes Qdevice Name
+0x00000001 1 A,V,NMW 192.168.1.10 (local)
+0x00000000 1 Qdevice
+"""
+    stdout: str = documents(resources=RESOURCES, cluster_status=CLUSTER_STATUS) + f"\nnull\nnull\n{QUORUM_STATUS_MARKER}\n{pvecm_status}"
+
+    snapshot: ClusterSnapshot = make_source(stdout=stdout).fetch()
+
+    assert snapshot.quorum_details is not None
+    assert "Expected votes: 3" in snapshot.quorum_details
+    assert "Total votes: 3" in snapshot.quorum_details
+    assert "Quorum: 2" in snapshot.quorum_details
+    assert "Flags: Quorate QDevice" in snapshot.quorum_details
+    assert "Nodeid Votes QDevice Name" in snapshot.quorum_details
+    assert "0x00000000 1 QDevice" in snapshot.quorum_details
 
 
 def test_only_tracked_guest_tags_are_kept_and_use_pve_colors() -> None:
@@ -169,6 +222,7 @@ def test_ssh_command_never_prompts_or_relaxes_host_checking() -> None:
     assert set(SSH_OPTIONS) <= set(command)
     assert "-oStrictHostKeyChecking=yes" in command
     assert command[-1].count("pvesh get") == 4
+    assert "pvecm status" in command[-1]
 
 
 def test_reachable_node_stays_online_and_keeps_its_figures_without_quorum() -> None:

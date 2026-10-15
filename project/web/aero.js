@@ -16,7 +16,7 @@
  * @typedef {{ name: string, state: string, level: HealthLevel, capacity_percent: number | null, size_bytes: number | null, dataset_available_bytes: number | null, allocated_bytes: number | null, free_bytes: number | null, fragmentation_percent: number | null, layout: string | null, scan: string | null, findings: string[] }} Pool
  * @typedef {{ disks: Disk[], pools: Pool[], smart_available: boolean, zfs_available: boolean }} StorageHealth
  * @typedef {{ name: string, display_name: string, state: "online" | "offline" | "unknown", address: string | null, image: string | null, initial: string, color: string, memory_description?: string | null, memory_ecc?: boolean | null, resources: Resources, guests: Guest[], hardware: Hardware }} PveNode
- * @typedef {{ source: string, fetched_at: string, nodes: PveNode[], quorate: boolean | null }} Snapshot
+ * @typedef {{ source: string, fetched_at: string, nodes: PveNode[], quorate: boolean | null, quorum_details: string | null }} Snapshot
  * @typedef {"all" | "running" | "vm" | "container"} GuestFilter
  * @typedef {{ snapshot: Snapshot | null, error: string | null, selectedNode: string | null, filter: GuestFilter, query: string }} ViewState
  * @typedef {{ className?: string, text?: string, attrs?: Readonly<Record<string, string>> }} ElementOptions
@@ -468,10 +468,108 @@ function renderTopologyQuorum() {
   const indicator = required("#topology-quorum");
   const quorate = state.snapshot?.quorate;
   const stale = state.error !== null && state.snapshot !== null;
-  const status = quorate === true ? "Quorate" : quorate === false ? "Not quorate" : "Unknown";
+  const status = quorate === true ? "Quorate" : quorate === false ? "Not Quorate" : "Unknown";
+  const summaryState = quorate === true ? "Quorate" : quorate === false ? "Not Quorate" : "Quorum State Unavailable";
   const tone = stale ? "stale" : quorate === true ? "ok" : quorate === false ? "lost" : "unknown";
+  const details = state.snapshot?.quorum_details ?? "";
+  const detailLines = details.split("\n");
+  const totalVotes = detailLines.find((line) => line.startsWith("Total votes:"))?.split(":")[1]?.trim();
+  const expectedVotes = detailLines.find((line) => line.startsWith("Expected votes:"))?.split(":")[1]?.trim();
+  const quorumVotes = detailLines.find((line) => line.startsWith("Quorum:"))?.split(":")[1]?.trim();
+  const summary = [
+    summaryState,
+    totalVotes && expectedVotes ? `${totalVotes} of ${expectedVotes} expected votes` : null,
+    quorumVotes ? `${quorumVotes} required` : null,
+  ]
+    .filter(Boolean)
+    .join(" · ");
   indicator.className = `topology-quorum quorum-${tone}`;
-  indicator.textContent = `Quorum: ${status}${stale ? " · last known" : ""}`;
+  const buttonContents = [el("span", { text: "Quorum:" }), el("strong", { className: "quorum-button-state", text: status })];
+  if (stale) buttonContents.push(el("span", { text: "· Last Known" }));
+  indicator.replaceChildren(...buttonContents);
+  indicator.setAttribute("aria-label", `Cluster Quorum: ${summaryState}. Open Details.`);
+  indicator.title = `${summary || "Quorum State Unavailable"} · Click for Details`;
+  syncQuorumDialog();
+}
+
+/** Renders grouped pvecm data without exposing the raw terminal output. */
+function renderQuorumDialog() {
+  const snapshot = state.snapshot;
+  const details = snapshot?.quorum_details ?? "";
+  /** @type {Map<string, string>} */
+  const fields = new Map();
+  /** @type {string[]} */
+  const membership = [];
+  let readingMembership = false;
+
+  for (const line of details.split("\n")) {
+    if (line === "QDevice membership:") {
+      readingMembership = true;
+      continue;
+    }
+    if (readingMembership) {
+      membership.push(line);
+      continue;
+    }
+    const separator = line.indexOf(":");
+    if (separator > 0) fields.set(line.slice(0, separator), line.slice(separator + 1).trim());
+  }
+
+  const summary = snapshot?.quorate === true ? "Quorate" : snapshot?.quorate === false ? "Not Quorate" : "Quorum State Unavailable";
+  const totalVotes = fields.get("Total votes");
+  const expectedVotes = fields.get("Expected votes");
+  const requiredVotes = fields.get("Quorum");
+  const voteSummary =
+    totalVotes && expectedVotes
+      ? `${totalVotes} of ${expectedVotes} expected votes${requiredVotes ? ` · ${requiredVotes} required` : ""}`
+      : "Vote totals were not reported.";
+  const tone = snapshot?.quorate === true ? "ok" : snapshot?.quorate === false ? "lost" : "unknown";
+
+  /** @param {string[]} keys */
+  const fieldTable = (keys) => {
+    const rows = keys
+      .filter((key) => fields.has(key))
+      .map((key) =>
+        el("tr", {}, [
+          el("th", { text: key, attrs: { scope: "row" } }),
+          el("td", { text: fields.get(key) ?? "" }),
+        ]),
+      );
+    return rows.length === 0
+      ? el("p", { className: "empty", text: "No details reported." })
+      : el("table", { className: "storage-table quorum-table" }, [el("tbody", {}, rows)]);
+  };
+
+  required("#quorum-body").replaceChildren(
+    el("p", { className: `quorum-summary quorum-summary-${tone}` }, [
+      el("strong", { className: "quorum-state", text: summary }),
+      el("span", { text: ` · ${voteSummary}` }),
+    ]),
+    el("p", { className: "hw-status", text: "Read-only cluster status from pvecm status." }),
+    el("h3", { text: "Cluster" }),
+    fieldTable(["Name", "Config Version", "Transport", "Secure auth", "Nodes"]),
+    el("h3", { text: "Quorum" }),
+    fieldTable(["Quorum provider", "Node ID", "Ring ID", "Quorate"]),
+    el("h3", { text: "Votequorum" }),
+    fieldTable(["Expected votes", "Highest expected", "Total votes", "Quorum", "Flags"]),
+    el("h3", { text: "QDevice" }),
+    fields.get("QDevice") === "Not configured"
+      ? el("p", { className: "empty", text: "No QDevice is configured." })
+      : membership.length > 0
+        ? el("pre", { className: "quorum-membership", text: membership.join("\n") })
+        : el("p", { className: "empty", text: details ? "No QDevice membership details reported." : "pvecm status details are unavailable." }),
+  );
+}
+
+function openQuorumDialog() {
+  const dialog = required("#quorum-dialog");
+  renderQuorumDialog();
+  if (dialog instanceof HTMLDialogElement && !dialog.open) dialog.showModal();
+}
+
+function syncQuorumDialog() {
+  const dialog = required("#quorum-dialog");
+  if (dialog instanceof HTMLDialogElement && dialog.open) renderQuorumDialog();
 }
 
 /** @param {PveNode} node */
@@ -1499,6 +1597,10 @@ document.addEventListener("click", (event) => {
     void runGuestAction(Number(actionTarget.getAttribute("data-guest-vmid")), actionTarget.getAttribute("data-guest-node") ?? "", verb);
     return;
   }
+  if (event.target.closest("[data-quorum-dialog]")) {
+    openQuorumDialog();
+    return;
+  }
   const hwErrorsBadge = event.target.closest("[data-hwerrors-node]");
   if (hwErrorsBadge instanceof Element) {
     openHardwareErrorsDialog(hwErrorsBadge.getAttribute("data-hwerrors-node"));
@@ -1545,6 +1647,10 @@ required("#close-logs-button").addEventListener("click", () => {
   if (dialog instanceof HTMLDialogElement) dialog.close();
 });
 required("#clear-logs-button").addEventListener("click", () => void clearActivityLog());
+required("#close-quorum-button").addEventListener("click", () => {
+  const dialog = required("#quorum-dialog");
+  if (dialog instanceof HTMLDialogElement) dialog.close();
+});
 required("#close-storage-button").addEventListener("click", () => {
   const dialog = required("#storage-dialog");
   if (dialog instanceof HTMLDialogElement) dialog.close();

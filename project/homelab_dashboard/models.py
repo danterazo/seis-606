@@ -250,6 +250,8 @@ class ClusterSnapshot:
     source: str
     fetched_at: datetime
     nodes: tuple[Node, ...]
+    quorate: Optional[bool] = None
+    quorum_details: Optional[str] = None
 
     def to_payload(self) -> dict[str, Any]:
         payload: dict[str, Any] = asdict(self)

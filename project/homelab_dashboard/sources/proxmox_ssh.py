@@ -8,7 +8,7 @@ from typing import Final, Optional, Protocol
 
 from homelab_dashboard.models import ClusterSnapshot
 from homelab_dashboard.sources.base import StatusSourceError
-from homelab_dashboard.sources.pve_parser import JsonObject, parse_snapshot
+from homelab_dashboard.sources.pve_parser import JsonObject, parse_quorum_details, parse_snapshot
 
 SOURCE_LABEL: Final[str] = "Proxmox VE via SSH"
 DEFAULT_USER: Final[str] = "root"
@@ -31,8 +31,10 @@ API_PATHS: Final[tuple[str, ...]] = ("/cluster/resources", "/cluster/status")
 LOCAL_STATUS_COMMAND: Final[str] = "{ pvesh get /nodes/$(hostname -s)/status --output-format json || echo null; }"
 # holds the tag colors configured in the Proxmox web UI
 CLUSTER_OPTIONS_COMMAND: Final[str] = "{ pvesh get /cluster/options --output-format json || echo null; }"
+QUORUM_STATUS_MARKER: Final[str] = "__HOMELAB_PVECM_STATUS__"
+QUORUM_STATUS_COMMAND: Final[str] = f"{{ printf '\\n{QUORUM_STATUS_MARKER}\\n'; pvecm status 2>/dev/null || true; }}"
 REMOTE_COMMAND: Final[str] = " && ".join(
-    [*(f"pvesh get {path} --output-format json" for path in API_PATHS), LOCAL_STATUS_COMMAND, CLUSTER_OPTIONS_COMMAND]
+    [*(f"pvesh get {path} --output-format json" for path in API_PATHS), LOCAL_STATUS_COMMAND, CLUSTER_OPTIONS_COMMAND, QUORUM_STATUS_COMMAND]
 )
 
 _FAILURE_MESSAGES: Final[tuple[tuple[str, str], ...]] = (
@@ -144,4 +146,10 @@ class ProxmoxSshSource:
             cluster_status=cluster_status,
             local_status=_decode_optional(text=completed.stdout, position=len(API_PATHS)),
             cluster_options=_decode_optional(text=completed.stdout, position=len(API_PATHS) + 1),
+            quorum_details=parse_quorum_details(status_output=_quorum_status_output(text=completed.stdout)),
         )
+
+
+def _quorum_status_output(*, text: str) -> str:
+    _, marker, output = text.partition(QUORUM_STATUS_MARKER)
+    return output.strip() if marker else ""
