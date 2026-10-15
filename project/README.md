@@ -145,116 +145,30 @@ host-key checking or handles passwords. No router trust changes have been perfor
 
 
 ## Layout
-```text
-project/
-├── .github/
-│   ├── copilot-instructions.md # project-specific copilot guidance
-│   └── skills/ # spec-kit workflow skills
-├── .specify/ # spec-kit templates, workflows, and configuration
-├── .streamlit/
-│   └── config.toml.example # streamlit configuration example
-├── .env.example # environment variable template
-├── .gitignore # ignored project files
-├── README.md # dashboard setup and operations
-├── app-specs.md # product requirements
-├── app.py # application entry point
-├── poetry.lock # python dependency lockfile
-├── server.py # http server and api routes
-├── assets/
-│   ├── frutiger-perplexity.png
-│   ├── panel-perplexity.png
-│   └── y2k-perplexity.png
-├── homelab_dashboard/
-│   ├── __init__.py
-│   ├── activity_log.py # activity log persistence
-│   ├── config.py # environment-based settings
-│   ├── domain.py # domain objects and calculations
-│   ├── models.py # typed dashboard data models
-│   ├── node_images.py # node image selection
-│   ├── node_profiles.py # configured node display and hardware profiles
-│   ├── presentation.py # dashboard view models
-│   ├── services/
-│   │   ├── __init__.py
-│   │   ├── guests.py # guest actions and reboot service
-│   │   └── health.py # node health aggregation
-│   ├── sources/
-│   │   ├── base.py # source protocol and safe errors
-│   │   ├── cache.py # source result caching
-│   │   ├── hardware_parser.py # hardware result parsing
-│   │   ├── hardware_source.py # hardware collection coordination
-│   │   ├── hardware_ssh.py # remote hardware collection
-│   │   ├── hwerrors_monitor.py # background hardware error monitoring
-│   │   ├── hwerrors_parser.py # hardware error result parsing
-│   │   ├── hwerrors_probe.py # remote hardware error probes
-│   │   ├── hwerrors_ssh.py # hardware error ssh transport
-│   │   ├── json_values.py # json value validation
-│   │   ├── openwrt_ssh.py # router ssh transport
-│   │   ├── pve_parser.py # proxmox response parsing
-│   │   ├── proxmox_ssh.py # proxmox ssh transport
-│   │   ├── remote_probe.py # shared remote probe helpers
-│   │   ├── storage_parser.py # storage result parsing
-│   │   ├── storage_probe.py # remote storage probes
-│   │   └── storage_ssh.py # storage ssh transport
-│   └── ui/
-│       ├── __init__.py
-│       └── dashboard.py # dashboard html rendering
-├── logs/
-│   └── access.jsonl # runtime request log
-├── reference/
-│   └── project1-requirements.pdf # original project requirements
-├── scripts/ # project-level helper scripts
-├── specs/
-│   └── 001-homelab-inventory-dashboard/
-│       ├── checklists/requirements.md
-│       ├── contracts/status-source.md
-│       ├── data-model.md
-│       ├── plan.md
-│       ├── quickstart.md
-│       ├── research.md
-│       ├── spec.md
-│       └── tasks.md
-├── tests/
-│   ├── conftest.py # shared test fixtures
-│   ├── integration/
-│   │   └── test_dashboard_overview.py
-│   └── unit/
-│       ├── test_cache.py
-│       ├── test_config.py
-│       ├── test_domain.py
-│       ├── test_guest_reboot.py
-│       ├── test_hardware.py
-│       ├── test_hardware_errors.py
-│       ├── test_health.py
-│       ├── test_node_images.py
-│       ├── test_node_profiles.py
-│       ├── test_openwrt_source.py
-│       ├── test_presentation.py
-│       ├── test_pve_source.py
-│       ├── test_refresh.py
-│       ├── test_secret_safety.py
-│       └── test_storage.py
-└── web/
-    ├── .htmlvalidate.json # html validation settings
-    ├── .prettierrc.json # formatter settings
-    ├── aero.css # dashboard styles
-    ├── aero.js # browser behavior
-    ├── biome.json # css lint settings
-    ├── eslint.config.js # javascript lint settings
-    ├── index.html # dashboard document
-    ├── package-lock.json # locked web dependencies
-    ├── package.json # web tooling and scripts
-    └── images/
-        ├── dolphins.gif
-        ├── fish-01.gif
-        ├── fish-02.gif
-        ├── reef-left.svg
-        ├── reef-right.svg
-        └── nodes/
-            ├── .gitkeep
-            ├── cerulean.png
-            ├── kex.png
-            └── kveikur.png
-```
+| Directory                                                   | Purpose                                                                 |
+| :---------------------------------------------------------- | :---------------------------------------------------------------------- |
+| `project/`                                                  | Application entry points, project configuration, and documentation      |
+| `project/.github/`                                          | Copilot guidance and spec-kit workflow skills                           |
+| `project/.github/skills/`                                   | Spec-kit workflow instructions                                          |
+| `project/.specify/`                                         | Spec-kit templates, workflows, and configuration                        |
+| `project/.streamlit/`                                       | Streamlit configuration example                                         |
+| `project/assets/`                                           | Dashboard artwork and visual assets                                     |
+| `project/homelab_dashboard/`                                | Dashboard domain, configuration, presentation, and data collection code |
+| `project/homelab_dashboard/services/`                       | Guest actions and node health services                                  |
+| `project/homelab_dashboard/sources/`                        | Proxmox, router, hardware, storage, and error data sources              |
+| `project/homelab_dashboard/ui/`                             | Dashboard HTML rendering                                                |
+| `project/logs/`                                             | Runtime request logs                                                    |
+| `project/reference/`                                        | Original project requirements and reference material                    |
+| `project/scripts/`                                          | Project helper scripts                                                  |
+| `project/specs/`                                            | Feature specifications, plans, contracts, and checklists                |
+| `project/specs/001-homelab-inventory-dashboard/`            | Homelab dashboard feature design artifacts                              |
+| `project/specs/001-homelab-inventory-dashboard/checklists/` | Requirements checklist for the dashboard feature                        |
+| `project/specs/001-homelab-inventory-dashboard/contracts/`  | Data-source interface contracts                                         |
+| `project/tests/`                                            | Automated tests and shared test fixtures                                |
+| `project/tests/integration/`                                | End-to-end dashboard behavior tests                                     |
+| `project/tests/unit/`                                       | Focused tests for dashboard modules                                     |
+| `project/web/`                                              | Browser interface, styles, scripts, and frontend tooling                |
+| `project/web/images/`                                       | Decorative and node-specific dashboard images                           |
 
 
 ## Test
