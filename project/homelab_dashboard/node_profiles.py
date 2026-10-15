@@ -26,6 +26,7 @@ PRODUCT_NAME_PREFIXES: Final[tuple[tuple[str, str], ...]] = (
     ("kp125m", "Kasa KP125M"),
 )
 PRODUCT_DEFAULT_PURPOSES: Final[dict[str, str]] = {"ecoflow": "Server Rack"}
+CONNECTION_TYPES: Final[dict[str, str]] = {"wifi": "WiFi", "eth": "Eth"}
 
 
 def display_name_for(*, name: str) -> str:
@@ -77,8 +78,9 @@ def _format_hostname_words(*, name: str, parenthesize_codes: bool) -> str:
             icelandic_name: Optional[str] = ICELANDIC_NAME_PARTS.get(word.casefold())
             if icelandic_name is not None:
                 formatted_words.append(icelandic_name.title())
-            elif word.casefold() == "wifi":
-                formatted_words.append("WiFi")
+            elif word.casefold() in CONNECTION_TYPES:
+                connection: str = CONNECTION_TYPES[word.casefold()]
+                formatted_words.append(f"({connection})" if parenthesize_codes else connection)
             elif re.fullmatch(r"(?=.*[A-Za-z])(?=.*\d)[A-Za-z0-9]+", word):
                 formatted_words.append(f"({word.upper()})" if parenthesize_codes else word.upper())
             elif word.isalpha() and len(word) == 2:

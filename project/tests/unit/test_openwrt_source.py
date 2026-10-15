@@ -25,7 +25,7 @@ def test_dnsmasq_leases_preserve_identity_and_use_shared_names() -> None:
     assert named.mac == "aa:bb:cc:dd:ee:ff"
     assert named.to_payload()["mac"] == "AA:BB:CC:DD:EE:FF"
     assert named.hostname == "ringom4-wifi"
-    assert named.to_payload()["display_name"] == "\u308a\u3093\u3054 (M4) WiFi"
+    assert named.to_payload()["display_name"] == "\u308a\u3093\u3054 (M4) (WiFi)"
     assert named.expires_at == datetime.fromtimestamp(timestamp=2000000000, tz=UTC)
     assert unnamed.expires_at is None
     assert unnamed.hostname is None
