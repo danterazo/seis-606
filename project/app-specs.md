@@ -1,12 +1,15 @@
 # SEIS 606 HW2: App Specs
 
+
 ## Natural Language Homelab & Inventory Management
 I decided to pick a mix of my first two ideas: the NLP Homelab Management dashboard that can _also_ manage my inventory of parts. This project could probably just be a CLI, but I want to create something visually appealing and easy to maintain / expand. It will serve as a one-stop-shop for my many machines and containers, as well as other relevant projects. Given the amount of tinkering I do with my machines, I consider the inventory feature relevant and not just tacking on a separate app.
 
 I wrote the majority of this text myself, however I utilized AI to rephrase my example queries from [HW1](../assignments/hw1/app-ideas.md) into statements. I also used it to migrate bullet points between sections if they were more appropriate in, for example, _Behavior_ instead of _Objectives_.
 
+
 ## MVP
 Dashboard that aggregates system status from all Proxmox nodes. The inventory system will utilize a mock example so I don't have to tally every part of mine.
+
 
 ## Objectives
 <!-- OBJECTIVE: the failure mode, not the feature description -->
@@ -15,6 +18,7 @@ Dashboard that aggregates system status from all Proxmox nodes. The inventory sy
 - Some errors can go unnoticed for a while if not manually checked
 - The app must reduce operational drift by aggregating my networked nodes, containers, and inventory into one view instead of requiring separate tools for each system
 - The app must minimize the risk of destructive mistakes by requiring confirmation before running dangerous actions and by validating the affected systems before making changes
+
 
 ## Behavior
 <!-- BEHAVIOR: observable outcomes only, no tech details -->
@@ -30,6 +34,7 @@ Dashboard that aggregates system status from all Proxmox nodes. The inventory sy
 - Don't perform any dangerous/destructive commands without user input
 - Minimal hallucination; if it is unsure about something, it should not make assumptions. If it could benefit from an MCP that exists on the web but isn't implemented locally, it will suggest I set it up
 - Allow users to attach items to nodes themselves, creating a record of which parts are used where, not just what's available for use
+
 
 ## Constraints
 <!-- CONSTRAINTS: non-negotiables regardless of implementation -->
@@ -48,6 +53,7 @@ Dashboard that aggregates system status from all Proxmox nodes. The inventory sy
   - Proxmox supports this natively, but other MCPs and tools might need custom integration
 - The app should prioritize existing MCP implementations such as Proxmox, ZFS, Thunderbird, and Klipper before creating/suggesting custom tooling for the same problem
 
+
 ## Verification
 <!-- VERIFICATION: testable criteria, not subjective ones -->
 - Ditto on the "Which VMs are emulating ARM CPUs" question; for verification, confirm that the system correctly lists all relevant VMs and their architectures
@@ -61,18 +67,22 @@ Dashboard that aggregates system status from all Proxmox nodes. The inventory sy
 - The app must distinguish between container-management actions and inventory actions so that a backup, restore, or version pin does not affect unrelated records
 - The interface must remain functional behind a reverse proxy and continue to display the correct data when nodes or container counts change over time
 
+
 ## Visual Concepts
 I tried generating mockups using local models in [image-generation.ipynb](../assignments/hw2/image-generation.ipynb), but this proved to be challenging, and text was always illegible. I got better results from Perplexity and whichever image-generation models it calls on the backend.
 
 I'm going for a Y2K aesthetic. Even though the following examples may differ greatly in style, I imagine the final app will look like a combination of them. If I can't balance functionality with design, then I'd prefer a utilitarian approach that prioritizes density.
 
+
 ### Frutiger Aero (Perplexity)
 This seems easy to expand and interpret at a glance. I'd be interested in programmatically building the topology instead of hardcoding it.
 ![Frutiger Aero](assets/frutiger-perplexity.png)
 
+
 ### Y2K (Perplexity)
 This one is a banger, but it seems easy to overcomplicate. I want an app that's easy to maintain, so that means modular, reusable components and programmatic design choices (e.g. automatically retrieving IPs instead of hardcoding them).
 ![Y2K](assets/y2k-perplexity.png)
+
 
 ### Y2K Minimal (Perplexity)
 This looks clean, but I question how useful it'd be. It also has corny slogans that I don't want. I can foresee this being a panel as part of a bigger page. I'd use circles / progress bars for quick visual validation of load, and I wouldn't bother adding CPU count or uptime.

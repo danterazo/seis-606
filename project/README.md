@@ -3,6 +3,7 @@
 A status dashboard with explicit guest reboot controls for a Proxmox VE cluster, styled after Frutiger Aero / Y2K desktops. Resource readings come
 from Proxmox; display profiles, fallback CPU models, and memory descriptions are configured separately. SSH uses hostnames resolved by the local system.
 
+
 ## Run
 
 ```bash
@@ -24,6 +25,7 @@ Open the printed URL (default `http://127.0.0.1:8765`). The server needs only th
 | `HOMELAB_ROUTER_SSH_USER`         |        `root`        | Router SSH account (key authentication only)                                                                                                                                                                                                                                                                      |
 | `HOMELAB_ROUTER_CACHE_SECONDS`    |         `60`         | Router lease cache TTL, including failures; independent of PVE                                                                                                                                                                                                                                                    |
 | `HOMELAB_UI_HOST` / `PORT`        | `127.0.0.1` / `8765` | Where the dashboard listens                                                                                                                                                                                                                                                                                       |
+
 
 ### First Connection
 
@@ -60,6 +62,7 @@ needed for this hosts-file setup.
 Connections use `root` by default. To use another account, set `HOMELAB_PVE_SSH_USER`; a non-root account needs the `PVEAuditor` role to read cluster
 resources.
 
+
 ## Security
 
 I have plenty of experience making apps accessible from the internet, but this app is deliberately not public: it would be a privacy nightmare. It has
@@ -88,6 +91,7 @@ SSH commands run as `root` by default on both Proxmox and the router, so comprom
 privileges. I settled for this because PVE, by default, uses `root` as the primary user. If remote machines offer non-root accounts with sufficient
 privileges, consider using them instead to reduce the risk associated with `root`.
 
+
 ### Guest Reboots
 
 The round orange arrow beside each guest's status submits a reboot after confirmation. It is disabled for stopped guests, unavailable nodes, and
@@ -103,6 +107,7 @@ deliberately restricted command wrapper/account that can reboot guests.
 Only one reboot submission runs at a time, and attempts for a guest have a 30-second cooldown. A timeout does not prove the reboot failed: check the
 guest before retrying. Success means the command was submitted, not that the OS has finished rebooting. Polling and node/router discovery remain
 read-only. Automated tests use fake SSH; browser action tests intercept requests and do not reboot real guests.
+
 
 ### Device Names and Leases
 
@@ -146,6 +151,7 @@ Before leases can load, verify the router's SSH host-key fingerprint against its
 connect with `ssh root@flint` to accept the verified key. The application never disables host-key checking, modifies `known_hosts`, or handles
 passwords.
 
+
 ## Layout
 
 | Directory                                                   | Purpose                                                                 |
@@ -173,12 +179,14 @@ passwords.
 | `project/web/`                                              | Browser interface, styles, scripts, and frontend tooling                |
 | `project/web/images/`                                       | Decorative and node-specific dashboard images                           |
 
+
 ## Test
 
 ```bash
 python3 -m pytest project/tests
 python3 -m mypy --strict project/server.py project/homelab_dashboard
 ```
+
 
 ## Hardware Details
 
@@ -193,7 +201,9 @@ ECC diagnostics remain available in hardware data but are not shown as a sentenc
 verify active error correction. Unconfigured nodes have no ECC badge rather than an assumed negative result. Offline nodes retain configured memory
 details without claiming live readings. CPU fallbacks remain italicized with an explanatory tooltip. GPU display and collection are disabled.
 
+
 ## What's Next?
+
 
 ### Home-Network Deployment
 
@@ -201,6 +211,7 @@ details without claiming live readings. CPU fallbacks remain italicized with an 
 - [ ] Configure a LAN-only reverse proxy at `https://dash.samskeyti.net`; keep its DNS, firewall, and routing local, and prevent public ingress.
 - [ ] Preserve the current loopback and origin protections for write requests. Decide how trusted proxy requests should work before enabling guest
       actions through the proxy.
+
 
 ### PVE Features Worth Surfacing
 
@@ -212,6 +223,7 @@ details without claiming live readings. CPU fallbacks remain italicized with an 
 - [ ] Link to PVE for consoles, migrations, snapshots, backup configuration, and other power controls instead of rebuilding those management
       workflows.
 - [ ] Use scoped PVE API tokens with PVEAuditor where practical; keep host hardware inspection on a separate restricted probe.
+
 
 ### Inventory and Natural Language
 
@@ -231,6 +243,7 @@ details without claiming live readings. CPU fallbacks remain italicized with an 
 - Treat discovered hostnames and notes as untrusted data, not model instructions. SQLite search is sufficient for structured inventory; a vector
   database is unnecessary initially.
 
+
 ### Chatbot Window
 
 - [ ] Add a chatbot window for managing home inventory, asking questions about nodes, and describing tasks in natural language for execution on
@@ -241,6 +254,7 @@ details without claiming live readings. CPU fallbacks remain italicized with an 
       require explicit confirmation for writes and disruptive actions, and audit each execution/result.
 - [ ] Support streamed replies, conversation history, tool/task progress, cancellation, and clear endpoint-unavailable or execution-failed states.
       Start with inventory queries and node questions before enabling confirmed task execution.
+
 
 ### Further OpenWRT Discovery
 
@@ -255,6 +269,7 @@ details without claiming live readings. CPU fallbacks remain italicized with an 
   and observed clients separately.
 - Keep MAC/IP inventories local and credentials off the browser; router outages should stale only this card, not the PVE dashboard.
 - [ ] Replace unrestricted root access with a restricted read-only wrapper or scoped RPC permissions before exposing the service beyond localhost.
+
 
 ### GPU and Hardware Follow-Up
 
