@@ -1,8 +1,6 @@
 # Specification Quality Checklist: Homelab Status Dashboard
 
-**Purpose**: Validate specification completeness and quality before proceeding to planning
-**Created**: 2026-09-27
-**Feature**: [spec.md](../spec.md)
+**Purpose**: Validate specification completeness and quality before proceeding to planning **Created**: 2026-09-27 **Feature**: [spec.md](../spec.md)
 
 ## Content Quality
 
@@ -31,4 +29,5 @@
 
 ## Notes
 
-- The MVP is intentionally limited to read-only homelab status visibility. Inventory mutations and system-management actions require separate specifications.
+- The MVP is intentionally limited to read-only homelab status visibility. Inventory mutations and system-management actions require separate
+  specifications.

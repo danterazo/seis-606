@@ -1,17 +1,31 @@
 # SEIS 606 HW3: Task, Plan, and Implement
+
 ## Reflections
-This process was quite interesting, as I had never made use of slash commands in Copilot before, nor had I tried the specify toolkit until now. I was impressed with how seamless and painless the process was.
 
-I'm concerned at the speed at which AI works compared to the speed at which I understand what it's doing. It feels easy to get carried away without fully understanding each step, and I'm guilty of it here. I'm using AI in a novel way compared to how I normally apply it to work and personal projects. Generally, I have a deeper understanding of what's going on every step of the process, but there's an overwhelming amount of TODOs and documentation to review here. The best analogy I can think of is studying for a test — this feels like I'm getting all the answers, but I won't be prepared for any curveballs if the test were to ask about the specifics of this app. I'll build my understanding with time, of course.
+This process was quite interesting, as I had never made use of slash commands in Copilot before, nor had I tried the specify toolkit until now. I was
+impressed with how seamless and painless the process was.
 
-To keep token usage low(er), I let Copilot decide which models to route my requests to. I remember seeing GPT-6 mentioned, though it was definitely one of the smaller variants of it. It wasn't until the implement step where I deliberately chose a powerful model (`MAI-Code-1.1-Flash`), to ensure good results.
+I'm concerned at the speed at which AI works compared to the speed at which I understand what it's doing. It feels easy to get carried away without
+fully understanding each step, and I'm guilty of it here. I'm using AI in a novel way compared to how I normally apply it to work and personal
+projects. Generally, I have a deeper understanding of what's going on every step of the process, but there's an overwhelming amount of TODOs and
+documentation to review here. The best analogy I can think of is studying for a test — this feels like I'm getting all the answers, but I won't be
+prepared for any curveballs if the test were to ask about the specifics of this app. I'll build my understanding with time, of course.
 
-Overall, this took me about an hour to complete. I spent some time overthinking how to best install `specify-cli`, managing my development environment, and getting distracted. But the commands worked smoothly and I made sure to monitor them as they went so it didn't feel so "hands off". I noted the commands I ran below — they're in the same order I executed them.
+To keep token usage low(er), I let Copilot decide which models to route my requests to. I remember seeing GPT-6 mentioned, though it was definitely
+one of the smaller variants of it. It wasn't until the implement step where I deliberately chose a powerful model (`MAI-Code-1.1-Flash`), to ensure
+good results.
 
-Finally, I'd like to note that I use *Espanso* for text shortcuts, and that includes the em-dashes you see above. They're considered a "tell" for AI-generated text, but I've been a fan of them for over a decade now. So to be clear: I wrote all of this text by hand and will continue to use em-dashes like normal with my handy `:--` $\rightarrow$ `—` shortcut. I'll let my commit history prove that my writing (and work in general) is iterative.
+Overall, this took me about an hour to complete. I spent some time overthinking how to best install `specify-cli`, managing my development
+environment, and getting distracted. But the commands worked smoothly and I made sure to monitor them as they went so it didn't feel so "hands off". I
+noted the commands I ran below — they're in the same order I executed them.
 
+Finally, I'd like to note that I use _Espanso_ for text shortcuts, and that includes the em-dashes you see above. They're considered a "tell" for
+AI-generated text, but I've been a fan of them for over a decade now. So to be clear: I wrote all of this text by hand and will continue to use
+em-dashes like normal with my handy `:--` $\rightarrow$ `—` shortcut. I'll let my commit history prove that my writing (and work in general) is
+iterative.
 
 ## Project Setup
+
 I first created a new directory for project files...
 
 ```bash
@@ -20,47 +34,51 @@ cd project
 specify init --here --ai copilot
 ```
 
-And then I copied content from HW2 into this new directory. The plan is to keep the homework folders for instructions / iterative deliverables, and then work out of the root-level `project/` directory going forward.
+And then I copied content from HW2 into this new directory. The plan is to keep the homework folders for instructions / iterative deliverables, and
+then work out of the root-level `project/` directory going forward.
 
 ## Constitution
+
 ```bash
 /speckit-constitution
 ```
 
-
 ## Specify
+
 ```bash
 /speckit-specify
 ```
 
-
 ## Clarify
+
 ```bash
 /speckit-clarify
 ```
+
 This step took about 15 minutes. I forgot to note which model specifically performed this task.
 
 ## Plan
+
 ```bash
 /speckit-plan
 ```
 
-
 ## Tasks
+
 ```bash
 /speckit-tasks
 ```
 
-
 ## Implement
+
 ```bash
 /speckit-implement
 ```
 
 This step, run by `MAI-Code-1.1-Flash` via Copilot, took 5 minutes and 13 seconds.
 
-
 ## Converge
+
 ```bash
 /speckit-converge
 ```

@@ -29,7 +29,7 @@ verify-gpu:
 
 format: fix lint
 
-fix: fix-python fix-web
+fix: fix-python fix-web fix-markdown
 
 fix-python:
 	poetry run ruff check --fix .
@@ -37,6 +37,9 @@ fix-python:
 
 fix-web:
 	npm --prefix project/web run format
+
+fix-markdown:
+	@git ls-files -z -- '*.md' | xargs -0 project/web/node_modules/.bin/prettier --write
 
 lint: lint-python lint-web
 
