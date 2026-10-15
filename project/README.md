@@ -208,7 +208,7 @@ validated change proposals, explicit confirmation, transactions, and audit recor
 Treat discovered hostnames/notes as untrusted data, not model instructions. A vector
 database is unnecessary for structured inventory; SQLite search is enough initially.
 
-### Chatbot window TODO
+### Chatbot Window TODO
 
 - [ ] Add a chatbot window for managing home inventory, asking questions about nodes,
     and describing tasks in natural language for execution on the selected nodes.
@@ -242,7 +242,7 @@ root access with a restricted read-only wrapper or scoped RPC permissions before
 the service beyond localhost. The live collector has successfully read DHCPv4 leases;
 no SSH trust changes were performed by the application.
 
-### Deferred GPU work
+### Deferred GPU Work
 
 - [ ] Restore discovered GPU inventory only after verifying the installed hardware;
     do not reintroduce expected GPU entries in the dashboard.
