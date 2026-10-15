@@ -283,10 +283,7 @@ Offline nodes retain configured memory details without claiming live readings. C
 remain italicized with an explanatory tooltip. GPU display and collection are disabled.
 
 
-## TODO
-- Planned features and implementation follow-ups:
-
-
+## What's Next?
 ### Home-Network Deployment
 - [ ] Host the dashboard in a dedicated LXC on the home network and make it reachable
   from LAN machines.
