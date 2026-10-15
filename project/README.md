@@ -96,7 +96,8 @@ ordering rather than a fixed profile rank. Online topology links use longer, thi
 indicates node availability, not measured network traffic.
 
 The LAN Devices and Guest / IoT panels below Nodes read dnsmasq's default `/tmp/dhcp.leases` over SSH through `/api/devices`. Each panel identifies
-the router by its configured SSH host, resolved IPv4 address, and OpenWrt release version. Cards show the name directly above labeled IPv4 and
+the router by its configured SSH host (displayed as Flint2 for `flint2`) and OpenWrt release version. Unavailable router details appear in orange;
+connection errors are available by hovering over the router line instead of repeating the failure beneath it. Cards show the name directly above labeled IPv4 and
 uppercase MAC rows, with no redundant hostname heading. Only devices with IPv4 leases are listed; IPv6-only devices
 and addresses are omitted. The active collector does not query IPv6 leases or neighbors. Standalone IPv6 parsing and correlation helpers remain tested
 for potential future use but are not invoked. Read timestamps and expiry dates remain hidden. Expiry stays internal for filtering. It polls the local

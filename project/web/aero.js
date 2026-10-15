@@ -1458,15 +1458,20 @@ function renderDevices() {
   ]) {
     const routerLabel = required(`#${prefix}-router-label`);
     const status = required(`#${prefix}-devices-status`);
+    routerLabel.classList.toggle("is-stale", Boolean(error || (devicesSnapshot && !devicesSnapshot.router_version)));
+    routerLabel.title = error ?? "";
     if (devicesSnapshot === null) {
       routerLabel.textContent = devicesError ? "Router details unavailable." : "Loading router details…";
     } else {
       const version = devicesSnapshot.router_version ? `OpenWRT Version ${devicesSnapshot.router_version}` : "OpenWRT Version Unavailable";
-      routerLabel.textContent = `${devicesSnapshot.router} · ${version}`;
+      const router = devicesSnapshot.router.toLowerCase() === "flint2" ? "Flint2" : devicesSnapshot.router;
+      routerLabel.textContent = `${router} · ${version}`;
     }
     status.classList.toggle("is-stale", Boolean(stale));
     const statusText = error
-      ? `${error}${devicesSnapshot?.fetched_at ? " Showing last-known leases." : ""}`
+      ? devicesSnapshot?.fetched_at
+        ? "Showing last-known leases."
+        : ""
       : devicesSnapshot === null
         ? "Loading DHCP leases…"
         : "";

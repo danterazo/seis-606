@@ -1543,8 +1543,9 @@ span.health-badge[role="button"] {
   margin: -4px 0 6px;
   overflow-wrap: anywhere;
 }
-.devices-status.is-stale {
-  color: #8a5a00;
+.devices-status.is-stale,
+.devices-router.is-stale {
+  color: #a65300;
 }
 .device-list {
   display: grid;
