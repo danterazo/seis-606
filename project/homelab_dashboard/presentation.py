@@ -6,7 +6,7 @@ from homelab_dashboard.node_profiles import NodeProfile, display_name_for, node_
 
 
 def present_payload(*, payload: dict[str, Any], image_dir: Path) -> dict[str, Any]:
-    """Order the nodes and add the display fields (name, initial, color, image, pinned address) the page needs."""
+    """Order the nodes and add the display fields the page needs."""
     nodes: list[dict[str, Any]] = list(payload["nodes"])
     for node in nodes:
         profile: NodeProfile = profile_for_node(node_name=node["name"])
@@ -18,6 +18,4 @@ def present_payload(*, payload: dict[str, Any], image_dir: Path) -> dict[str, An
         node["image"] = find_node_image(node_name=node["name"], image_dir=image_dir)
         for guest in node.get("guests", []):
             guest["display_name"] = display_name_for(name=guest["name"])
-        if profile.address is not None:
-            node["address"] = profile.address
     return {**payload, "nodes": sorted(nodes, key=lambda node: node_sort_key(node_name=node["name"], address=node.get("address")))}

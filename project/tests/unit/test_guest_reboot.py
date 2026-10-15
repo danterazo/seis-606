@@ -22,7 +22,7 @@ class FakeSource:
                 Node(
                     name="cerulean",
                     state=node_state,
-                    address="100.100.20.43",
+                    address="192.168.20.43",
                     resources=Resources(),
                     guests=(Guest(vmid=112, name="test", node="cerulean", kind=kind, state=guest_state, resources=Resources()),),
                 ),
@@ -38,7 +38,7 @@ class FakeSource:
 
 
 @pytest.mark.parametrize(argnames=("kind", "expected"), argvalues=[(GuestKind.CONTAINER, "pct reboot 112"), (GuestKind.VM, "qm reboot 112")])
-def test_reboot_uses_the_current_node_address_and_server_derived_kind(kind: GuestKind, expected: str) -> None:
+def test_reboot_uses_the_current_node_hostname_and_server_derived_kind(kind: GuestKind, expected: str) -> None:
     calls: list[Sequence[str]] = []
 
     def runner(command: Sequence[str], *, timeout: float, stdin: Optional[str] = None) -> "subprocess.CompletedProcess[str]":
@@ -50,7 +50,7 @@ def test_reboot_uses_the_current_node_address_and_server_derived_kind(kind: Gues
     service.reboot(vmid=112, node_name="cerulean")
     assert source.calls == 1
     assert calls[0][0] == SSH_EXECUTABLE
-    assert calls[0][-2:] == ("root@100.100.20.43", expected)
+    assert calls[0][-2:] == ("root@cerulean", expected)
     assert "-oStrictHostKeyChecking=yes" in calls[0]
     with pytest.raises(expected_exception=StatusSourceError, match="recently attempted"):
         service.reboot(vmid=112, node_name="cerulean")

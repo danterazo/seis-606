@@ -23,7 +23,7 @@ REMOTE_COMMAND: Final[str] = "python3 -"
 
 
 class HardwareProbe(Protocol):
-    def probe(self, *, node_name: str, address: str) -> Hardware: ...
+    def probe(self, *, node_name: str, host: str) -> Hardware: ...
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -32,8 +32,8 @@ class SshHardwareProbe:
     timeout_seconds: float = 15.0
     runner: CommandRunner = run_command
 
-    def probe(self, *, node_name: str, address: str) -> Hardware:
-        destination: str = SshTarget(host=address, user=self.user).destination
+    def probe(self, *, node_name: str, host: str) -> Hardware:
+        destination: str = SshTarget(host=host, user=self.user).destination
         command: tuple[str, ...] = (SSH_EXECUTABLE, *SSH_OPTIONS, destination, REMOTE_COMMAND)
         try:
             completed: subprocess.CompletedProcess[str] = self.runner(command, timeout=self.timeout_seconds, stdin=PROBE_SCRIPT)

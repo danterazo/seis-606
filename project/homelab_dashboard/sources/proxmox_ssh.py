@@ -1,8 +1,9 @@
 import json
 import re
+import socket
 import subprocess
 from collections.abc import Callable, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import UTC, datetime
 from typing import Final, Optional, Protocol
 
@@ -125,6 +126,7 @@ class ProxmoxSshSource:
     target: SshTarget
     timeout_seconds: float = 15.0
     runner: CommandRunner = run_command
+    resolver: Callable[[str], Optional[str]] = socket.gethostbyname
     clock: Callable[[], datetime] = _utc_now
 
     def fetch(self) -> ClusterSnapshot:
@@ -140,7 +142,7 @@ class ProxmoxSshSource:
             raise StatusSourceError(explain_ssh_failure(stderr=completed.stderr, destination=self.target.destination, action="Querying Proxmox"))
 
         resources, cluster_status = _decode_arrays(text=completed.stdout, count=len(API_PATHS))
-        return parse_snapshot(
+        snapshot: ClusterSnapshot = parse_snapshot(
             source=SOURCE_LABEL,
             fetched_at=self.clock(),
             resources=resources,
@@ -149,6 +151,13 @@ class ProxmoxSshSource:
             cluster_options=_decode_optional(text=completed.stdout, position=len(API_PATHS) + 1),
             quorum_details=parse_quorum_details(status_output=_quorum_status_output(text=completed.stdout)),
         )
+        return replace(snapshot, nodes=tuple(replace(node, address=self._resolve_address(host=node.name)) for node in snapshot.nodes))
+
+    def _resolve_address(self, *, host: str) -> Optional[str]:
+        try:
+            return self.resolver(host)
+        except OSError:
+            return None
 
 
 def _quorum_status_output(*, text: str) -> str:

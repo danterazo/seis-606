@@ -51,7 +51,7 @@ class FakeProbe:
         self.results: dict[str, Optional[Hardware]] = results
         self.calls: list[str] = []
 
-    def probe(self, *, node_name: str, address: str) -> Hardware:
+    def probe(self, *, node_name: str, host: str) -> Hardware:
         self.calls.append(node_name)
         result: Optional[Hardware] = self.results.get(node_name)
         if result is None:
@@ -268,18 +268,18 @@ def make_runner(*, stdout: str = "", stderr: str = "", returncode: int = 0, call
 def test_ssh_probe_sends_the_script_on_stdin_with_strict_host_keys() -> None:
     calls: list[tuple[Sequence[str], Optional[str]]] = []
     probe: SshHardwareProbe = SshHardwareProbe(runner=make_runner(stdout=json.dumps({"cpu_model": "Intel(R) N150", "gpus": []}), calls=calls))
-    hardware: Hardware = probe.probe(node_name="cerulean", address="100.100.20.43")
+    hardware: Hardware = probe.probe(node_name="cerulean", host="cerulean")
     command, stdin = calls[0]
     assert hardware.cpu_model == "Intel N150"
     assert "-oStrictHostKeyChecking=yes" in command
-    assert command[-2:] == ("root@100.100.20.43", "python3 -")
+    assert command[-2:] == ("root@cerulean", "python3 -")
     assert stdin == PROBE_SCRIPT
 
 
 def test_ssh_probe_reports_failures_and_malformed_output() -> None:
     with pytest.raises(expected_exception=StatusSourceError, match="refused"):
         SshHardwareProbe(runner=make_runner(stderr="Permission denied (publickey)", returncode=255, calls=[])).probe(
-            node_name="x", address="10.0.0.1"
+            node_name="x", host="x"
         )
     with pytest.raises(expected_exception=StatusSourceError, match="malformed"):
-        SshHardwareProbe(runner=make_runner(stdout="not json", calls=[])).probe(node_name="x", address="10.0.0.1")
+        SshHardwareProbe(runner=make_runner(stdout="not json", calls=[])).probe(node_name="x", host="x")

@@ -30,13 +30,13 @@ class HardwareErrorMonitor:
     _running: dict[str, "Future[None]"] = field(default_factory=dict, init=False)
     _pool: ThreadPoolExecutor = field(default_factory=lambda: ThreadPoolExecutor(max_workers=4), init=False)
 
-    def refresh(self, *, node_name: str, address: str, force: bool) -> None:
+    def refresh(self, *, node_name: str, force: bool) -> None:
         with self._lock:
             checked: Optional[float] = self._checked.get(node_name)
             fresh: bool = checked is not None and self.clock() - checked < self.ttl_seconds
             if node_name in self._running or (fresh and not force):
                 return
-            self._running[node_name] = self._pool.submit(self._probe, node_name, address)
+            self._running[node_name] = self._pool.submit(self._probe, node_name)
 
     def wait(self) -> None:
         with self._lock:
@@ -58,11 +58,11 @@ class HardwareErrorMonitor:
             )
         return good if failure is None else replace(good, stale=True, error=failure)
 
-    def _probe(self, node_name: str, address: str) -> None:
+    def _probe(self, node_name: str) -> None:
         result: Optional[HardwareErrors] = None
         failure: Optional[str] = None
         try:
-            result = self.probe.probe(node_name=node_name, address=address)
+            result = self.probe.probe(node_name=node_name, host=node_name)
         except StatusSourceError as error:
             failure = str(error)
         with self._lock:

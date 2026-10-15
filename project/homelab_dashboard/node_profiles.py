@@ -29,8 +29,6 @@ class NodeProfile:
     # one letter for the guest badge; set by hand because Kex and Kveikur both start with K
     initial: str
     color: str
-    # when set, shown instead of whatever Proxmox reports (offline nodes report none)
-    address: Optional[str] = None
     # shown, marked as expected, while the node can't be probed (e.g. it is offline)
     expected_cpu: Optional[str] = None
     memory_description: Optional[str] = None
@@ -42,7 +40,6 @@ NODE_PROFILES: Final[dict[str, NodeProfile]] = {
         display_name=display_name_for(name="Kex"),
         initial="K",
         color="#c62839",
-        address="100.100.20.42",
         expected_cpu="Intel Xeon E5-1650 v4",
         memory_description="DDR4 RDIMM",
         memory_ecc=True,
@@ -51,7 +48,6 @@ NODE_PROFILES: Final[dict[str, NodeProfile]] = {
         display_name=display_name_for(name="Cerulean"),
         initial="C",
         color="#0b7fc7",
-        address="100.100.20.43",
         expected_cpu="Intel N150",
         memory_description="DDR4 SODIMM",
         memory_ecc=False,
@@ -60,7 +56,6 @@ NODE_PROFILES: Final[dict[str, NodeProfile]] = {
         display_name=display_name_for(name="Kveikur"),
         initial="V",
         color="#f28c1b",
-        address="100.100.20.46",
         expected_cpu="AMD Ryzen Threadripper PRO 3945WX",
         memory_description="DDR4 RDIMM",
         memory_ecc=True,
@@ -85,11 +80,10 @@ def profile_for_node(*, node_name: str) -> NodeProfile:
 
 
 def node_sort_key(*, node_name: str, address: Optional[str] = None) -> tuple[bool, int, int, str]:
-    effective_address: Optional[str] = profile_for_node(node_name=node_name).address or address
-    if effective_address is None:
+    if address is None:
         return (True, 0, 0, node_name.casefold())
     try:
-        parsed_address = ipaddress.ip_address(effective_address)
+        parsed_address = ipaddress.ip_address(address)
     except ValueError:
         return (True, 0, 0, node_name.casefold())
     return (False, parsed_address.version, int(parsed_address), node_name.casefold())

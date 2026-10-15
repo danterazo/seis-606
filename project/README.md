@@ -1,7 +1,7 @@
 # Homelab Dashboard
 
 A status dashboard with explicit guest reboot controls for a Proxmox VE cluster, styled after Frutiger Aero / Y2K desktops. Resource readings come
-from Proxmox; display profiles, pinned addresses, fallback CPU models, and memory descriptions are configured separately and are not live discoveries.
+from Proxmox; display profiles, fallback CPU models, and memory descriptions are configured separately. SSH uses hostnames resolved by the local system.
 
 ## Run
 
@@ -13,7 +13,7 @@ Open the printed URL (default `http://127.0.0.1:8765`). The server needs only th
 
 | Variable                          |       Default        | Purpose                                                                                                                                                                                                                                                                                                           |
 | :-------------------------------- | :------------------: | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `HOMELAB_PVE_SSH_HOST`            |  `100.100.20.43`     | Host, IP, or SSH alias of any cluster node; the default is Cerulean's Tailscale IP                                                                                                                                                                                                                                 |
+| `HOMELAB_PVE_SSH_HOST`            |     `cerulean`       | Host, IP, or SSH alias of any cluster node; the default hostname resolves according to this machine's local hosts/DNS configuration                                                                                                                                                                                |
 | `HOMELAB_PVE_SSH_USER`            |        `root`        | Account used for every connection                                                                                                                                                                                                                                                                                 |
 | `HOMELAB_SSH_TIMEOUT`             |         `15`         | Seconds to wait for Proxmox                                                                                                                                                                                                                                                                                       |
 | `HOMELAB_CACHE_SECONDS`           |         `10`         | Minimum seconds between Proxmox queries (one costs ~2 CPU-seconds on a node); the page itself polls every second                                                                                                                                                                                                  |
@@ -27,17 +27,33 @@ Open the printed URL (default `http://127.0.0.1:8765`). The server needs only th
 
 ### First Connection
 
-From WSL2, run `make init-ssh` to check both LAN and Tailscale addresses for the cluster nodes, plus the configured router hostname when resolvable:
+Run `make init-ssh-trust` to check the cluster node hostnames and the configured router SSH host (`flint2` by default):
 
 ```bash
-make init-ssh
+make init-ssh-trust
 ```
 
-The helper exits without prompting when all configured hosts already have `known_hosts` entries. For each new host, OpenSSH displays its fingerprint
+The helper exits without prompting when all configured hostnames already have `known_hosts` entries. For each new host, OpenSSH displays its fingerprint
 and asks you to confirm it; accepted host keys are written directly to `known_hosts`. Compare each fingerprint with the machine's console or another
-trusted channel before accepting it. This does not create or modify SSH identity keys. LAN and Tailscale addresses are separate `known_hosts` entries
-even when they identify the same machine. If the router hostname `flint2` is not resolvable on the laptop, set `HOMELAB_ROUTER_SSH_HOST` to a
-reachable router address or SSH alias.
+trusted channel before accepting it. This does not create or modify SSH identity keys. Hostnames remain the same across machines, while local hosts/DNS
+records can map them to LAN addresses on the desktop and Tailscale addresses on the laptop. Node IPs shown in the dashboard come from that same local
+hostname resolution.
+
+WSL does not import custom Windows hosts-file entries into its generated `/etc/hosts`. This WSL setup resolves `flint2` through Tailscale DNS to
+`100.100.10.1`, despite the Windows hosts-file mapping to `192.168.10.1`. To have WSL use the same per-machine mappings, change
+`generateHosts=true` to `generateHosts=false` under `[network]` in `/etc/wsl.conf`, then run `wsl --shutdown` from Windows PowerShell. After reopening
+the distro, link WSL's hosts file to Windows' file:
+
+```bash
+sudo cp -a /etc/hosts /etc/hosts.wsl-backup
+sudo rm /etc/hosts
+sudo ln -s /mnt/c/Windows/System32/drivers/etc/hosts /etc/hosts
+getent ahostsv4 flint2 kex cerulean kveikur
+```
+
+The lookup should show the Windows-file addresses. Repeat with each machine's own Windows hosts file so the desktop and laptop resolve the same names
+to their respective LAN or Tailscale IPs. WSL's DNS tunneling is already enabled by default in the installed WSL version; changing `.wslconfig` is not
+needed for this hosts-file setup.
 
 Connections use `root` by default. To use another account, set `HOMELAB_PVE_SSH_USER`; a non-root account needs the `PVEAuditor` role to read cluster
 resources.
@@ -94,8 +110,8 @@ intermediate alias resolution is used. The case-insensitive map is shared by nod
 and IDs stay unchanged. The Japanese entries render as hiragana using the exact labels configured in the map. Future aliases do not create placeholder
 nodes; they apply when a node or lease is discovered.
 
-Cluster nodes are ordered numerically by their displayed IP address, with IPv4 before IPv6. Pinned profile addresses take precedence over reported
-addresses. Missing or invalid addresses sort last; names break ties alphabetically. The node list, overview, topology, and node filters use this
+Cluster nodes are ordered numerically by their locally resolved IP address, with IPv4 before IPv6. Missing or invalid addresses sort last; names break
+ties alphabetically. The node list, overview, topology, and node filters use this
 ordering rather than a fixed profile rank. Online topology links use longer, thicker moving dashes; offline links remain static gray dashes. Motion
 indicates node availability, not measured network traffic.
 

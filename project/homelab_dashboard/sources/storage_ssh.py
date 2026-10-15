@@ -22,7 +22,7 @@ REMOTE_COMMAND: Final[str] = "python3 -"
 
 
 class StorageProbe(Protocol):
-    def probe(self, *, node_name: str, address: str) -> Storage: ...
+    def probe(self, *, node_name: str, host: str) -> Storage: ...
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -32,8 +32,8 @@ class SshStorageProbe:
     timeout_seconds: float = 60.0
     runner: CommandRunner = run_command
 
-    def probe(self, *, node_name: str, address: str) -> Storage:
-        destination: str = SshTarget(host=address, user=self.user).destination
+    def probe(self, *, node_name: str, host: str) -> Storage:
+        destination: str = SshTarget(host=host, user=self.user).destination
         command: tuple[str, ...] = (SSH_EXECUTABLE, *SSH_OPTIONS, destination, REMOTE_COMMAND)
         try:
             completed: subprocess.CompletedProcess[str] = self.runner(command, timeout=self.timeout_seconds, stdin=STORAGE_SCRIPT)

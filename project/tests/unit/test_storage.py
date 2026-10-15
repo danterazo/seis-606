@@ -122,7 +122,7 @@ def test_ssh_probe_sends_script_and_parses() -> None:
         sent.append(stdin)
         return subprocess.CompletedProcess(args=list(command), returncode=0, stdout=json.dumps({"disks": [hdd()], "pools": []}), stderr="")
 
-    assert len(SshStorageProbe(runner=runner).probe(node_name="kex", address="10.0.0.1").disks) == 1
+    assert len(SshStorageProbe(runner=runner).probe(node_name="kex", host="kex").disks) == 1
     assert sent == [STORAGE_SCRIPT]
 
 
@@ -158,7 +158,7 @@ class OneNode:
 
 
 class HardwareStub:
-    def probe(self, *, node_name: str, address: str) -> Hardware:
+    def probe(self, *, node_name: str, host: str) -> Hardware:
         return Hardware(source=HardwareSource.LIVE)
 
 
@@ -167,7 +167,7 @@ class StorageStub:
         self.calls: int = 0
         self.fail: bool = False
 
-    def probe(self, *, node_name: str, address: str) -> Storage:
+    def probe(self, *, node_name: str, host: str) -> Storage:
         self.calls += 1
         if self.fail:
             raise StatusSourceError("down")

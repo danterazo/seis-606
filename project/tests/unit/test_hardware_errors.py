@@ -167,7 +167,7 @@ def test_probe_sends_script_and_parses() -> None:
         sent.append(stdin)
         return subprocess.CompletedProcess(args=list(command), returncode=0, stdout=json.dumps(document(event(EDAC_LINE))), stderr="")
 
-    assert len(SshHardwareErrorProbe(runner=runner).probe(node_name="kex", address="10.0.0.1").incidents) == 1
+    assert len(SshHardwareErrorProbe(runner=runner).probe(node_name="kex", host="kex").incidents) == 1
     assert sent == [HW_ERRORS_SCRIPT]
 
 
@@ -176,7 +176,7 @@ class ErrorStub:
         self.fail: bool = False
         self.boot: str = BOOT
 
-    def probe(self, *, node_name: str, address: str) -> HardwareErrors:
+    def probe(self, *, node_name: str, host: str) -> HardwareErrors:
         if self.fail:
             raise StatusSourceError("ssh down")
         return parse_hardware_errors(document=document(event(EDAC_LINE), boot_id=self.boot))
@@ -187,14 +187,14 @@ def test_monitor_keeps_last_known_state_marked_stale_and_flags_counter_resets() 
     stub: ErrorStub = ErrorStub()
     monitor: HardwareErrorMonitor = HardwareErrorMonitor(probe=stub, ttl_seconds=60, clock=lambda: now[0])
     assert monitor.latest(node_name="kex", reachable=True) is None
-    monitor.refresh(node_name="kex", address="10.0.0.1", force=False)
+    monitor.refresh(node_name="kex", force=False)
     monitor.wait()
     first: Optional[HardwareErrors] = monitor.latest(node_name="kex", reachable=True)
     assert first is not None and not first.stale and not first.counters_reset
 
     stub.fail = True
     now[0] = 61.0
-    monitor.refresh(node_name="kex", address="10.0.0.1", force=False)
+    monitor.refresh(node_name="kex", force=False)
     monitor.wait()
     kept: Optional[HardwareErrors] = monitor.latest(node_name="kex", reachable=True)
     assert kept is not None and kept.stale and kept.error == "ssh down" and kept.incidents == first.incidents
@@ -204,7 +204,7 @@ def test_monitor_keeps_last_known_state_marked_stale_and_flags_counter_resets() 
 
     stub.fail, stub.boot = False, OLD_BOOT
     now[0] = 200.0
-    monitor.refresh(node_name="kex", address="10.0.0.1", force=False)
+    monitor.refresh(node_name="kex", force=False)
     monitor.wait()
     after: Optional[HardwareErrors] = monitor.latest(node_name="kex", reachable=True)
     assert after is not None and not after.stale and after.counters_reset
@@ -222,7 +222,7 @@ class OfflineAfterwards:
 
 
 class HardwareStub:
-    def probe(self, *, node_name: str, address: str) -> Hardware:
+    def probe(self, *, node_name: str, host: str) -> Hardware:
         return Hardware(source=HardwareSource.LIVE)
 
 

@@ -5,12 +5,9 @@ ssh_dir="${HOME}/.ssh"
 known_hosts="${ssh_dir}/known_hosts"
 
 hosts=(
-  192.168.20.42
-  192.168.20.43
-  192.168.20.46
-  100.100.20.42
-  100.100.20.43
-  100.100.20.46
+  kex
+  cerulean
+  kveikur
   "${HOMELAB_ROUTER_SSH_HOST:-flint2}"
 )
 

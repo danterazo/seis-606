@@ -47,9 +47,7 @@ class GuestRebooter:
             required_state: GuestState = GuestState.RUNNING if verb == "reboot" else GuestState.STOPPED
             if node.state is not NodeState.ONLINE or guest.state is not required_state:
                 raise ValueError(f"Only {required_state.value} guests on online nodes can be {'rebooted' if verb == 'reboot' else 'started'}.")
-            if node.address is None:
-                raise ValueError("The guest's node has no reported SSH address.")
-            target: SshTarget = SshTarget(host=node.address, user=self.user)
+            target: SshTarget = SshTarget(host=node.name, user=self.user)
             executable: str = "pct" if guest.kind is GuestKind.CONTAINER else "qm"
             command: tuple[str, ...] = (SSH_EXECUTABLE, *SSH_OPTIONS, target.destination, f"{executable} {verb} {vmid}")
             self._attempted_at[vmid] = self.clock()

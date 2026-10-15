@@ -207,7 +207,7 @@ def test_reboot_endpoint_checks_origin_and_validates_commands_before_ssh() -> No
                     Node(
                         name="cerulean",
                         state=NodeState.ONLINE,
-                        address="100.100.20.43",
+                        address="192.168.20.43",
                         resources=Resources(),
                         guests=(
                             Guest(vmid=112, name="test", node="cerulean", kind=GuestKind.CONTAINER, state=GuestState.RUNNING, resources=Resources()),
@@ -256,7 +256,7 @@ def test_reboot_endpoint_checks_origin_and_validates_commands_before_ssh() -> No
         assert post(body={"vmid": 112, "node": "kex"}) == 400
         assert calls == []
         assert post(body=valid) == 200
-        assert calls[0][-2:] == ("root@100.100.20.43", "pct reboot 112")
+        assert calls[0][-2:] == ("root@cerulean", "pct reboot 112")
         assert post(body=valid) == 503
         assert len(calls) == 1
     finally:

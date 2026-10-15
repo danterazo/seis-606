@@ -51,6 +51,7 @@ def make_source(
     return ProxmoxSshSource(
         target=SshTarget(host="cerulean"),
         runner=make_runner(stdout=stdout, stderr=stderr, returncode=returncode, calls=calls),
+        resolver=lambda host: {"cerulean": "192.168.20.43"}.get(host),
         clock=lambda: FIXED_TIME,
     )
 
@@ -59,12 +60,12 @@ def documents(*, resources: Sequence[dict[str, Any]], cluster_status: Sequence[d
     return json.dumps(list(resources)) + "\n" + json.dumps(list(cluster_status))
 
 
-def test_fetch_parses_nodes_guests_and_addresses() -> None:
+def test_fetch_parses_nodes_guests_and_resolves_local_addresses() -> None:
     snapshot: ClusterSnapshot = make_source(stdout=documents(resources=RESOURCES, cluster_status=CLUSTER_STATUS)).fetch()
 
     cerulean: Node = snapshot.nodes[0]
     _violet: Node = snapshot.nodes[1]
-    assert (cerulean.name, cerulean.state, cerulean.address) == ("cerulean", NodeState.ONLINE, "100.100.20.43")
+    assert (cerulean.name, cerulean.state, cerulean.address) == ("cerulean", NodeState.ONLINE, "192.168.20.43")
     assert cerulean.resources.cpu_ratio == 0.25
     assert [(guest.vmid, guest.kind, guest.state) for guest in cerulean.guests] == [
         (101, GuestKind.VM, GuestState.RUNNING),
@@ -267,13 +268,13 @@ def test_connections_use_root_by_default() -> None:
     make_source(stdout="[][]", calls=calls).fetch()
 
     assert "root@cerulean" in calls[0]
-    assert SshTarget(host="100.100.20.43").destination == "root@100.100.20.43"
+    assert SshTarget(host="cerulean").destination == "root@cerulean"
 
 
-def test_settings_default_to_root_on_cerulean_tailscale_ip() -> None:
+def test_settings_default_to_root_on_cerulean_hostname() -> None:
     settings: Settings = Settings.from_env(environ={})
 
-    assert (settings.ssh_user, settings.ssh_host) == ("root", "100.100.20.43")
+    assert (settings.ssh_user, settings.ssh_host) == ("root", "cerulean")
 
 
 @pytest.mark.parametrize(

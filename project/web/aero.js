@@ -1492,7 +1492,7 @@ function renderDevices() {
     required(`#${prefix}-device-list`).replaceChildren(
       ...(rows.length
         ? rows
-        : [el("li", { className: "empty", text: error ? "Devices unavailable." : devicesSnapshot === null ? "" : "No devices reported." })]),
+        : [el("li", { className: "empty", text: error ? "Devices Unavailable" : devicesSnapshot === null ? "" : "No devices reported." })]),
     );
   }
 }

@@ -72,7 +72,7 @@ class HardwareEnrichedSource:
                 if self._is_probeable(node=node):
                     self._refresh_storage(node=node, force=force)
                     if self.errors is not None:
-                        self.errors.refresh(node_name=node.name, address=str(node.address), force=force)
+                        self.errors.refresh(node_name=node.name, force=force)
             nodes: tuple[Node, ...] = tuple(self._with_hardware(node=node) for node in snapshot.nodes)
             checked: list[datetime] = [self._entries[node.name].checked_at for node in snapshot.nodes if self._is_probeable(node=node)]
         return replace(snapshot, nodes=nodes, fetched_at=max([snapshot.fetched_at, *checked]))
@@ -94,13 +94,13 @@ class HardwareEnrichedSource:
             fresh: bool = checked is not None and self.clock() - checked < self.storage_ttl_seconds
             if node.name in self._storage_running or (fresh and not force):
                 return
-            self._storage_running[node.name] = self._storage_pool.submit(self._probe_storage, node.name, str(node.address))
+            self._storage_running[node.name] = self._storage_pool.submit(self._probe_storage, node.name)
 
-    def _probe_storage(self, node_name: str, address: str) -> None:
+    def _probe_storage(self, node_name: str) -> None:
         assert self.storage_probe is not None
         result: Optional[Storage] = None
         try:
-            result = self.storage_probe.probe(node_name=node_name, address=address)
+            result = self.storage_probe.probe(node_name=node_name, host=node_name)
         except StatusSourceError:
             pass  # keep the previous reading rather than hiding a known problem
         with self._storage_lock:
@@ -111,7 +111,7 @@ class HardwareEnrichedSource:
 
     @staticmethod
     def _is_probeable(*, node: Node) -> bool:
-        return node.state is NodeState.ONLINE and node.address is not None
+        return node.state is NodeState.ONLINE
 
     def _is_stale(self, *, node: Node) -> bool:
         entry: Optional[_Entry] = self._entries.get(node.name)
@@ -119,7 +119,7 @@ class HardwareEnrichedSource:
 
     def _probe_one(self, node: Node) -> _Entry:
         try:
-            hardware: Hardware = self.probe.probe(node_name=node.name, address=str(node.address))
+            hardware: Hardware = self.probe.probe(node_name=node.name, host=node.name)
         except StatusSourceError:
             hardware = self.expected_hardware(node_name=node.name)
         return _Entry(hardware=hardware, stored_at=self.clock(), checked_at=self.now())
