@@ -68,6 +68,12 @@ and strict host-key checking is enabled. This is an inherited security measure p
 by OpenSSH, and my existing SSH config, keys, and `known_hosts` file. The app does not handle SSH
 passwords. Independently verify each host-key fingerprint before trusting it, like I have did when initially configuring these servers. **DON'T** commit private keys to this repository.
 
+Other inherited security measures include the project's `.gitignore`, which excludes
+`.env`, `.env.*`, and `.streamlit/secrets.toml` to reduce the chance of accidentally
+committing local secrets. Ignore rules do not protect files that are already tracked or
+secure secrets stored on disk; keep credentials out of source control and protect them
+with appropriate local file permissions.
+
 SSH commands run as `root` by default on both Proxmox and the router, so compromise of the
 dashboard process or its local account carriies superuser privileges. I settled for this because
 PVE, by default, uses `root` as the primary user. If remote machines offer non-root accounts with sufficient privileges, consider using them instead to reduce the risk associated with `root`.

@@ -1371,6 +1371,10 @@ span.health-badge[role="button"] {
 }
 #quorum-dialog {
   width: min(720px, calc(100vw - 28px));
+  max-height: min(780px, calc(100dvh - 8px));
+}
+#quorum-body {
+  max-height: min(680px, calc(100dvh - 72px));
 }
 .quorum-summary {
   margin: 4px 0;
