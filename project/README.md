@@ -152,7 +152,7 @@ python3 -m pytest project/tests
 python3 -m mypy --strict project/server.py project/homelab_dashboard
 ```
 
-## Hardware details
+## Hardware Details
 
 Each online node is probed for its CPU model, physical-core/logical-thread counts from
 `/proc/cpuinfo`, and SMBIOS memory-array error correction using `dmidecode --type 16`.
@@ -173,7 +173,7 @@ remain italicized with an explanatory tooltip. GPU display and collection are di
 
 ## Roadmap
 
-### PVE features worth surfacing
+### PVE Features Worth Surfacing
 
 Prioritize storage/pool usage and health, last successful backup and failed backup jobs,
 cluster quorum, recent failed tasks, and small CPU/RAM history charts. Then consider
@@ -182,7 +182,7 @@ for consoles, migrations, snapshots, backup configuration, and other power contr
 than rebuilding those management workflows. Use scoped PVE API tokens with PVEAuditor
 where practical; host hardware inspection still needs a separate restricted probe.
 
-### Inventory and natural language
+### Inventory and Natural Language
 
 Keep the first version read-only: discover nodes/guests, persist physical components,
 locations and notes, then answer inventory questions. This is a coherent companion to
@@ -222,7 +222,7 @@ database is unnecessary for structured inventory; SQLite search is enough initia
     and clear endpoint-unavailable or execution-failed states. Start with inventory
     queries and node questions before enabling confirmed task execution.
 
-### Further OpenWRT discovery
+### Further OpenWRT Discovery
 
 The DHCPv4 collector targets `root@192.168.10.1` through SSH with key authentication,
 verified host keys, an 8-second timeout, and a 60-second independent cache. For richer discovery,
