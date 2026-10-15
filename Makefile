@@ -7,8 +7,7 @@ LLAMA_CMAKE_ARGS ?= -DGGML_CUDA=on -DCMAKE_CUDA_ARCHITECTURES=120
 deps:
 	@bash scripts/update-dependencies.sh
 
-# Set up verified SSH host keys for the homelab.
-init-ssh:
+init-ssh-trust:
 	@bash project/scripts/trust-ssh-host-keys.sh
 
 # alias
