@@ -1363,17 +1363,17 @@ span.health-badge[role="button"] {
     animation: none;
   }
 }
-#storage-dialog {
+.storage-dialog {
   width: min(1100px, calc(100vw - 28px));
 }
-#hwerrors-dialog {
+.hwerrors-dialog {
   width: min(1200px, calc(100vw - 28px));
 }
-#quorum-dialog {
+.quorum-dialog {
   width: min(720px, calc(100vw - 28px));
   max-height: min(780px, calc(100dvh - 8px));
 }
-#quorum-body {
+.quorum-body {
   max-height: min(680px, calc(100dvh - 72px));
 }
 .quorum-summary {
