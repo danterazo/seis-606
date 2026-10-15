@@ -9,7 +9,7 @@ deps:
 
 # Set up verified SSH host keys for the homelab.
 init-ssh:
-	@bash project/scripts/init-ssh-known.sh
+	@bash project/scripts/trust-ssh-host-keys.sh
 
 # alias
 update: deps
