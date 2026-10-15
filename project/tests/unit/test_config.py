@@ -1,10 +1,10 @@
 from homelab_dashboard.config import Settings
 
 
-def test_default_proxmox_ssh_host_uses_hostname() -> None:
+def test_default_proxmox_ssh_host_uses_cerulean_tailscale_ip() -> None:
     settings: Settings = Settings.from_env(environ={})
 
-    assert settings.ssh_host == "cerulean"
+    assert settings.ssh_host == "100.100.20.43"
 
 
 def test_default_router_ssh_host_uses_hostname() -> None:

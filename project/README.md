@@ -13,7 +13,7 @@ Open the printed URL (default `http://127.0.0.1:8765`). The server needs only th
 
 | Variable                          |       Default        | Purpose                                                                                                                                                                                                                                                                                                           |
 | :-------------------------------- | :------------------: | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `HOMELAB_PVE_SSH_HOST`            |      `cerulean`      | Host, IP, or SSH alias of any cluster node. I aliased `192.168.20.43` to `cerulean` in my machine's hosts file                                                                                                                                                                                                    |
+| `HOMELAB_PVE_SSH_HOST`            |  `100.100.20.43`     | Host, IP, or SSH alias of any cluster node; the default is Cerulean's Tailscale IP                                                                                                                                                                                                                                 |
 | `HOMELAB_PVE_SSH_USER`            |        `root`        | Account used for every connection                                                                                                                                                                                                                                                                                 |
 | `HOMELAB_SSH_TIMEOUT`             |         `15`         | Seconds to wait for Proxmox                                                                                                                                                                                                                                                                                       |
 | `HOMELAB_CACHE_SECONDS`           |         `10`         | Minimum seconds between Proxmox queries (one costs ~2 CPU-seconds on a node); the page itself polls every second                                                                                                                                                                                                  |
@@ -27,13 +27,15 @@ Open the printed URL (default `http://127.0.0.1:8765`). The server needs only th
 
 ### First Connection
 
-Trust Cerulean's host key once, after confirming the fingerprints match:
+From WSL2, run the helper to scan both LAN and Tailscale addresses for the cluster nodes, plus the configured router hostname when resolvable:
 
 ```bash
-ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub        # on Cerulean's console
-ssh-keyscan -t ed25519 cerulean | ssh-keygen -lf -      # on this machine
-ssh-keyscan -H -t ed25519 cerulean >> ~/.ssh/known_hosts
+bash project/scripts/init-ssh-known.sh
 ```
+
+The helper prints each discovered ED25519 fingerprint and asks before adding keys to `known_hosts`. Compare fingerprints with each machine's console
+or another trusted channel before accepting them. LAN and Tailscale addresses are separate `known_hosts` entries even when they identify the same
+machine. If the router hostname `flint2` is not resolvable on the laptop, set `HOMELAB_ROUTER_SSH_HOST` to a reachable router address or SSH alias.
 
 Connections use `root` by default. To use another account, set `HOMELAB_PVE_SSH_USER`; a non-root account needs the `PVEAuditor` role to read cluster
 resources.
@@ -53,7 +55,7 @@ Guest start/reboot and log-clear requests are restricted to loopback clients wit
 header. These checks help prevent remote and cross-origin writes; they are not user authentication. Other processes or users on the same machine
 should be treated as trusted with the dashboard.
 
-SSH uses the machine's OpenSSH client with public-key authentication only. Password and keyboard-interactive authentication are disabled, interactive
+SSH uses the WSL2 OpenSSH client at `/usr/bin/ssh` with public-key authentication only. Password and keyboard-interactive authentication are disabled, interactive
 prompts are disabled, and strict host-key checking is enabled. This is an inherited security measure provided by OpenSSH, and my existing SSH config,
 keys, and `known_hosts` file. The app does not handle SSH passwords. Independently verify each host-key fingerprint before trusting it, like I have
 did when initially configuring these servers. **DON'T** commit private keys to this repository.

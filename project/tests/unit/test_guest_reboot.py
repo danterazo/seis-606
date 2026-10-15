@@ -7,6 +7,7 @@ import pytest
 from homelab_dashboard.models import ClusterSnapshot, Guest, GuestKind, GuestState, Node, NodeState, Resources
 from homelab_dashboard.services.guests import GuestRebooter
 from homelab_dashboard.sources.base import StatusSourceError
+from homelab_dashboard.sources.proxmox_ssh import SSH_EXECUTABLE
 
 
 class FakeSource:
@@ -21,7 +22,7 @@ class FakeSource:
                 Node(
                     name="cerulean",
                     state=node_state,
-                    address="192.168.20.43",
+                    address="100.100.20.43",
                     resources=Resources(),
                     guests=(Guest(vmid=112, name="test", node="cerulean", kind=kind, state=guest_state, resources=Resources()),),
                 ),
@@ -48,7 +49,8 @@ def test_reboot_uses_the_current_node_address_and_server_derived_kind(kind: Gues
     service = GuestRebooter(source=source, runner=runner)
     service.reboot(vmid=112, node_name="cerulean")
     assert source.calls == 1
-    assert calls[0][-2:] == ("root@192.168.20.43", expected)
+    assert calls[0][0] == SSH_EXECUTABLE
+    assert calls[0][-2:] == ("root@100.100.20.43", expected)
     assert "-oStrictHostKeyChecking=yes" in calls[0]
     with pytest.raises(expected_exception=StatusSourceError, match="recently attempted"):
         service.reboot(vmid=112, node_name="cerulean")

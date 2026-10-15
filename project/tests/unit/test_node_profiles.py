@@ -33,9 +33,9 @@ def test_unknown_nodes_use_their_first_letter_as_the_initial() -> None:
 
 
 def test_kex_and_kveikur_have_fixed_addresses() -> None:
-    assert profile_for_node(node_name="kex").address == "192.168.20.42"
-    assert profile_for_node(node_name="kveikur").address == "192.168.20.46"
-    assert profile_for_node(node_name="cerulean").address is None
+    assert profile_for_node(node_name="kex").address == "100.100.20.42"
+    assert profile_for_node(node_name="cerulean").address == "100.100.20.43"
+    assert profile_for_node(node_name="kveikur").address == "100.100.20.46"
 
 
 def test_lookup_ignores_case() -> None:
@@ -66,7 +66,7 @@ def test_unmapped_device_names_are_preserved() -> None:
 
 
 def test_node_order_uses_ip_addresses_including_new_nodes() -> None:
-    addresses = {"kveikur": "192.168.20.46", "cerulean": "192.168.20.43", "kex": "192.168.20.42", "new-node": "192.168.20.41"}
+    addresses = {"kveikur": "100.100.20.46", "cerulean": "100.100.20.43", "kex": "100.100.20.42", "new-node": "100.100.20.41"}
     assert sorted(addresses, key=lambda name: node_sort_key(node_name=name, address=addresses[name])) == ["new-node", "kex", "cerulean", "kveikur"]
 
 

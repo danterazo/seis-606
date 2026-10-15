@@ -268,11 +268,11 @@ def make_runner(*, stdout: str = "", stderr: str = "", returncode: int = 0, call
 def test_ssh_probe_sends_the_script_on_stdin_with_strict_host_keys() -> None:
     calls: list[tuple[Sequence[str], Optional[str]]] = []
     probe: SshHardwareProbe = SshHardwareProbe(runner=make_runner(stdout=json.dumps({"cpu_model": "Intel(R) N150", "gpus": []}), calls=calls))
-    hardware: Hardware = probe.probe(node_name="cerulean", address="192.168.20.43")
+    hardware: Hardware = probe.probe(node_name="cerulean", address="100.100.20.43")
     command, stdin = calls[0]
     assert hardware.cpu_model == "Intel N150"
     assert "-oStrictHostKeyChecking=yes" in command
-    assert command[-2:] == ("root@192.168.20.43", "python3 -")
+    assert command[-2:] == ("root@100.100.20.43", "python3 -")
     assert stdin == PROBE_SCRIPT
 
 

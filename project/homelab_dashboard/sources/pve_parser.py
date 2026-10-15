@@ -5,6 +5,7 @@ from datetime import datetime
 from typing import Final, Optional
 
 from homelab_dashboard.models import ClusterSnapshot, Guest, GuestKind, GuestState, GuestTag, Node, NodeState, Resources, TrackedTag
+from homelab_dashboard.node_profiles import profile_for_node
 from homelab_dashboard.sources.json_values import as_integer, as_number, as_text
 
 JsonObject = Mapping[str, object]
@@ -241,7 +242,7 @@ def parse_snapshot(
         node_name: str = str(row.get("node"))
         parsed: Optional[Node] = _parse_node(
             row=row,
-            address=addresses.get(node_name),
+            address=profile_for_node(node_name=node_name).address or addresses.get(node_name),
             guests=guests_by_node[node_name],
             online=node_name in online_names,
             local_resources=local_resources if node_name in local_names else None,

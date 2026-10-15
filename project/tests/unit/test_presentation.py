@@ -13,7 +13,7 @@ def test_new_nodes_sort_by_numeric_ip_not_name_or_profile_order(tmp_path: Path) 
         nodes=[
             {"name": "alpha", "address": "192.168.20.100"},
             {"name": "kex", "address": "10.9.9.9"},
-            {"name": "cerulean", "address": "192.168.20.43"},
+            {"name": "cerulean", "address": "100.100.20.43"},
             {"name": "zeta", "address": "192.168.20.9"},
             {"name": "missing", "address": None},
             {"name": "invalid", "address": "unknown"},
@@ -21,7 +21,7 @@ def test_new_nodes_sort_by_numeric_ip_not_name_or_profile_order(tmp_path: Path) 
         ]
     )
     presented = present_payload(payload=payload, image_dir=tmp_path)
-    assert [node["name"] for node in presented["nodes"]] == ["zeta", "kex", "cerulean", "kveikur", "alpha", "invalid", "missing"]
+    assert [node["name"] for node in presented["nodes"]] == ["kex", "cerulean", "kveikur", "zeta", "alpha", "invalid", "missing"]
 
 
 def test_other_payload_fields_are_preserved(tmp_path: Path) -> None:

@@ -8,7 +8,7 @@ import pytest
 from homelab_dashboard.config import Settings
 from homelab_dashboard.models import ClusterSnapshot, GuestKind, GuestState, GuestTag, Node, NodeState
 from homelab_dashboard.sources.base import StatusSourceError
-from homelab_dashboard.sources.proxmox_ssh import QUORUM_STATUS_MARKER, SSH_OPTIONS, CommandRunner, ProxmoxSshSource, SshTarget
+from homelab_dashboard.sources.proxmox_ssh import QUORUM_STATUS_MARKER, SSH_EXECUTABLE, SSH_OPTIONS, CommandRunner, ProxmoxSshSource, SshTarget
 
 FIXED_TIME: Final[datetime] = datetime(year=2026, month=10, day=6, hour=12, minute=0, tzinfo=UTC)
 
@@ -64,7 +64,7 @@ def test_fetch_parses_nodes_guests_and_addresses() -> None:
 
     cerulean: Node = snapshot.nodes[0]
     _violet: Node = snapshot.nodes[1]
-    assert (cerulean.name, cerulean.state, cerulean.address) == ("cerulean", NodeState.ONLINE, "192.168.20.43")
+    assert (cerulean.name, cerulean.state, cerulean.address) == ("cerulean", NodeState.ONLINE, "100.100.20.43")
     assert cerulean.resources.cpu_ratio == 0.25
     assert [(guest.vmid, guest.kind, guest.state) for guest in cerulean.guests] == [
         (101, GuestKind.VM, GuestState.RUNNING),
@@ -218,7 +218,7 @@ def test_ssh_command_never_prompts_or_relaxes_host_checking() -> None:
     make_source(stdout="[][]", calls=calls).fetch()
 
     command: Sequence[str] = calls[0]
-    assert command[0] == "ssh"
+    assert command[0] == SSH_EXECUTABLE
     assert set(SSH_OPTIONS) <= set(command)
     assert "-oStrictHostKeyChecking=yes" in command
     assert command[-1].count("pvesh get") == 4
@@ -267,13 +267,13 @@ def test_connections_use_root_by_default() -> None:
     make_source(stdout="[][]", calls=calls).fetch()
 
     assert "root@cerulean" in calls[0]
-    assert SshTarget(host="192.168.20.43").destination == "root@192.168.20.43"
+    assert SshTarget(host="100.100.20.43").destination == "root@100.100.20.43"
 
 
-def test_settings_default_to_root_on_cerulean() -> None:
+def test_settings_default_to_root_on_cerulean_tailscale_ip() -> None:
     settings: Settings = Settings.from_env(environ={})
 
-    assert (settings.ssh_user, settings.ssh_host) == ("root", "192.168.20.43")
+    assert (settings.ssh_user, settings.ssh_host) == ("root", "100.100.20.43")
 
 
 @pytest.mark.parametrize(
