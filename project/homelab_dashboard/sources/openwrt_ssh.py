@@ -12,7 +12,7 @@ from typing import Any, Final, Optional
 
 from homelab_dashboard.node_profiles import display_name_for
 from homelab_dashboard.sources.base import StatusSourceError
-from homelab_dashboard.sources.proxmox_ssh import SSH_OPTIONS, CommandRunner, SshTarget, explain_ssh_failure, run_command
+from homelab_dashboard.sources.proxmox_ssh import SSH_EXECUTABLE, SSH_OPTIONS, CommandRunner, SshTarget, explain_ssh_failure, run_command
 
 LAN_NETWORK: Final[ipaddress.IPv4Network] = ipaddress.IPv4Network("192.168.0.0/16")
 ROUTER_LEASES_SEPARATOR: Final[str] = "__HOMELAB_DHCP_LEASES__"
@@ -234,7 +234,7 @@ class OpenWrtLeaseSource:
     _error: Optional[str] = field(default=None, init=False)
 
     def _read(self) -> tuple[Optional[str], tuple[DhcpLease, ...]]:
-        command: tuple[str, ...] = ("ssh", *SSH_OPTIONS, self.target.destination, REMOTE_COMMAND)
+        command: tuple[str, ...] = (SSH_EXECUTABLE, *SSH_OPTIONS, self.target.destination, REMOTE_COMMAND)
         try:
             completed: subprocess.CompletedProcess[str] = self.runner(command, timeout=self.timeout_seconds)
         except FileNotFoundError as error:

@@ -27,15 +27,17 @@ Open the printed URL (default `http://127.0.0.1:8765`). The server needs only th
 
 ### First Connection
 
-From WSL2, run the helper to scan both LAN and Tailscale addresses for the cluster nodes, plus the configured router hostname when resolvable:
+From WSL2, run `make init-ssh` to check both LAN and Tailscale addresses for the cluster nodes, plus the configured router hostname when resolvable:
 
 ```bash
-bash project/scripts/init-ssh-known.sh
+make init-ssh
 ```
 
-The helper prints each discovered ED25519 fingerprint and asks before adding keys to `known_hosts`. Compare fingerprints with each machine's console
-or another trusted channel before accepting them. LAN and Tailscale addresses are separate `known_hosts` entries even when they identify the same
-machine. If the router hostname `flint2` is not resolvable on the laptop, set `HOMELAB_ROUTER_SSH_HOST` to a reachable router address or SSH alias.
+The helper exits without prompting when all configured hosts already have `known_hosts` entries. For each new host, OpenSSH displays its fingerprint
+and asks you to confirm it; accepted host keys are written directly to `known_hosts`. Compare each fingerprint with the machine's console or another
+trusted channel before accepting it. This does not create or modify SSH identity keys. LAN and Tailscale addresses are separate `known_hosts` entries
+even when they identify the same machine. If the router hostname `flint2` is not resolvable on the laptop, set `HOMELAB_ROUTER_SSH_HOST` to a
+reachable router address or SSH alias.
 
 Connections use `root` by default. To use another account, set `HOMELAB_PVE_SSH_USER`; a non-root account needs the `PVEAuditor` role to read cluster
 resources.

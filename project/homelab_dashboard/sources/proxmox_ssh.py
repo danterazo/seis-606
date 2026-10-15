@@ -12,6 +12,7 @@ from homelab_dashboard.sources.pve_parser import JsonObject, parse_quorum_detail
 
 SOURCE_LABEL: Final[str] = "Proxmox VE via SSH"
 DEFAULT_USER: Final[str] = "root"
+SSH_EXECUTABLE: Final[str] = "/usr/bin/ssh"
 
 # public-key only, never prompts, and never relaxes host-key verification
 SSH_OPTIONS: Final[tuple[str, ...]] = (
@@ -127,7 +128,7 @@ class ProxmoxSshSource:
     clock: Callable[[], datetime] = _utc_now
 
     def fetch(self) -> ClusterSnapshot:
-        command: tuple[str, ...] = ("ssh", *SSH_OPTIONS, self.target.destination, REMOTE_COMMAND)
+        command: tuple[str, ...] = (SSH_EXECUTABLE, *SSH_OPTIONS, self.target.destination, REMOTE_COMMAND)
         try:
             completed: subprocess.CompletedProcess[str] = self.runner(command, timeout=self.timeout_seconds)
         except FileNotFoundError as error:

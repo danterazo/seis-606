@@ -7,7 +7,7 @@ from typing import Optional
 
 from homelab_dashboard.models import ClusterSnapshot, Guest, GuestKind, GuestState, Node, NodeState
 from homelab_dashboard.sources.base import RefreshableStatusSource, StatusSourceError
-from homelab_dashboard.sources.proxmox_ssh import SSH_OPTIONS, CommandRunner, SshTarget, explain_ssh_failure, run_command
+from homelab_dashboard.sources.proxmox_ssh import SSH_EXECUTABLE, SSH_OPTIONS, CommandRunner, SshTarget, explain_ssh_failure, run_command
 
 
 @dataclass(slots=True, kw_only=True)
@@ -51,7 +51,7 @@ class GuestRebooter:
                 raise ValueError("The guest's node has no reported SSH address.")
             target: SshTarget = SshTarget(host=node.address, user=self.user)
             executable: str = "pct" if guest.kind is GuestKind.CONTAINER else "qm"
-            command: tuple[str, ...] = ("ssh", *SSH_OPTIONS, target.destination, f"{executable} {verb} {vmid}")
+            command: tuple[str, ...] = (SSH_EXECUTABLE, *SSH_OPTIONS, target.destination, f"{executable} {verb} {vmid}")
             self._attempted_at[vmid] = self.clock()
             try:
                 completed: subprocess.CompletedProcess[str] = self.runner(command, timeout=self.timeout_seconds)
