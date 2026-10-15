@@ -18,7 +18,7 @@ Open the printed URL (default `http://127.0.0.1:8765`). The server needs only th
 | `HOMELAB_SSH_TIMEOUT`             |         `15`         | Seconds to wait for Proxmox                                                                                                                                                                                                                                                                                       |
 | `HOMELAB_CACHE_SECONDS`           |         `10`         | Minimum seconds between Proxmox queries (one costs ~2 CPU-seconds on a node); the page itself polls every second                                                                                                                                                                                                  |
 | `HOMELAB_HARDWARE_CACHE_SECONDS`  |         `3`          | Minimum seconds between CPU/firmware ECC probes of each online node (a tiny read-only Python script sent over the same SSH connection settings; nothing is installed or written on the node)                                                                                                                      |
-| `HOMELAB_ROUTER_SSH_HOST`         |       `flint`        | OpenWRT router for DHCPv4 leases. Alias for `192.168.10.1`                                                                                                                                                                                                                                                        |
+| `HOMELAB_ROUTER_SSH_HOST`         |       `flint2`       | OpenWRT router for DHCPv4 leases                                                                                                                                                                                                                                                                                 |
 | `HOMELAB_STORAGE_CACHE_SECONDS`   |        `300`         | Minimum seconds between SMART / `zpool` reads of each online node, run in the background (needs `smartctl`; disks in standby are not woken). Thresholds live in `sources/storage_parser.py` (HDD warn 45 °C / critical 50 °C)                                                                                     |
 | `HOMELAB_HW_ERRORS_CACHE_SECONDS` |        `120`         | Minimum seconds between hardware-error reads (EDAC counters, 14 days of kernel/rasdaemon journal, `ras-mc-ctl --summary`) of each online node, run in the background. Read-only; the last reading is kept and marked stale when a node is unreachable. Recurrence threshold lives in `sources/hwerrors_parser.py` |
 | `HOMELAB_ROUTER_SSH_USER`         |        `root`        | Router SSH account (key authentication only)                                                                                                                                                                                                                                                                      |
@@ -95,8 +95,9 @@ addresses. Missing or invalid addresses sort last; names break ties alphabetical
 ordering rather than a fixed profile rank. Online topology links use longer, thicker moving dashes; offline links remain static gray dashes. Motion
 indicates node availability, not measured network traffic.
 
-The LAN Devices and Guest / IoT panels below Nodes read only dnsmasq's default `/tmp/dhcp.leases` over SSH through `/api/devices`. Cards show the name
-directly above labeled IPv4 and uppercase MAC rows, with no redundant hostname heading. Only devices with IPv4 leases are listed; IPv6-only devices
+The LAN Devices and Guest / IoT panels below Nodes read dnsmasq's default `/tmp/dhcp.leases` over SSH through `/api/devices`. Each panel identifies
+the router by its configured SSH host, resolved IPv4 address, and OpenWrt release version. Cards show the name directly above labeled IPv4 and
+uppercase MAC rows, with no redundant hostname heading. Only devices with IPv4 leases are listed; IPv6-only devices
 and addresses are omitted. The active collector does not query IPv6 leases or neighbors. Standalone IPv6 parsing and correlation helpers remain tested
 for potential future use but are not invoked. Read timestamps and expiry dates remain hidden. Expiry stays internal for filtering. It polls the local
 cache every 10 seconds; Refresh forces both sources independently. Router errors retain unexpired last-known leases with an explicit stale/error
@@ -109,9 +110,9 @@ connectivity or VLAN claim.
 
 Before leases can load, verify the router's SSH host-key fingerprint against its console or another trusted channel, then trust it in this machine's
 `known_hosts` and configure SSH key authentication. For example, inspect a candidate ED25519 fingerprint with
-`ssh-keyscan -t ed25519 flint | ssh-keygen -lf -`; this network scan alone does not establish trust. Only after independently confirming it,
-connect with `ssh root@flint` to accept the verified key. The application never disables host-key checking or handles passwords. No router
-trust changes have been performed.
+`ssh-keyscan -t ed25519 flint2 | ssh-keygen -lf -`; this network scan alone does not establish trust. Only after independently confirming it,
+connect with `ssh root@flint2` to accept the verified key. The application never disables host-key checking, modifies `known_hosts`, or handles
+passwords.
 
 ## Layout
 
@@ -211,8 +212,8 @@ details without claiming live readings. CPU fallbacks remain italicized with an 
 
 ### Further OpenWRT Discovery
 
-- The DHCPv4 collector reads `root@flint` over SSH with key authentication, verified host keys, an 8-second timeout, and an independent
-  60-second cache. It has successfully read DHCPv4 leases; the application has not changed SSH trust.
+- The DHCPv4 collector reads `root@flint2` over SSH with key authentication, verified host keys, an 8-second timeout, and an independent
+      60-second cache. It reads DHCPv4 leases when the configured router hostname is reachable.
 - [ ] Inspect `ubus -v list` for methods supported by the router's OpenWRT version and packages.
 - [ ] Prefer structured `ubus` JSON and `ip -j neigh` where available; BusyBox `ip` may need `ip-full` for JSON output.
 - [ ] Read `ubus call dhcp ipv4leases` / `ipv6leases` where supported; otherwise parse dnsmasq's `/tmp/dhcp.leases`.
