@@ -1458,14 +1458,23 @@ function renderDevices() {
   ]) {
     const routerLabel = required(`#${prefix}-router-label`);
     const status = required(`#${prefix}-devices-status`);
-    routerLabel.classList.toggle("is-stale", Boolean(error || (devicesSnapshot && !devicesSnapshot.router_version)));
+    routerLabel.classList.remove("is-stale");
     routerLabel.title = error ?? "";
     if (devicesSnapshot === null) {
       routerLabel.textContent = devicesError ? "Router details unavailable." : "Loading router details…";
     } else {
-      const version = devicesSnapshot.router_version ? `OpenWRT Version ${devicesSnapshot.router_version}` : "OpenWRT Version Unavailable";
       const router = devicesSnapshot.router.toLowerCase() === "flint2" ? "Flint2" : devicesSnapshot.router;
-      routerLabel.textContent = `${router} · ${version}`;
+      routerLabel.replaceChildren(document.createTextNode(`${router} · `));
+      if (devicesSnapshot.router_version) {
+        routerLabel.append(document.createTextNode(`OpenWRT Version ${devicesSnapshot.router_version}`));
+      } else {
+        routerLabel.append(
+          el("span", {
+            className: "version-unavailable",
+            text: "OpenWRT Version Unavailable",
+          }),
+        );
+      }
     }
     status.classList.toggle("is-stale", Boolean(stale));
     const statusText = error
@@ -1492,7 +1501,12 @@ function renderDevices() {
     required(`#${prefix}-device-list`).replaceChildren(
       ...(rows.length
         ? rows
-        : [el("li", { className: "empty", text: error ? "Devices Unavailable" : devicesSnapshot === null ? "" : "No devices reported." })]),
+        : [
+            el("li", {
+              className: error ? "empty devices-unavailable" : "empty",
+              text: error ? "Devices Unavailable" : devicesSnapshot === null ? "" : "No devices reported.",
+            }),
+          ]),
     );
   }
 }
