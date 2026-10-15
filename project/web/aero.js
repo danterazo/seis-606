@@ -473,9 +473,18 @@ function renderTopologyQuorum() {
   const tone = stale ? "stale" : quorate === true ? "ok" : quorate === false ? "lost" : "unknown";
   const details = state.snapshot?.quorum_details ?? "";
   const detailLines = details.split("\n");
-  const totalVotes = detailLines.find((line) => line.startsWith("Total votes:"))?.split(":")[1]?.trim();
-  const expectedVotes = detailLines.find((line) => line.startsWith("Expected votes:"))?.split(":")[1]?.trim();
-  const quorumVotes = detailLines.find((line) => line.startsWith("Quorum:"))?.split(":")[1]?.trim();
+  const totalVotes = detailLines
+    .find((line) => line.startsWith("Total votes:"))
+    ?.split(":")[1]
+    ?.trim();
+  const expectedVotes = detailLines
+    .find((line) => line.startsWith("Expected votes:"))
+    ?.split(":")[1]
+    ?.trim();
+  const quorumVotes = detailLines
+    .find((line) => line.startsWith("Quorum:"))
+    ?.split(":")[1]
+    ?.trim();
   const summary = [
     summaryState,
     totalVotes && expectedVotes ? `${totalVotes} of ${expectedVotes} expected votes` : null,
@@ -529,12 +538,7 @@ function renderQuorumDialog() {
   const fieldTable = (keys) => {
     const rows = keys
       .filter((key) => fields.has(key))
-      .map((key) =>
-        el("tr", {}, [
-          el("th", { text: key, attrs: { scope: "row" } }),
-          el("td", { text: fields.get(key) ?? "" }),
-        ]),
-      );
+      .map((key) => el("tr", {}, [el("th", { text: key, attrs: { scope: "row" } }), el("td", { text: fields.get(key) ?? "" })]));
     return rows.length === 0
       ? el("p", { className: "empty", text: "No details reported." })
       : el("table", { className: "storage-table quorum-table" }, [el("tbody", {}, rows)]);
@@ -1112,9 +1116,7 @@ function renderOverview(nodes) {
                 el("div", { className: "tile-details" }, [
                   el("div", { className: "facts" }, [
                     fact("RAM", memoryText),
-                    ...(arcBytes === null
-                      ? []
-                      : [fact("ARC", arcMax ? formatMemoryPair({ used: arcBytes, total: arcMax }) : formatBytes(arcBytes))]),
+                    ...(arcBytes === null ? [] : [fact("ARC", arcMax ? formatMemoryPair({ used: arcBytes, total: arcMax }) : formatBytes(arcBytes))]),
                   ]),
                 ]),
               ]),

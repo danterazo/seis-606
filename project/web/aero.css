@@ -1413,7 +1413,10 @@ span.health-badge[role="button"] {
   border: 1px solid rgba(15, 90, 150, 0.14);
   border-radius: 5px;
   background: rgba(15, 90, 150, 0.06);
-  font: 12px/1.5 "Cascadia Mono", "DejaVu Sans Mono", monospace;
+  font:
+    12px/1.5 "Cascadia Mono",
+    "DejaVu Sans Mono",
+    monospace;
   white-space: pre;
 }
 .hw-status {
