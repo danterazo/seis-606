@@ -5,6 +5,7 @@ styled after Frutiger Aero / Y2K desktops.
 Resource readings come from Proxmox; display profiles, pinned addresses, fallback CPU
 models, and memory descriptions are configured separately and are not live discoveries.
 
+
 ## Run
 ```bash
 python3 project/app.py
@@ -27,6 +28,7 @@ standard library and an OpenSSH client.
 | `HOMELAB_ROUTER_CACHE_SECONDS`    | `60`                 | Router lease cache TTL, including failures; independent of PVE                                                                                                                                                                                                                                                    |
 | `HOMELAB_UI_HOST` / `PORT`        | `127.0.0.1` / `8765` | Where the dashboard listens                                                                                                                                                                                                                                                                                       |
 
+
 ### First Connection
 Trust Cerulean's host key once, after confirming the fingerprints match:
 
@@ -38,6 +40,7 @@ ssh-keyscan -H -t ed25519 192.168.20.43 >> ~/.ssh/known_hosts
 
 Connections use `root` by default. To use another account, set `HOMELAB_PVE_SSH_USER`;
 a non-root account needs the `PVEAuditor` role to read cluster resources.
+
 
 ## Security
 I have plenty of experience making apps accessible from the internet, but this app is
@@ -69,6 +72,7 @@ SSH commands run as `root` by default on both Proxmox and the router, so comprom
 dashboard process or its local account carriies superuser privileges. I settled for this because
 PVE, by default, uses `root` as the primary user. If remote machines offer non-root accounts with sufficient privileges, consider using them instead to reduce the risk associated with `root`.
 
+
 ### Guest Reboots
 The round orange arrow beside each guest's status submits a reboot after confirmation.
 It is disabled for stopped guests, unavailable nodes, and pending/recent submissions.
@@ -89,6 +93,7 @@ cooldown. A timeout does not prove the reboot failed: check the guest before ret
 Success means the command was submitted, not that the OS has finished rebooting.
 Polling and node/router discovery remain read-only. Automated tests use fake SSH;
 browser action tests intercept requests and do not reboot real guests.
+
 
 ### Device Names and Leases
 Edit `DISPLAY_NAMES` in `homelab_dashboard/node_profiles.py` to configure display names.
@@ -132,26 +137,126 @@ does not establish trust. Only after independently confirming it, connect with
 `ssh root@192.168.10.1` to accept the verified key. The application never disables
 host-key checking or handles passwords. No router trust changes have been performed.
 
+
 ## Layout
 ```text
 project/
-├── app.py                      entry point
-├── server.py                   static files + /api/status
-├── web/                        index.html, aero.css, aero.js (type-checked with JSDoc)
-└── homelab_dashboard/
-    ├── models.py               frozen, typed Node / Guest / ClusterSnapshot
-    ├── config.py               settings from the environment
-    └── sources/
-        ├── base.py             StatusSource protocol and safe error type
-        ├── pve_parser.py       pure Proxmox JSON -> models
-        └── proxmox_ssh.py      SSH transport
+├── .github/
+│   ├── copilot-instructions.md # project-specific copilot guidance
+│   └── skills/ # spec-kit workflow skills
+├── .specify/ # spec-kit templates, workflows, and configuration
+├── .streamlit/
+│   └── config.toml.example # streamlit configuration example
+├── .env.example # environment variable template
+├── .gitignore # ignored project files
+├── README.md # dashboard setup and operations
+├── app-specs.md # product requirements
+├── app.py # application entry point
+├── poetry.lock # python dependency lockfile
+├── server.py # http server and api routes
+├── assets/
+│   ├── frutiger-perplexity.png
+│   ├── panel-perplexity.png
+│   └── y2k-perplexity.png
+├── homelab_dashboard/
+│   ├── __init__.py
+│   ├── activity_log.py # activity log persistence
+│   ├── config.py # environment-based settings
+│   ├── domain.py # domain objects and calculations
+│   ├── models.py # typed dashboard data models
+│   ├── node_images.py # node image selection
+│   ├── node_profiles.py # configured node display and hardware profiles
+│   ├── presentation.py # dashboard view models
+│   ├── services/
+│   │   ├── __init__.py
+│   │   ├── guests.py # guest actions and reboot service
+│   │   └── health.py # node health aggregation
+│   ├── sources/
+│   │   ├── base.py # source protocol and safe errors
+│   │   ├── cache.py # source result caching
+│   │   ├── hardware_parser.py # hardware result parsing
+│   │   ├── hardware_source.py # hardware collection coordination
+│   │   ├── hardware_ssh.py # remote hardware collection
+│   │   ├── hwerrors_monitor.py # background hardware error monitoring
+│   │   ├── hwerrors_parser.py # hardware error result parsing
+│   │   ├── hwerrors_probe.py # remote hardware error probes
+│   │   ├── hwerrors_ssh.py # hardware error ssh transport
+│   │   ├── json_values.py # json value validation
+│   │   ├── openwrt_ssh.py # router ssh transport
+│   │   ├── pve_parser.py # proxmox response parsing
+│   │   ├── proxmox_ssh.py # proxmox ssh transport
+│   │   ├── remote_probe.py # shared remote probe helpers
+│   │   ├── storage_parser.py # storage result parsing
+│   │   ├── storage_probe.py # remote storage probes
+│   │   └── storage_ssh.py # storage ssh transport
+│   └── ui/
+│       ├── __init__.py
+│       └── dashboard.py # dashboard html rendering
+├── logs/
+│   └── access.jsonl # runtime request log
+├── reference/
+│   └── project1-requirements.pdf # original project requirements
+├── scripts/ # project-level helper scripts
+├── specs/
+│   └── 001-homelab-inventory-dashboard/
+│       ├── checklists/requirements.md
+│       ├── contracts/status-source.md
+│       ├── data-model.md
+│       ├── plan.md
+│       ├── quickstart.md
+│       ├── research.md
+│       ├── spec.md
+│       └── tasks.md
+├── tests/
+│   ├── conftest.py # shared test fixtures
+│   ├── integration/
+│   │   └── test_dashboard_overview.py
+│   └── unit/
+│       ├── test_cache.py
+│       ├── test_config.py
+│       ├── test_domain.py
+│       ├── test_guest_reboot.py
+│       ├── test_hardware.py
+│       ├── test_hardware_errors.py
+│       ├── test_health.py
+│       ├── test_node_images.py
+│       ├── test_node_profiles.py
+│       ├── test_openwrt_source.py
+│       ├── test_presentation.py
+│       ├── test_pve_source.py
+│       ├── test_refresh.py
+│       ├── test_secret_safety.py
+│       └── test_storage.py
+└── web/
+    ├── .htmlvalidate.json # html validation settings
+    ├── .prettierrc.json # formatter settings
+    ├── aero.css # dashboard styles
+    ├── aero.js # browser behavior
+    ├── biome.json # css lint settings
+    ├── eslint.config.js # javascript lint settings
+    ├── index.html # dashboard document
+    ├── package-lock.json # locked web dependencies
+    ├── package.json # web tooling and scripts
+    └── images/
+        ├── dolphins.gif
+        ├── fish-01.gif
+        ├── fish-02.gif
+        ├── reef-left.svg
+        ├── reef-right.svg
+        └── nodes/
+            ├── .gitkeep
+            ├── cerulean.png
+            ├── kex.png
+            └── kveikur.png
 ```
+
 
 ## Test
 ```bash
 python3 -m pytest project/tests
 python3 -m mypy --strict project/server.py project/homelab_dashboard
 ```
+
 
 ## Hardware Details
 Each online node is probed for its CPU model, physical-core/logical-thread counts from
@@ -171,8 +276,10 @@ have no ECC badge rather than an assumed negative result.
 Offline nodes retain configured memory details without claiming live readings. CPU fallbacks
 remain italicized with an explanatory tooltip. GPU display and collection are disabled.
 
+
 ## TODO
 - Planned features and implementation follow-ups:
+
 
 ### Home-Network Deployment
 - [ ] Host the dashboard in a dedicated LXC on the home network and make it reachable
@@ -181,6 +288,7 @@ remain italicized with an explanatory tooltip. GPU display and collection are di
   firewall, and routing local, and prevent public ingress.
 - [ ] Preserve the current loopback and origin protections for write requests. Decide
   how trusted proxy requests should work before enabling guest actions through the proxy.
+
 
 ### PVE Features Worth Surfacing
 - [ ] Show storage and pool usage and health.
@@ -192,6 +300,7 @@ remain italicized with an explanatory tooltip. GPU display and collection are di
     controls instead of rebuilding those management workflows.
 - [ ] Use scoped PVE API tokens with PVEAuditor where practical; keep host hardware
     inspection on a separate restricted probe.
+
 
 ### Inventory and Natural Language
 - Keep the first version read-only: discover nodes and guests, persist physical components,
@@ -213,6 +322,7 @@ remain italicized with an explanatory tooltip. GPU display and collection are di
 - Treat discovered hostnames and notes as untrusted data, not model instructions. SQLite
   search is sufficient for structured inventory; a vector database is unnecessary initially.
 
+
 ### Chatbot Window
 - [ ] Add a chatbot window for managing home inventory, asking questions about nodes, and
     describing tasks in natural language for execution on selected nodes.
@@ -225,6 +335,7 @@ remain italicized with an explanatory tooltip. GPU display and collection are di
 - [ ] Support streamed replies, conversation history, tool/task progress, cancellation, and
     clear endpoint-unavailable or execution-failed states. Start with inventory queries
     and node questions before enabling confirmed task execution.
+
 
 ### Further OpenWRT Discovery
 - The DHCPv4 collector reads `root@192.168.10.1` over SSH with key authentication, verified
@@ -243,6 +354,7 @@ remain italicized with an explanatory tooltip. GPU display and collection are di
   only this card, not the PVE dashboard.
 - [ ] Replace unrestricted root access with a restricted read-only wrapper or scoped RPC
     permissions before exposing the service beyond localhost.
+
 
 ### GPU and Hardware Follow-Up
 - [ ] Restore discovered GPU inventory only after verifying the installed hardware; do not
