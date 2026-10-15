@@ -6,7 +6,6 @@ Resource readings come from Proxmox; display profiles, pinned addresses, fallbac
 models, and memory descriptions are configured separately and are not live discoveries.
 
 ## Run
-
 ```bash
 python3 project/app.py
 ```
@@ -15,7 +14,7 @@ Open the printed URL (default `http://127.0.0.1:8765`). The server needs only th
 standard library and an OpenSSH client.
 
 | Variable                          | Default              | Purpose                                                                                                                                                                                                                                                                                                           |
-| :-------------------------------- | :------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| :-------------------------------- | :------------------: | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `HOMELAB_PVE_SSH_HOST`            | `192.168.20.43`      | Host, IP, or SSH alias of any cluster node                                                                                                                                                                                                                                                                        |
 | `HOMELAB_PVE_SSH_USER`            | `root`               | Account used for every connection                                                                                                                                                                                                                                                                                 |
 | `HOMELAB_SSH_TIMEOUT`             | `15`                 | Seconds to wait for Proxmox                                                                                                                                                                                                                                                                                       |
@@ -29,7 +28,6 @@ standard library and an OpenSSH client.
 | `HOMELAB_UI_HOST` / `PORT`        | `127.0.0.1` / `8765` | Where the dashboard listens                                                                                                                                                                                                                                                                                       |
 
 ### First Connection
-
 Trust Cerulean's host key once, after confirming the fingerprints match:
 
 ```bash
@@ -42,12 +40,19 @@ Connections use `root` by default. To use another account, set `HOMELAB_PVE_SSH_
 a non-root account needs the `PVEAuditor` role to read cluster resources.
 
 ## Security
+I have plenty of experience making apps accessible from the internet, but this app is
+deliberately not public: it would be a privacy nightmare. It has no user login, and its
+read endpoints reveal detailed node and guest information, device names, DHCP leases,
+IP/MAC addresses, and request metadata.
 
-This is a single-user dashboard intended to run on the local machine. It uses plain
-HTTP and has no user login. The status, DHCP lease, and activity-log read endpoints
-are available to any client that can reach the server; they can reveal node and guest
-details, device names, IP/MAC addresses, and request metadata. Keep the default
-`HOMELAB_UI_HOST=127.0.0.1` for local access. Do not bind it to a LAN or public interface, or expose it through a proxy or tunnel, without first adding authentication and HTTPS.
+The intended deployment is on my home network so any machine on my LAN can access it,
+through a local-only reverse proxy at `https://dash.samskeyti.net`. The proxy, DNS,
+firewall, and router must keep that hostname and service unreachable from the public
+internet; do not use port forwarding or a public tunnel. HTTPS protects data in transit,
+but does not add authentication: LAN clients can read the dashboard's status, lease, and
+activity-log endpoints. Keep `HOMELAB_UI_HOST=127.0.0.1` for local development, and
+allow LAN clients to reach only the reverse proxy; allow the app upstream to accept
+connections only from that proxy.
 
 Guest start/reboot and log-clear requests are restricted to loopback clients with a
 matching localhost Host and Origin plus an app-specific action header. These checks
@@ -65,7 +70,6 @@ dashboard process or its local account carriies superuser privileges. I settled 
 PVE, by default, uses `root` as the primary user. If remote machines offer non-root accounts with sufficient privileges, consider using them instead to reduce the risk associated with `root`.
 
 ### Guest Reboots
-
 The round orange arrow beside each guest's status submits a reboot after confirmation.
 It is disabled for stopped guests, unavailable nodes, and pending/recent submissions.
 The server refreshes cluster inventory, checks that the guest still belongs to the
@@ -87,7 +91,6 @@ Polling and node/router discovery remain read-only. Automated tests use fake SSH
 browser action tests intercept requests and do not reboot real guests.
 
 ### Device Names and Leases
-
 Edit `DISPLAY_NAMES` in `homelab_dashboard/node_profiles.py` to configure display names.
 This is the only naming map: the router's `ringoM4-wifi` and `ringoA20` are matched
 directly to their hiragana display names. The hyphenated `ringo-A20` spelling is an
@@ -130,7 +133,6 @@ does not establish trust. Only after independently confirming it, connect with
 host-key checking or handles passwords. No router trust changes have been performed.
 
 ## Layout
-
 ```text
 project/
 ├── app.py                      entry point
@@ -146,14 +148,12 @@ project/
 ```
 
 ## Test
-
 ```bash
 python3 -m pytest project/tests
 python3 -m mypy --strict project/server.py project/homelab_dashboard
 ```
 
 ## Hardware Details
-
 Each online node is probed for its CPU model, physical-core/logical-thread counts from
 `/proc/cpuinfo`, and SMBIOS memory-array error correction using `dmidecode --type 16`.
 CPU readings use the hardware-probe cache. Missing tools, insufficient permissions, and unknown firmware
@@ -171,85 +171,86 @@ have no ECC badge rather than an assumed negative result.
 Offline nodes retain configured memory details without claiming live readings. CPU fallbacks
 remain italicized with an explanatory tooltip. GPU display and collection are disabled.
 
-## Roadmap
+## TODO
+- Planned features and implementation follow-ups:
+
+### Home-Network Deployment
+- [ ] Host the dashboard in a dedicated LXC on the home network and make it reachable
+  from LAN machines.
+- [ ] Configure a LAN-only reverse proxy at `https://dash.samskeyti.net`; keep its DNS,
+  firewall, and routing local, and prevent public ingress.
+- [ ] Preserve the current loopback and origin protections for write requests. Decide
+  how trusted proxy requests should work before enabling guest actions through the proxy.
 
 ### PVE Features Worth Surfacing
-
-Prioritize storage/pool usage and health, last successful backup and failed backup jobs,
-cluster quorum, recent failed tasks, and small CPU/RAM history charts. Then consider
-guest tags/notes, uptime, network/disk throughput, and version/update status. Link to PVE
-for consoles, migrations, snapshots, backup configuration, and other power controls rather
-than rebuilding those management workflows. Use scoped PVE API tokens with PVEAuditor
-where practical; host hardware inspection still needs a separate restricted probe.
+- [ ] Show storage and pool usage and health.
+- [ ] Show the latest successful backup and recent failed backup or maintenance tasks.
+- [ ] Surface cluster quorum and recent failed tasks.
+- [ ] Collect bounded, cached CPU/RAM/storage samples and show short-window history charts.
+- [ ] Consider guest tags and notes, uptime, network/disk throughput, and version/update status.
+- [ ] Link to PVE for consoles, migrations, snapshots, backup configuration, and other power
+    controls instead of rebuilding those management workflows.
+- [ ] Use scoped PVE API tokens with PVEAuditor where practical; keep host hardware
+    inspection on a separate restricted probe.
 
 ### Inventory and Natural Language
+- Keep the first version read-only: discover nodes and guests, persist physical components,
+  locations, and notes, then answer inventory questions.
+- Use FastAPI, SQLite (WAL), SQLAlchemy, and Alembic migrations for the single-user homelab.
+- Keep PVE and router collectors separate from inventory CRUD; serve cached observations
+  rather than running SSH inside each request. Move to PostgreSQL only when concurrency or
+  deployment needs justify it.
+- Store assets with stable internal IDs, linked components, network interfaces with MAC
+  addresses, source identifiers, timestamped observations, and an audit trail.
+- Do not identify devices by IP or hostname alone; store PVE guest IDs with cluster identity.
+- Distinguish observed facts from manual assertions with provenance, last-seen times,
+  collection failures, and conflicts. Discovery must not silently overwrite manual notes.
+- Keep telemetry retention separate from long-lived inventory.
+- Use narrow, validated tools such as `search_assets`, `get_asset`, and `list_components`;
+  never execute generated SQL or shell commands.
+- Return answers with the relevant assets, source, and observation time. Add edits later
+  through validated change proposals, explicit confirmation, transactions, and audit records.
+- Treat discovered hostnames and notes as untrusted data, not model instructions. SQLite
+  search is sufficient for structured inventory; a vector database is unnecessary initially.
 
-Keep the first version read-only: discover nodes/guests, persist physical components,
-locations and notes, then answer inventory questions. This is a coherent companion to
-the dashboard; rebuilding PVE administration and adding autonomous infrastructure
-changes would make the initial scope too wide.
-
-For a single-user homelab, use FastAPI, SQLite (WAL), SQLAlchemy, and Alembic migrations.
-Keep PVE and router collectors separate from inventory CRUD and serve cached observations
-rather than doing SSH inside each request. Move to PostgreSQL only when concurrency or
-deployment needs justify it.
-
-Store assets with stable internal IDs, components linked to assets, network interfaces
-with MAC addresses, source identifiers, timestamped observations, and an audit trail.
-Do not identify devices by IP or hostname alone. Store PVE guest IDs with cluster identity.
-Distinguish observed facts from manual assertions, including provenance, last seen,
-collection failures, and conflicts; discovery must not overwrite manual notes silently.
-Keep telemetry retention separate from long-lived inventory.
-
-Natural language should call narrow, validated tools such as `search_assets`,
-`get_asset`, and `list_components`, not execute generated SQL or shell commands. Return
-answers with the relevant assets, source, and observation time. Add edits later through
-validated change proposals, explicit confirmation, transactions, and audit records.
-Treat discovered hostnames/notes as untrusted data, not model instructions. A vector
-database is unnecessary for structured inventory; SQLite search is enough initially.
-
-### Chatbot Window TODO
-
-- [ ] Add a chatbot window for managing home inventory, asking questions about nodes,
-    and describing tasks in natural language for execution on the selected nodes.
+### Chatbot Window
+- [ ] Add a chatbot window for managing home inventory, asking questions about nodes, and
+    describing tasks in natural language for execution on selected nodes.
 - [ ] Connect through a server-side inference adapter. Start with LM Studio's
-    OpenAI-compatible base URL `http://100.100.20.10:1234/v1`; keep the endpoint and
-    model configurable so the inference server can move to Kveikur later.
-- [ ] Give the chatbot validated inventory and node tools, not unrestricted generated
-    SQL or shell access. Preview target nodes and proposed changes; require explicit
-    confirmation for writes and disruptive actions, and audit each execution/result.
-- [ ] Support streamed replies, conversation history, tool/task progress, cancellation,
-    and clear endpoint-unavailable or execution-failed states. Start with inventory
-    queries and node questions before enabling confirmed task execution.
+    OpenAI-compatible base URL `http://100.100.20.10:1234/v1`; keep the endpoint and model
+    configurable so the inference server can move to Kveikur later.
+- [ ] Give the chatbot validated inventory and node tools, not unrestricted generated SQL
+    or shell access. Preview target nodes and proposed changes; require explicit confirmation
+    for writes and disruptive actions, and audit each execution/result.
+- [ ] Support streamed replies, conversation history, tool/task progress, cancellation, and
+    clear endpoint-unavailable or execution-failed states. Start with inventory queries
+    and node questions before enabling confirmed task execution.
 
 ### Further OpenWRT Discovery
+- The DHCPv4 collector reads `root@192.168.10.1` over SSH with key authentication, verified
+  host keys, an 8-second timeout, and an independent 60-second cache. It has successfully
+  read DHCPv4 leases; the application has not changed SSH trust.
+- [ ] Inspect `ubus -v list` for methods supported by the router's OpenWRT version and packages.
+- [ ] Prefer structured `ubus` JSON and `ip -j neigh` where available; BusyBox `ip` may need
+    `ip-full` for JSON output.
+- [ ] Read `ubus call dhcp ipv4leases` / `ipv6leases` where supported; otherwise parse
+    dnsmasq's `/tmp/dhcp.leases`.
+- [ ] Read Wi-Fi associations from each `hostapd.*` object's `get_clients` method when available.
+- [ ] Join lease and association data by MAC/interface and retain expiry and observation times.
+- Keep DHCP leases distinct from current connectivity: neighbors are not a complete wired
+  census, and static-IP devices may have no lease. Show leases and observed clients separately.
+- Keep MAC/IP inventories local and credentials off the browser; router outages should stale
+  only this card, not the PVE dashboard.
+- [ ] Replace unrestricted root access with a restricted read-only wrapper or scoped RPC
+    permissions before exposing the service beyond localhost.
 
-The DHCPv4 collector targets `root@192.168.10.1` through SSH with key authentication,
-verified host keys, an 8-second timeout, and a 60-second independent cache. For richer discovery,
-Use `ubus -v list` to discover the router's actual methods: availability depends on its
-OpenWRT version and installed packages. Prefer structured `ubus` JSON and `ip -j neigh`
-where supported; the default BusyBox `ip` may need an `ip-full` installation for JSON.
-
-On suitable installations, `ubus call dhcp ipv4leases` / `ipv6leases` expose leases;
-otherwise parse dnsmasq's `/tmp/dhcp.leases` with its documented fields. Wi-Fi association
-data can come from each `hostapd.*` object's `get_clients` method when available.
-Join by MAC/interface and retain lease expiry and observation timestamps. DHCP leases
-are not proof that a client is currently connected, neighbors are not a complete wired
-client census, and static-IP devices may have no lease. Show leases and observed clients
-as distinct states. Router outages should stale only this card, not the PVE dashboard.
-Keep MAC/IP inventories local and credentials off the browser. Replace unrestricted
-root access with a restricted read-only wrapper or scoped RPC permissions before exposing
-the service beyond localhost. The live collector has successfully read DHCPv4 leases;
-no SSH trust changes were performed by the application.
-
-### Deferred GPU Work
-
-- [ ] Restore discovered GPU inventory only after verifying the installed hardware;
-    do not reintroduce expected GPU entries in the dashboard.
-- [ ] Restore host utilization/VRAM readings for AMD, NVIDIA, and Intel with separate
-    caching and bounded probe costs. Existing probe helpers are retained but unused.
-- [ ] Distinguish host-visible, driverless, and VFIO-passthrough cards; collect guest
-    telemetry separately when the host cannot read a passed-through GPU.
+### GPU and Hardware Follow-Up
+- [ ] Restore discovered GPU inventory only after verifying the installed hardware; do not
+    reintroduce expected GPU entries in the dashboard.
+- [ ] Restore host utilization/VRAM readings for AMD, NVIDIA, and Intel with separate caching
+    and bounded probe costs. Existing probe helpers are retained but unused.
+- [ ] Distinguish host-visible, driverless, and VFIO-passthrough cards; collect guest telemetry
+    separately when the host cannot read a passed-through GPU.
 - [ ] Track GPUs as inventory components with provenance and last-seen timestamps.
-- [ ] Add per-DIMM discovery (`dmidecode --type 17`) and EDAC ECC enablement/error
-    evidence, keeping configured specifications distinct from live verification.
+- [ ] Add per-DIMM discovery (`dmidecode --type 17`) and EDAC ECC enablement/error evidence,
+    keeping configured specifications distinct from live verification.
