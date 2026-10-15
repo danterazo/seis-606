@@ -21,7 +21,7 @@
  * @typedef {{ snapshot: Snapshot | null, error: string | null, selectedNode: string | null, filter: GuestFilter, query: string }} ViewState
  * @typedef {{ className?: string, text?: string, attrs?: Readonly<Record<string, string>> }} ElementOptions
  * @typedef {{ address: string, mac: string, hostname: string | null, display_name: string, network_group: "lan" | "guest_iot", expires_at: string | null }} DhcpLease
- * @typedef {{ source: string, router: string, fetched_at: string | null, stale: boolean, error: string | null, leases: DhcpLease[] }} DevicesSnapshot
+ * @typedef {{ source: string, router: string, router_address: string | null, router_version: string | null, fetched_at: string | null, stale: boolean, error: string | null, leases: DhcpLease[] }} DevicesSnapshot
  * @typedef {{ pending: boolean, message: string, error: boolean, retryAt: number }} GuestActionState
  * @typedef {{ timestamp: string, method: string, path: string, status: number, client: string }} ActivityLogEntry
  */
@@ -1456,13 +1456,22 @@ function renderDevices() {
     { group: "lan", prefix: "lan" },
     { group: "guest_iot", prefix: "guest-iot" },
   ]) {
+    const routerLabel = required(`#${prefix}-router-label`);
     const status = required(`#${prefix}-devices-status`);
+    if (devicesSnapshot === null) {
+      routerLabel.textContent = devicesError ? "Router details unavailable." : "Loading router details…";
+    } else {
+      const version = devicesSnapshot.router_version ? `OpenWRT Version ${devicesSnapshot.router_version}` : "OpenWRT Version Unavailable";
+      routerLabel.textContent = `${devicesSnapshot.router} · ${version}`;
+    }
     status.classList.toggle("is-stale", Boolean(stale));
-    status.textContent = error
+    const statusText = error
       ? `${error}${devicesSnapshot?.fetched_at ? " Showing last-known leases." : ""}`
       : devicesSnapshot === null
         ? "Loading DHCP leases…"
-        : `${devicesSnapshot.source} · ${devicesSnapshot.router}`;
+        : "";
+    status.hidden = statusText === "";
+    status.textContent = statusText;
     const leases = (devicesSnapshot?.leases ?? []).filter((lease) => lease.network_group === group && typeof lease.address === "string");
     const rows = leases.map((lease) =>
       el("li", { className: "device" }, [

@@ -1536,6 +1536,13 @@ span.health-badge[role="button"] {
   margin: 0 0 12px;
   overflow-wrap: anywhere;
 }
+.devices-router {
+  font-size: 11px;
+  line-height: 1.35;
+  color: var(--ink-soft);
+  margin: -4px 0 6px;
+  overflow-wrap: anywhere;
+}
 .devices-status.is-stale {
   color: #8a5a00;
 }

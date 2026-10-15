@@ -8,6 +8,7 @@ from homelab_dashboard.node_profiles import DISPLAY_NAMES
 from homelab_dashboard.sources.base import StatusSourceError
 from homelab_dashboard.sources.openwrt_ssh import (
     REMOTE_COMMAND,
+    ROUTER_LEASES_SEPARATOR,
     OpenWrtLeaseSource,
     build_device_payloads,
     parse_ipv6_records,
@@ -84,11 +85,31 @@ def test_router_source_caches_failures_and_retains_last_good_data() -> None:
     assert "host key" in failed["error"]
     assert failed["leases"] == first["leases"]
     assert failed["fetched_at"] == first["fetched_at"]
+    assert failed["router_version"] is None
     source.fetch()
     assert len(runner.calls) == 2
     runner.returncode = 0
     assert source.fetch(force=True)["stale"] is False
     assert len(runner.calls) == 3
+
+
+def test_router_source_exposes_resolved_address_and_openwrt_version() -> None:
+    runner = FakeRunner()
+    runner.stdout = '{"release":{"version":"25.12.5"}}\n' + ROUTER_LEASES_SEPARATOR + "\n" + LEASES
+    source = OpenWrtLeaseSource(
+        target=SshTarget(host="flint2"),
+        runner=runner,
+        resolver=lambda host: "192.168.10.1",
+    )
+
+    payload = source.fetch()
+
+    assert payload["router"] == "flint2"
+    assert payload["router_address"] == "192.168.10.1"
+    assert payload["router_version"] == "25.12.5"
+
+    runner.stdout = LEASES
+    assert source.fetch(force=True)["router_version"] == "25.12.5"
 
 
 def test_first_failure_has_no_fake_leases_or_success_timestamp() -> None:
@@ -275,7 +296,9 @@ def test_active_source_returns_only_ipv4_and_never_queries_ipv6() -> None:
     assert payload["error"] is None
     assert len(payload["leases"]) == 2
     assert all(lease["address"] is not None and "ipv6_addresses" not in lease for lease in payload["leases"])
-    assert runner.calls[0][-1] == "cat /tmp/dhcp.leases"
+    assert "ubus call system board" in runner.calls[0][-1]
+    assert "cat /tmp/dhcp.leases" in runner.calls[0][-1]
+    assert "ip -6" not in runner.calls[0][-1]
 
 
 def test_multiple_ipv6_leases_for_the_same_duid_share_one_card() -> None:

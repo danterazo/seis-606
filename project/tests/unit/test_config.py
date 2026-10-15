@@ -10,7 +10,7 @@ def test_default_proxmox_ssh_host_uses_hostname() -> None:
 def test_default_router_ssh_host_uses_hostname() -> None:
     settings: Settings = Settings.from_env(environ={})
 
-    assert settings.router_ssh_host == "flint"
+    assert settings.router_ssh_host == "flint2"
 
 
 def test_ui_host_is_independent_from_proxmox_ssh_host() -> None:

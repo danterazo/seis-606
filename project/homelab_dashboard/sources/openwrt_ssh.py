@@ -1,5 +1,7 @@
 import ipaddress
+import json
 import re
+import socket
 import subprocess
 import threading
 import time
@@ -13,7 +15,10 @@ from homelab_dashboard.sources.base import StatusSourceError
 from homelab_dashboard.sources.proxmox_ssh import SSH_OPTIONS, CommandRunner, SshTarget, explain_ssh_failure, run_command
 
 LAN_NETWORK: Final[ipaddress.IPv4Network] = ipaddress.IPv4Network("192.168.0.0/16")
-REMOTE_COMMAND: Final[str] = "cat /tmp/dhcp.leases"
+ROUTER_LEASES_SEPARATOR: Final[str] = "__HOMELAB_DHCP_LEASES__"
+REMOTE_COMMAND: Final[str] = (
+    "{ ubus call system board 2>/dev/null || printf '{}'; }; printf '\\n" + ROUTER_LEASES_SEPARATOR + "\\n'; cat /tmp/dhcp.leases"
+)
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -53,6 +58,21 @@ def parse_leases(*, text: str) -> tuple[DhcpLease, ...]:
             raise StatusSourceError("OpenWRT returned an invalid DHCP lease record.") from error
         leases.append(DhcpLease(address=str(parsed_address), mac=mac.lower(), hostname=None if hostname == "*" else hostname, expires_at=expires_at))
     return tuple(leases)
+
+
+def parse_router_response(*, text: str) -> tuple[Optional[str], tuple[DhcpLease, ...]]:
+    board_text, separator, lease_text = text.partition(ROUTER_LEASES_SEPARATOR)
+    router_version: Optional[str] = None
+    if separator:
+        try:
+            board: object = json.loads(board_text)
+        except json.JSONDecodeError:
+            board = None
+        if isinstance(board, dict) and isinstance(board.get("release"), dict):
+            version: object = board["release"].get("version")
+            if isinstance(version, str) and version.strip():
+                router_version = version.strip()
+    return router_version, parse_leases(text=lease_text if separator else text)
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -201,15 +221,19 @@ class OpenWrtLeaseSource:
     timeout_seconds: float = 8.0
     ttl_seconds: float = 60.0
     runner: CommandRunner = run_command
+    resolver: Callable[[str], str] = socket.gethostbyname
     clock: Callable[[], float] = time.monotonic
     now: Callable[[], datetime] = _utc_now
     _lock: threading.Lock = field(default_factory=threading.Lock, init=False)
     _stored_at: Optional[float] = field(default=None, init=False)
     _fetched_at: Optional[datetime] = field(default=None, init=False)
     _leases: tuple[DhcpLease, ...] = field(default=(), init=False)
+    _router_version: Optional[str] = field(default=None, init=False)
+    _router_address: Optional[str] = field(default=None, init=False)
+    _router_address_resolved: bool = field(default=False, init=False)
     _error: Optional[str] = field(default=None, init=False)
 
-    def _read(self) -> tuple[DhcpLease, ...]:
+    def _read(self) -> tuple[Optional[str], tuple[DhcpLease, ...]]:
         command: tuple[str, ...] = ("ssh", *SSH_OPTIONS, self.target.destination, REMOTE_COMMAND)
         try:
             completed: subprocess.CompletedProcess[str] = self.runner(command, timeout=self.timeout_seconds)
@@ -219,13 +243,25 @@ class OpenWrtLeaseSource:
             raise StatusSourceError("Reading OpenWRT DHCP leases timed out.") from error
         if completed.returncode != 0:
             raise StatusSourceError(explain_ssh_failure(stderr=completed.stderr, destination=self.target.destination, action="Reading DHCP leases"))
-        return parse_leases(text=completed.stdout)
+        return parse_router_response(text=completed.stdout)
+
+    def _resolve_router_address(self) -> Optional[str]:
+        if not self._router_address_resolved:
+            self._router_address_resolved = True
+            try:
+                self._router_address = self.resolver(self.target.host)
+            except (OSError, ValueError):
+                self._router_address = None
+        return self._router_address
 
     def fetch(self, *, force: bool = False) -> dict[str, Any]:
         with self._lock:
             if force or self._stored_at is None or self.clock() - self._stored_at >= self.ttl_seconds:
                 try:
-                    self._leases = self._read()
+                    router_version, leases = self._read()
+                    self._leases = leases
+                    if router_version is not None:
+                        self._router_version = router_version
                     self._fetched_at = self.now()
                     self._error = None
                 except StatusSourceError as error:
@@ -235,6 +271,8 @@ class OpenWrtLeaseSource:
             return {
                 "source": "OpenWRT",
                 "router": self.target.host,
+                "router_address": self._resolve_router_address(),
+                "router_version": self._router_version,
                 "fetched_at": self._fetched_at.isoformat(timespec="seconds") if self._fetched_at is not None else None,
                 "stale": self._error is not None,
                 "error": self._error,
