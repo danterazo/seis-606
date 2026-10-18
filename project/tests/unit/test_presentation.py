@@ -1,6 +1,7 @@
 from pathlib import Path
 from typing import Any
 
+import pytest
 from homelab_dashboard.presentation import present_payload
 
 
@@ -32,9 +33,11 @@ def test_other_payload_fields_are_preserved(tmp_path: Path) -> None:
     assert presented["fetched_at"] == "2026-10-07T00:00:00+00:00"
 
 
-def test_formatted_names_apply_to_nodes_and_guests_without_changing_identity(tmp_path: Path) -> None:
-    payload = make_payload(nodes=[{"name": "suika", "address": None, "guests": [{"name": "saru", "vmid": 101}]}])
+@pytest.mark.parametrize("name", ["saru", "btc", "BCH", "xmr-miner", "nvidia-vm", "Win11-Backblaze", "win11-backblaze"])
+@pytest.mark.parametrize("kind", ["container", "vm"])
+def test_only_node_names_are_formatted(tmp_path: Path, name: str, kind: str) -> None:
+    payload = make_payload(nodes=[{"name": "suika", "address": None, "guests": [{"name": name, "vmid": 101, "kind": kind}]}])
     node = present_payload(payload=payload, image_dir=tmp_path)["nodes"][0]
     assert node["name"] == "suika"
     assert node["display_name"] == "\u3059\u3044\u304b"
-    assert node["guests"][0] == {"name": "saru", "display_name": "\u3055\u308b", "vmid": 101}
+    assert node["guests"][0] == {"name": name, "display_name": name, "vmid": 101, "kind": kind}

@@ -27,6 +27,7 @@ PRODUCT_NAME_PREFIXES: Final[tuple[tuple[str, str], ...]] = (
 )
 PRODUCT_DEFAULT_PURPOSES: Final[dict[str, str]] = {"ecoflow": "Server Rack"}
 CONNECTION_TYPES: Final[dict[str, str]] = {"wifi": "WiFi", "eth": "Eth"}
+PRESERVED_WORDS: Final[dict[str, str]] = {"btc": "BTC", "bch": "BCH", "xmr": "XMR", "nvidia": "NVIDIA", "win11": "Win11"}
 
 
 def display_name_for(*, name: str) -> str:
@@ -50,6 +51,9 @@ def _format_hostname_words(*, name: str, parenthesize_codes: bool) -> str:
     words: list[str] = []
     separated_name: str = re.sub(r"(?<=[a-z])(?=[A-Z])", " ", name).replace("-", " ")
     for word in separated_name.split():
+        if word.casefold() in PRESERVED_WORDS:
+            words.append(word)
+            continue
         if word.casefold() == "delta3":
             words.append("Delta3")
             continue
@@ -68,7 +72,9 @@ def _format_hostname_words(*, name: str, parenthesize_codes: bool) -> str:
             word_index += 1
             continue
         japanese_name: Optional[str] = JAPANESE_NAME_PARTS.get(word.casefold())
-        if japanese_name is not None:
+        if word.casefold() in PRESERVED_WORDS:
+            formatted_words.append(PRESERVED_WORDS[word.casefold()])
+        elif japanese_name is not None:
             formatted_words.append(japanese_name)
         elif word == "Delta3":
             formatted_words.append(word)

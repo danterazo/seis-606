@@ -2,7 +2,7 @@ from pathlib import Path
 from typing import Any
 
 from homelab_dashboard.node_images import find_node_image
-from homelab_dashboard.node_profiles import NodeProfile, display_name_for, node_sort_key, profile_for_node
+from homelab_dashboard.node_profiles import NodeProfile, node_sort_key, profile_for_node
 
 
 def present_payload(*, payload: dict[str, Any], image_dir: Path) -> dict[str, Any]:
@@ -17,5 +17,5 @@ def present_payload(*, payload: dict[str, Any], image_dir: Path) -> dict[str, An
         node["memory_ecc"] = profile.memory_ecc
         node["image"] = find_node_image(node_name=node["name"], image_dir=image_dir)
         for guest in node.get("guests", []):
-            guest["display_name"] = display_name_for(name=guest["name"])
+            guest["display_name"] = guest["name"]
     return {**payload, "nodes": sorted(nodes, key=lambda node: node_sort_key(node_name=node["name"], address=node.get("address")))}

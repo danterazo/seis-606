@@ -80,6 +80,14 @@ def test_lookup_ignores_case() -> None:
         ("kp125m-nerd-qaxe", "Kasa KP125M (NerdQAxe++)"),
         ("kp125m-qaxe", "Kasa KP125M (QAxe)"),
         ("new-node", "New Node"),
+        ("btc", "BTC"),
+        ("BCH", "BCH"),
+        ("xmr", "XMR"),
+        ("nvidia", "NVIDIA"),
+        ("NVIDIA", "NVIDIA"),
+        ("win11", "Win11"),
+        ("Win11", "Win11"),
+        ("WIN11-backblaze", "Win11 Backblaze"),
     ],
 )
 def test_hostnames_are_formatted_dynamically(name: str, display_name: str) -> None:
