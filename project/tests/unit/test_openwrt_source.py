@@ -134,14 +134,14 @@ def test_router_source_exposes_resolved_address_and_openwrt_version() -> None:
     runner = FakeRunner()
     runner.stdout = '{"release":{"version":"25.12.5"}}\n' + ROUTER_LEASES_SEPARATOR + "\n" + LEASES
     source = OpenWrtLeaseSource(
-        target=SshTarget(host="flint2"),
+        target=SshTarget(host="samskeyti"),
         runner=runner,
         resolver=lambda host: "192.168.10.1",
     )
 
     payload = source.fetch()
 
-    assert payload["router"] == "flint2"
+    assert payload["router"] == "samskeyti"
     assert payload["router_address"] == "192.168.10.1"
     assert payload["router_version"] == "25.12.5"
 

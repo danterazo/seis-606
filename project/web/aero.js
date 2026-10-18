@@ -1484,11 +1484,7 @@ function renderDevices() {
     if (devicesSnapshot === null) {
       routerLabel.textContent = devicesError ? "Router details unavailable." : "Loading router details…";
     } else {
-      const routerName = devicesSnapshot.router.toLowerCase();
-      const router =
-        routerName === "flint" || routerName === "flint2"
-          ? "Flint2"
-          : `${devicesSnapshot.router.slice(0, 1).toUpperCase()}${devicesSnapshot.router.slice(1)}`;
+      const router = `${devicesSnapshot.router.slice(0, 1).toUpperCase()}${devicesSnapshot.router.slice(1)}`;
       routerLabel.replaceChildren(document.createTextNode(`${router} · `));
       if (devicesSnapshot.router_version) {
         routerLabel.append(document.createTextNode(`OpenWRT Version ${devicesSnapshot.router_version}`));
