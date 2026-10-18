@@ -23,11 +23,12 @@ PRODUCT_NAME_PREFIXES: Final[tuple[tuple[str, str], ...]] = (
     ("ecoflow", "EcoFlow DELTA 3 Plus"),
     ("delta3-plus", "EcoFlow DELTA 3 Plus"),
     ("delta3", "EcoFlow DELTA 3 Plus"),
+    ("kp15m", "Kasa KP15M"),
     ("kp125m", "Kasa KP125M"),
 )
 PRODUCT_DEFAULT_PURPOSES: Final[dict[str, str]] = {"ecoflow": "Server Rack"}
 CONNECTION_TYPES: Final[dict[str, str]] = {"wifi": "WiFi", "eth": "Eth"}
-PRESERVED_WORDS: Final[dict[str, str]] = {"btc": "BTC", "bch": "BCH", "xmr": "XMR", "nvidia": "NVIDIA", "win11": "Win11"}
+PRESERVED_WORDS: Final[dict[str, str]] = {"btc": "BTC", "bch": "BCH", "xmr": "XMR", "nvidia": "NVIDIA", "win11": "Win11", "xb10": "XB10"}
 
 
 def display_name_for(*, name: str) -> str:

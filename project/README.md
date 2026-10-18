@@ -107,10 +107,10 @@ read-only. Automated tests use fake SSH; browser action tests intercept requests
 ### Device Names and Leases
 
 Hostnames are formatted dynamically for display: hyphens and camel-case boundaries become spaces, each word is capitalized, and alphanumeric model
-codes such as `10G`, `M4`, and `A20` and connection types (`WiFi`, `Eth`) are uppercased or cased as shown, in parentheses (for example,
+codes such as `10G`, `M4`, `A20`, and `XB10` and connection types (`WiFi`, `Eth`) are uppercased or cased as shown, in parentheses (for example,
 `りんご (M4) (WiFi)`). Inside a product purpose group they stay plain to avoid nested parentheses. Product names such as `QAxe` and `NerdQAxe++`
 retain their canonical spelling, as do `NVIDIA`, `BTC`, `BCH`, `XMR`, and `Win11`. Two-letter acronyms remain uppercase. Product prefixes use a parenthesized purpose suffix, such as
-`Kasa KP125M (Bedroom Lights)` or `EcoFlow DELTA 3 Plus (Server Rack)` (matched from `ecoflow` or `delta3` hostnames). The bare `ecoflow` hostname
+`Kasa KP125M (Bedroom Lights)`, `Kasa KP15M (Xfinity XB10)`, or `EcoFlow DELTA 3 Plus (Server Rack)` (matched from `kp125m`, `kp15m`, `ecoflow`, or `delta3` hostnames). The bare `ecoflow` hostname
 defaults to `Server Rack`; future EcoFlow units can provide their own suffix. Icelandic hostname parts such as `ovedur`, `vardeldur`, `saeglopur`, and
 `hoppipolla` retain their proper spelling (`Óveður`, `Varðeldur`, `Sæglópur`, and `Hoppípolla`). The Japanese hostname parts `ringo`, `suika`,
 `ichigo`, and `saru` render in hiragana (for example, `りんご (M4)`). This shared formatter is used for node labels and DHCP devices;
