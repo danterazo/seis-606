@@ -122,7 +122,7 @@ Cluster nodes are ordered numerically by their locally resolved IP address, with
 ties alphabetically. The node list, overview, topology, and node filters use this ordering rather than a fixed profile rank. Online topology links use
 longer, thicker moving dashes; offline links remain static gray dashes. Motion indicates node availability, not measured network traffic.
 
-The LAN Devices and Guest / IoT panels below Nodes read `dnsmasq`'s default `/tmp/dhcp.leases` over SSH through `/api/devices`. Each panel identifies
+The LAN DHCP Leases and Guest & IoT DHCP Leases panels below Nodes read `dnsmasq`'s default `/tmp/dhcp.leases` over SSH through `/api/devices`. Each panel identifies
 the router by its configured SSH host (displayed as Samskeyti by default) and OpenWrt release version. Unavailable
 router details appear in orange; connection errors are available by hovering over the router line instead of repeating the failure beneath it. Cards
 show the name directly above labeled IPv4 and uppercase MAC rows, with no redundant hostname heading. When a MAC prefix is registered, the server
@@ -136,7 +136,7 @@ when present. Manufacturer rows appear directly below MAC as `Vendor`, with the 
 explicit stale/error indication and do not block PVE status. Leases are not proof of current connectivity. Static-IPv4-only discovery and Wi-Fi
 association data are not implemented yet.
 
-Leases in `192.168.0.0/16` appear in LAN Devices; all other IPv4 leases appear in Guest / IoT. The API returns LAN first, then the remaining devices.
+Leases in `192.168.0.0/16` appear in LAN DHCP Leases; all other IPv4 leases appear in Guest & IoT DHCP Leases. The API returns LAN first, then the remaining devices.
 In both panels, named devices come before IP-only devices, with numeric IP ordering within each subgroup. This is a display grouping, not a
 connectivity or VLAN claim.
 
