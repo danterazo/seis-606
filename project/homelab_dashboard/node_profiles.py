@@ -11,7 +11,7 @@ ICELANDIC_NAME_MAP: Final[dict[str, str]] = {
     "vardeldur": "varðeldur",
     "saeglopur": "sæglópur",
     "hoppipolla": "hoppípolla",
-    "hafid": "Hafið",
+    "hafid": "hafið",
 }
 JAPANESE_NAME_MAP: Final[dict[str, str]] = {
     "ringo": "りんご",
