@@ -1,6 +1,13 @@
 Modify `.vscode/settings.json` only when the user explicitly requests it. Python import paths are configured in `pyproject.toml` under
 `[tool.pyright]`; edit that file instead, and ask first if a change seems necessary.
 
+## Project Memory
+
+- Before working in this project, read `project/.specify/memory/project-memory.md` for durable decisions, verified context, and deferred work.
+- Keep that file current when the user makes or changes a project decision, or when tracked work is started, completed, blocked, or deferred.
+- Treat deferred items as notes, not authorization to implement them. Preserve the user's local-only, single-operator scope unless they explicitly change it.
+- Distinguish verified implementation facts from intended deployment plans; do not mark work complete without verification.
+
 ## Documentation sync
 
 - When project code, configuration, endpoints, tests, or directory structure changes, inspect and update affected user-facing documentation, including
