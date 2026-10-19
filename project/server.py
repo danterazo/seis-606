@@ -26,6 +26,7 @@ from homelab_dashboard.sources.hwerrors_ssh import SshHardwareErrorProbe
 from homelab_dashboard.sources.openwrt_ssh import OpenWrtLeaseSource
 from homelab_dashboard.sources.proxmox_ssh import ProxmoxSshSource, SshTarget
 from homelab_dashboard.sources.storage_ssh import SshStorageProbe
+from homelab_dashboard.terminal import AMBER, GREEN, PLUM, TEAL, log_line
 
 WEB_ROOT: Final[Path] = Path(__file__).resolve().parent / "web"
 NODE_IMAGE_DIR: Final[Path] = WEB_ROOT / "images" / "nodes"
@@ -216,10 +217,15 @@ def main() -> None:
     devices: OpenWrtLeaseSource = OpenWrtLeaseSource(target=router_target, ttl_seconds=settings.router_cache_seconds)
     rebooter: GuestRebooter = GuestRebooter(source=enriched, user=settings.ssh_user)
     server: ThreadingHTTPServer = create_server(settings=settings, source=enriched, devices=devices, rebooter=rebooter)
-    print(f"Homelab dashboard running at http://{settings.host}:{settings.port} (source: {target.destination})")
+    log_line(
+        ("Running homelab dashboard!", GREEN),
+        ("Access the page at", TEAL),
+        (f"http://{settings.host}:{settings.port}", PLUM),
+        (f"(via: {target.destination})", TEAL),
+    )
     try:
         server.serve_forever()
     except KeyboardInterrupt:
-        print("\nStopping homelab dashboard.")
+        log_line(("Stopping homelab dashboard!", AMBER))
     finally:
         server.server_close()

@@ -15,7 +15,7 @@ update: deps
 
 run:
 	@fuser -k 8766/tcp 2>/dev/null || true
-	DASHBOARD_DEV=1 PORT=8766 poetry run watchfiles --filter python --grace-period 0.5 'python3 project/app.py' project/homelab_dashboard project/server.py project/app.py
+	DASHBOARD_DEV=1 PORT=8766 poetry run python project/dev.py
 
 upgrade:
 	uv tool upgrade --all
