@@ -10,8 +10,8 @@ WATCH_PATHS: Final[tuple[str, ...]] = ("project/homelab_dashboard", "project/ser
 
 def report_changes(changes: set[tuple[Change, str]]) -> None:
     count: int = len(changes)
-    label: str = "Change" if count == 1 else "Changes"
-    log_line((f"{count} {label} Detected", PINK))
+    label: str = "change" if count == 1 else "changes"
+    log_line((f"{count} {label} detected", PINK))
 
 
 def main() -> None:
