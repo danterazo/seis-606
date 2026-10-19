@@ -23,16 +23,19 @@ upgrade:
 verify-gpu:
 	poetry run python -c "import llama_cpp.llama_cpp as lib; print('supports_gpu_offload =', bool(lib.llama_supports_gpu_offload()))"
 
-format: fix lint
+.PHONY: format fix fix-python fix-web fix-markdown lint lint-python lint-web
+
+format: fix
 
 fix: fix-python fix-web fix-markdown
+	$(MAKE) lint
 
 fix-python:
 	poetry run ruff check --fix .
 	poetry run ruff format .
 
 fix-web:
-	npm --prefix project/web run format
+	npm --prefix project/web run fix
 
 fix-markdown:
 	@git ls-files -z -- '*.md' | xargs -0 project/web/node_modules/.bin/prettier --write

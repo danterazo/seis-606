@@ -169,6 +169,10 @@ passwords.
 
 ## Test
 
+From the repository root, run `make fix` to apply supported Python and web lint fixes, format Python/web files and tracked Markdown, then run Python
+and web lint checks, including JavaScript type-checking. `make format` is an alias for the same workflow. `make lint` only checks Python and web code
+without modifying files. Problems without a supported automatic fix still fail the command and require manual changes.
+
 ```bash
 python3 -m pytest project/tests
 python3 -m mypy --strict project/server.py project/homelab_dashboard

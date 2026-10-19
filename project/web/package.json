@@ -3,6 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "fix": "eslint --fix aero.js && biome lint --write aero.css && html-validate --fix index.html && npm run format",
     "format": "prettier --write \"*.{js,html,css}\"",
     "format:check": "prettier --check \"*.{js,html,css}\"",
     "lint": "eslint aero.js && biome lint aero.css && html-validate index.html && npm run typecheck",

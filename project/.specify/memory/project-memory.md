@@ -27,6 +27,12 @@ These are discussion items, not authorization to change code or deployment. Upda
       requested.
 - [ ] If persistent data is introduced, define dev/production separation, backup/restore, and access controls before deployment.
 
+## Code Cleanup
+
+- Use `make fix` for supported Python/web lint fixes, Python/web/tracked-Markdown formatting, and final Python/web lint checks including JavaScript
+  type-checking. `make format` is a compatibility alias; `make lint` is check-only. Unsupported fixes still require manual changes.
+- On 2026-10-18, the web fix workflow automatically repaired the HTML `no-raw-characters` ampersand error, and web lint/type-checks passed.
+
 ## Verified Security Posture
 
 As reviewed on 2026-10-18:
