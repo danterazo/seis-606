@@ -8,7 +8,8 @@ Before real users touch your app | SEIS 606 Project 1
 
 **Date:** 2026-10-18
 
-**How to use:** Work through this on your own app. Mark each box ✓ pass, ✗ fail or ? didn't know how to check. Every fail and ? becomes a row in your test log. Aim for at least three probes you actually ran. A documented failure earns more credit than a hidden one.
+**How to use:** Work through this on your own app. Mark each box ✓ pass, ✗ fail or ? didn't know how to check. Every fail and ? becomes a row in your
+test log. Aim for at least three probes you actually ran. A documented failure earns more credit than a hidden one.
 
 ## 1. Secrets and Source (about 5 min)
 
@@ -57,7 +58,7 @@ Before real users touch your app | SEIS 606 Project 1
 
 **What is the one thing you would fix first, and what is the one thing you could not tell was broken?**
 
-> 
+>
 
 ---
 

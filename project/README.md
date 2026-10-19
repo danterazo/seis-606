@@ -42,9 +42,9 @@ that same local hostname resolution.
 
 WSL does not import custom Windows hosts-file entries into its generated `/etc/hosts`. The router is named `samskeyti`; Tailscale DNS resolves it to
 `100.100.10.1`, while Ovedur's Windows hosts-file mapping uses `192.168.10.1`. Set the matching WSL hosts-file entry explicitly to use the LAN route.
-Override `HOMELAB_ROUTER_SSH_HOST` when a different route is needed. To have WSL use the
-same per-machine mappings, change `generateHosts=true` to `generateHosts=false` under `[network]` in `/etc/wsl.conf`, then run `wsl --shutdown` from
-Windows PowerShell. After reopening the distro, link WSL's hosts file to Windows' file:
+Override `HOMELAB_ROUTER_SSH_HOST` when a different route is needed. To have WSL use the same per-machine mappings, change `generateHosts=true` to
+`generateHosts=false` under `[network]` in `/etc/wsl.conf`, then run `wsl --shutdown` from Windows PowerShell. After reopening the distro, link WSL's
+hosts file to Windows' file:
 
 ```bash
 sudo cp -a /etc/hosts /etc/hosts.wsl-backup
@@ -107,36 +107,38 @@ read-only. Automated tests use fake SSH; browser action tests intercept requests
 ### Device Names and Leases
 
 Hostname display avoids inferred product names, title casing, code splitting, and suffix formatting. ASCII Icelandic and Japanese name parts are
-translated with dedicated lowercase maps (for example, `ovedur` becomes `óveður`, `vardeldur` becomes `varðeldur`, and `ringo` becomes `りんご`); all other hostname text stays as reported.
-For KP125M plugs only, the first `kp125m-` prefix becomes `kp125m_` for visual separation. The same formatter is used for node labels and DHCP
-devices; VM and container names are displayed verbatim, including in topology and guest cards/search. Raw hostnames and IDs stay unchanged.
+translated with dedicated lowercase maps (for example, `ovedur` becomes `óveður`, `vardeldur` becomes `varðeldur`, and `ringo` becomes `りんご`); all
+other hostname text stays as reported. For KP125M plugs only, the first `kp125m-` prefix becomes `kp125m_` for visual separation. The same formatter
+is used for node labels and DHCP devices; VM and container names are displayed verbatim, including in topology and guest cards/search. Raw hostnames
+and IDs stay unchanged.
 
 Cluster nodes are ordered numerically by their locally resolved IP address, with IPv4 before IPv6. Missing or invalid addresses sort last; names break
 ties alphabetically. The node list, overview, topology, and node filters use this ordering rather than a fixed profile rank. Online topology links use
 longer, thicker moving dashes; offline links remain static gray dashes. Motion indicates node availability, not measured network traffic.
 
-The LAN DHCP Leases and Guest & IoT DHCP Leases panels below Nodes read `dnsmasq`'s default `/tmp/dhcp.leases` over SSH through `/api/devices`. Each panel identifies
-the router by its configured SSH host (displayed as Samskeyti by default) and OpenWrt release version. Unavailable
-router details appear in orange; connection errors are available by hovering over the router line instead of repeating the failure beneath it. Cards
-show the name directly above labeled IPv4 and uppercase MAC rows, with no redundant hostname heading. When a MAC prefix is registered, the server
-shows its IEEE-registered manufacturer from the public OUI registry. The registry is downloaded and cached server-side; individual MAC addresses are
-not sent to a lookup service. Locally administered/randomized MACs and unmatched prefixes have no manufacturer line, and registry/network failures do
-not block leases. Only devices with IPv4 leases are listed; IPv6-only devices and addresses are omitted. The active collector does not query IPv6
-leases or neighbors. Standalone IPv6 parsing and correlation helpers remain tested for potential future use but are not invoked. Read timestamps and
-expiry dates remain hidden. Expiry stays internal for filtering. It polls the local cache every 10 seconds; Refresh forces both sources independently.
-Router errors retain unexpired last-known leases with an inline `Showing last-known leases` status after the router/version, separated by a dot only
-when present. Manufacturer rows appear directly below MAC as `Vendor`, with the same label in the tooltip and accessible name. Router errors retain an
+The LAN DHCP Leases and Guest & IoT DHCP Leases panels below Nodes read `dnsmasq`'s default `/tmp/dhcp.leases` over SSH through `/api/devices`. Each
+panel identifies the router by its configured SSH host (displayed as Samskeyti by default) and OpenWrt release version. Unavailable router details
+appear in orange; connection errors are available by hovering over the router line instead of repeating the failure beneath it. Cards show the name
+directly above labeled IPv4 and uppercase MAC rows, with no redundant hostname heading. When a MAC prefix is registered, the server shows its
+IEEE-registered manufacturer from the public OUI registry. The registry is downloaded and cached server-side; individual MAC addresses are not sent to
+a lookup service. Locally administered/randomized MACs and unmatched prefixes have no manufacturer line, and registry/network failures do not block
+leases. Only devices with IPv4 leases are listed; IPv6-only devices and addresses are omitted. The active collector does not query IPv6 leases or
+neighbors. Standalone IPv6 parsing and correlation helpers remain tested for potential future use but are not invoked. Read timestamps and expiry
+dates remain hidden. Expiry stays internal for filtering. It polls the local cache every 10 seconds; Refresh forces both sources independently. Router
+errors retain unexpired last-known leases with an inline `Showing last-known leases` status after the router/version, separated by a dot only when
+present. Manufacturer rows appear directly below MAC as `Vendor`, with the same label in the tooltip and accessible name. Router errors retain an
 explicit stale/error indication and do not block PVE status. Leases are not proof of current connectivity. Static-IPv4-only discovery and Wi-Fi
 association data are not implemented yet.
 
-Leases in `192.168.0.0/16` appear in LAN DHCP Leases; all other IPv4 leases appear in Guest & IoT DHCP Leases. The API returns LAN first, then the remaining devices.
-In both panels, named devices come before IP-only devices, with numeric IP ordering within each subgroup. This is a display grouping, not a
-connectivity or VLAN claim.
+Leases in `192.168.0.0/16` appear in LAN DHCP Leases; all other IPv4 leases appear in Guest & IoT DHCP Leases. The API returns LAN first, then the
+remaining devices. In both panels, named devices come before IP-only devices, with numeric IP ordering within each subgroup. This is a display
+grouping, not a connectivity or VLAN claim.
 
 Before leases can load, verify the router's SSH host-key fingerprint against its console or another trusted channel, then trust it in this machine's
 `known_hosts` and configure SSH key authentication. For example, inspect a candidate ED25519 fingerprint with
-`ssh-keyscan -t ed25519 samskeyti | ssh-keygen -lf -`; this network scan alone does not establish trust. Only after independently confirming it, connect
-with `ssh root@samskeyti` to accept the verified key. The application never disables host-key checking, modifies `known_hosts`, or handles passwords.
+`ssh-keyscan -t ed25519 samskeyti | ssh-keygen -lf -`; this network scan alone does not establish trust. Only after independently confirming it,
+connect with `ssh root@samskeyti` to accept the verified key. The application never disables host-key checking, modifies `known_hosts`, or handles
+passwords.
 
 ## Layout
 
