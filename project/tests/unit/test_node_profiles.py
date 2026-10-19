@@ -39,61 +39,61 @@ def test_lookup_ignores_case() -> None:
 @pytest.mark.parametrize(
     argnames=("name", "display_name"),
     argvalues=[
-        ("ovedur-10G", "\u00d3ve\u00f0ur (10G)"),
-        ("\u00f3ve\u00f0ur-10g", "\u00d3ve\u00f0ur (10G)"),
-        ("vardeldur-wifi", "Var\u00f0eldur (WiFi)"),
-        ("VARDELDUR-ETH", "Var\u00f0eldur (Eth)"),
-        ("saeglopur", "S\u00e6gl\u00f3pur"),
-        ("saeglopur-wifi", "S\u00e6gl\u00f3pur (WiFi)"),
-        ("hoppipolla", "Hopp\u00edpolla"),
-        ("creality-k1c-wifi", "Creality (K1C) (WiFi)"),
-        ("ringoM4-wifi", "\u308a\u3093\u3054 (M4) (WiFi)"),
-        ("ringom4-wifi", "\u308a\u3093\u3054 (M4) (WiFi)"),
-        ("ringo-m4-wifi", "\u308a\u3093\u3054 (M4) (WiFi)"),
-        ("ringo-m4-eth", "\u308a\u3093\u3054 (M4) (Eth)"),
-        ("kp125m-desktop-lamp-wifi", "Kasa KP125M (Desktop Lamp WiFi)"),
-        ("ringoA20", "\u308a\u3093\u3054 (A20)"),
-        ("ringoa20", "\u308a\u3093\u3054 (A20)"),
-        ("ringo-a20", "\u308a\u3093\u3054 (A20)"),
+        ("ovedur-10G", "\u00f3ve\u00f0ur-10G"),
+        ("\u00f3ve\u00f0ur-10g", "\u00f3ve\u00f0ur-10g"),
+        ("vardeldur-wifi", "var\u00f0eldur-wifi"),
+        ("VARDELDUR-ETH", "var\u00f0eldur-ETH"),
+        ("saeglopur", "s\u00e6gl\u00f3pur"),
+        ("saeglopur-wifi", "s\u00e6gl\u00f3pur-wifi"),
+        ("hoppipolla", "hopp\u00edpolla"),
+        ("creality-k1c-wifi", "creality-k1c-wifi"),
+        ("ringoM4-wifi", "\u308a\u3093\u3054M4-wifi"),
+        ("ringom4-wifi", "\u308a\u3093\u3054m4-wifi"),
+        ("ringo-m4-wifi", "\u308a\u3093\u3054-m4-wifi"),
+        ("ringo-m4-eth", "\u308a\u3093\u3054-m4-eth"),
+        ("kp125m-desktop-lamp-wifi", "kp125m_desktop-lamp-wifi"),
+        ("ringoA20", "\u308a\u3093\u3054A20"),
+        ("ringoa20", "\u308a\u3093\u3054a20"),
+        ("ringo-a20", "\u308a\u3093\u3054-a20"),
         ("suika", "\u3059\u3044\u304b"),
         ("ichigo", "\u3044\u3061\u3054"),
         ("saru", "\u3055\u308b"),
-        ("10g", "(10G)"),
-        ("gp", "GP"),
+        ("10g", "10g"),
+        ("gp", "gp"),
         ("HP", "HP"),
-        ("delta3", "EcoFlow DELTA 3 Plus"),
-        ("delta3-server-rack", "EcoFlow DELTA 3 Plus (Server Rack)"),
-        ("delta3-plus-garage", "EcoFlow DELTA 3 Plus (Garage)"),
-        ("ECOFLOW-delta3-plus", "EcoFlow DELTA 3 Plus"),
-        ("ecoflow", "EcoFlow DELTA 3 Plus (Server Rack)"),
-        ("ecoflow-server-rack", "EcoFlow DELTA 3 Plus (Server Rack)"),
-        ("ecoflow-bedroom", "EcoFlow DELTA 3 Plus (Bedroom)"),
-        ("ecoflow-delta3-plus-server-rack", "EcoFlow DELTA 3 Plus (Server Rack)"),
-        ("nerd-qaxe", "NerdQAxe++"),
-        ("NERD-QAXE", "NerdQAxe++"),
-        ("nerdqaxe", "NerdQAxe++"),
-        ("qaxe", "QAxe"),
-        ("kp125m", "Kasa KP125M"),
-        ("kp125m-ovedur", "Kasa KP125M (\u00d3ve\u00f0ur)"),
-        ("KP125M-bedroom-lights", "Kasa KP125M (Bedroom Lights)"),
-        ("kp125m-ovedur-10g", "Kasa KP125M (\u00d3ve\u00f0ur 10G)"),
-        ("kp125m-nerd-qaxe", "Kasa KP125M (NerdQAxe++)"),
-        ("kp125m-qaxe", "Kasa KP125M (QAxe)"),
-        ("kp15m-xb10", "Kasa KP15M (XB10)"),
-        ("kp15m-xfinity-xb10", "Kasa KP15M (Xfinity XB10)"),
+        ("delta3", "delta3"),
+        ("delta3-server-rack", "delta3-server-rack"),
+        ("delta3-plus-garage", "delta3-plus-garage"),
+        ("ECOFLOW-delta3-plus", "ECOFLOW-delta3-plus"),
+        ("ecoflow", "ecoflow"),
+        ("ecoflow-server-rack", "ecoflow-server-rack"),
+        ("ecoflow-bedroom", "ecoflow-bedroom"),
+        ("ecoflow-delta3-plus-server-rack", "ecoflow-delta3-plus-server-rack"),
+        ("nerd-qaxe", "nerd-qaxe"),
+        ("NERD-QAXE", "NERD-QAXE"),
+        ("nerdqaxe", "nerdqaxe"),
+        ("qaxe", "qaxe"),
+        ("kp125m", "kp125m"),
+        ("kp125m-ovedur", "kp125m_\u00f3ve\u00f0ur"),
+        ("KP125M-bedroom-lights", "kp125m_bedroom-lights"),
+        ("kp125m-ovedur-10g", "kp125m_\u00f3ve\u00f0ur-10g"),
+        ("kp125m-nerd-qaxe", "kp125m_nerd-qaxe"),
+        ("kp125m-qaxe", "kp125m_qaxe"),
+        ("kp15m-xb10", "kp15m-xb10"),
+        ("kp15m-xfinity-xb10", "kp15m-xfinity-xb10"),
         ("XB10", "XB10"),
-        ("new-node", "New Node"),
-        ("btc", "BTC"),
+        ("new-node", "new-node"),
+        ("btc", "btc"),
         ("BCH", "BCH"),
-        ("xmr", "XMR"),
-        ("nvidia", "NVIDIA"),
+        ("xmr", "xmr"),
+        ("nvidia", "nvidia"),
         ("NVIDIA", "NVIDIA"),
-        ("win11", "Win11"),
+        ("win11", "win11"),
         ("Win11", "Win11"),
-        ("WIN11-backblaze", "Win11 Backblaze"),
+        ("WIN11-backblaze", "WIN11-backblaze"),
     ],
 )
-def test_hostnames_are_formatted_dynamically(name: str, display_name: str) -> None:
+def test_hostnames_only_apply_transliteration_and_kp125m_separator(name: str, display_name: str) -> None:
     assert display_name_for(name=name) == display_name
     assert profile_for_node(node_name=name).display_name == display_name
 
@@ -117,12 +117,12 @@ def test_duplicate_addresses_use_a_stable_name_tiebreaker() -> None:
     assert node_sort_key(node_name="alpha", address="192.168.20.100") < node_sort_key(node_name="zeta", address="192.168.20.100")
 
 
-def test_unknown_nodes_get_a_stable_capitalized_profile() -> None:
+def test_unknown_nodes_keep_the_reported_name_in_their_profile() -> None:
     first = profile_for_node(node_name="new-node")
 
     assert first == profile_for_node(node_name="new-node")
     assert first.color in FALLBACK_PALETTE
-    assert first.display_name == "New Node"
+    assert first.display_name == "new-node"
 
 
 def test_every_color_is_a_plain_hex_value() -> None:

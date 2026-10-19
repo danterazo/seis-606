@@ -106,17 +106,10 @@ read-only. Automated tests use fake SSH; browser action tests intercept requests
 
 ### Device Names and Leases
 
-Hostnames are formatted dynamically for display: hyphens and camel-case boundaries become spaces, each word is capitalized, and alphanumeric model
-codes such as `10G`, `M4`, `A20`, and `XB10` and connection types (`WiFi`, `Eth`) are uppercased or cased as shown, in parentheses (for example,
-`りんご (M4) (WiFi)`). Inside a product purpose group they stay plain to avoid nested parentheses. Product names such as `QAxe` and `NerdQAxe++`
-retain their canonical spelling, as do `NVIDIA`, `BTC`, `BCH`, `XMR`, and `Win11`. Two-letter acronyms remain uppercase. Product prefixes use a parenthesized purpose suffix, such as
-`Kasa KP125M (Bedroom Lights)`, `Kasa KP15M (Xfinity XB10)`, or `EcoFlow DELTA 3 Plus (Server Rack)` (matched from `kp125m`, `kp15m`, `ecoflow`, or `delta3` hostnames). The bare `ecoflow` hostname
-defaults to `Server Rack`; future EcoFlow units can provide their own suffix. Icelandic hostname parts such as `ovedur`, `vardeldur`, `saeglopur`, and
-`hoppipolla` retain their proper spelling (`Óveður`, `Varðeldur`, `Sæglópur`, and `Hoppípolla`). The Japanese hostname parts `ringo`, `suika`,
-`ichigo`, and `saru` render in hiragana (for example, `りんご (M4)`). This shared formatter is used for node labels and DHCP devices;
-VM and container names are displayed verbatim, including in topology and guest cards/search. Raw hostnames and IDs stay unchanged.
-New names need no map entry and do not create placeholder nodes; they are formatted when a node or
-lease is discovered.
+Hostname display avoids inferred product names, title casing, code splitting, and suffix formatting. ASCII Icelandic and Japanese name parts are
+translated with dedicated lowercase maps (for example, `ovedur` becomes `óveður`, `vardeldur` becomes `varðeldur`, and `ringo` becomes `りんご`); all other hostname text stays as reported.
+For KP125M plugs only, the first `kp125m-` prefix becomes `kp125m_` for visual separation. The same formatter is used for node labels and DHCP
+devices; VM and container names are displayed verbatim, including in topology and guest cards/search. Raw hostnames and IDs stay unchanged.
 
 Cluster nodes are ordered numerically by their locally resolved IP address, with IPv4 before IPv6. Missing or invalid addresses sort last; names break
 ties alphabetically. The node list, overview, topology, and node filters use this ordering rather than a fixed profile rank. Online topology links use
