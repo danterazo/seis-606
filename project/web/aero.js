@@ -119,18 +119,16 @@ function svg(tag, attrs = {}, children = []) {
 /** @param {string | null} address */
 const isVpnAddress = (address) => address !== null && /^100\.100\.\d{1,3}\.\d{1,3}$/.test(address);
 
-const TAILSCALE_MARK_URL = "/images/tailscale-mark.svg";
+const TAILSCALE_LOGO_URL = "/images/tailscale.svg";
 
 /** @returns {HTMLImageElement} */
 function vpnIcon() {
-  return el("img", { className: "vpn-icon", attrs: { src: TAILSCALE_MARK_URL, alt: "Tailscale VPN" } });
+  return el("img", { className: "vpn-icon", attrs: { src: TAILSCALE_LOGO_URL, alt: "Tailscale VPN" } });
 }
 
 /** @param {string} address */
 function addressLabel(address) {
-  return isVpnAddress(address)
-    ? el("span", { className: "vpn-address" }, [vpnIcon(), address])
-    : document.createTextNode(address);
+  return isVpnAddress(address) ? el("span", { className: "vpn-address" }, [vpnIcon(), address]) : document.createTextNode(address);
 }
 
 /** @param {number} value */
@@ -431,10 +429,7 @@ function gauge({ label, value, tone, arcValue = null, arcClass = "gauge-arc-zfs"
   const arcs =
     arcValue === null || value === null
       ? [ringArc(`gauge-arc gauge-${tone}`, value)]
-      : [
-          ringArc(`gauge-arc ${arcClass}`, value),
-          ringArc(`gauge-arc gauge-${tone}`, value - arcValue, overlayAtEnd ? arcValue : 0),
-        ];
+      : [ringArc(`gauge-arc ${arcClass}`, value), ringArc(`gauge-arc gauge-${tone}`, value - arcValue, overlayAtEnd ? arcValue : 0)];
   const ring = svg("svg", { viewBox: "0 0 56 56", "aria-hidden": "true" }, [
     svg("circle", { class: "gauge-track", cx: 28, cy: 28, r: radius }),
     ...arcs,
@@ -1274,7 +1269,7 @@ function renderTopology(nodes) {
       ...(isVpnAddress(node.address)
         ? [
             svg("image", {
-              href: TAILSCALE_MARK_URL,
+              href: TAILSCALE_LOGO_URL,
               x: x - 48,
               y: nodeY + 53,
               width: 12,
