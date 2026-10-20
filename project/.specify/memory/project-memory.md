@@ -1,6 +1,6 @@
 # Project Memory
 
-Updated: 2026-10-18
+Updated: 2026-10-20
 
 ## Operating Decision
 
@@ -9,6 +9,11 @@ Updated: 2026-10-18
 - Local-only limits intended reach, not all risk; compromised accounts, browsers, proxies, or LAN devices remain in scope.
 - The app defaults to loopback. The README's LAN-access plan conflicts with the user's only-for-my-eyes decision and must be reconciled before
   implementation.
+
+## Development Workflow
+
+- The user runs the local dashboard server to observe changes, commonly on `127.0.0.1:8766`. Reuse the existing server and browser page for UI validation; do not start, restart, or stop a server the user manages unless explicitly asked.
+- If the existing server is unavailable, ask the user to start it instead of launching a duplicate. Avoid `make run` for previews because it kills the process on port `8766` before starting.
 
 ## Presentation
 
