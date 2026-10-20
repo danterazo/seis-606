@@ -13,3 +13,4 @@ project/logs/
 
 # IDE
 .vscode/settings.json
+*.sync-conflict-*
