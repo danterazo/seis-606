@@ -19,6 +19,8 @@ Updated: 2026-10-20
 - Avoid `make run` for previews because it kills the process on port `8766` before starting.
 - `make deps` / `make update` pulls with `--ff-only` before updating dependencies, commits only tracked root Python and dashboard web dependency
   manifests/lockfiles with `Update dependencies` when changed, and pushes. Unrelated staged files are excluded; failed pulls stop the workflow.
+- `make pull` updates submodules recursively, commits only changed submodule pointers with `Update submodules`, and pushes the main repository.
+  Unrelated staged files are excluded; unchanged pointers do not create a commit. Failed update or commit steps prevent pushing.
 
 ## Presentation
 

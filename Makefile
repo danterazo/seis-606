@@ -23,7 +23,7 @@ upgrade:
 verify-gpu:
 	poetry run python -c "import llama_cpp.llama_cpp as lib; print('supports_gpu_offload =', bool(lib.llama_supports_gpu_offload()))"
 
-.PHONY: format fix fix-python fix-web fix-markdown lint lint-python lint-web
+.PHONY: format fix fix-python fix-web fix-markdown lint lint-python lint-web pull protect-submodules
 
 format: fix
 
@@ -52,6 +52,18 @@ pull:
 	git pull
 	$(MAKE) protect-submodules
 	git submodule foreach --recursive 'git switch main && git pull --ff-only origin main'
+	@submodules=(); \
+	while IFS= read -r -d '' entry; do \
+		if [[ "$$entry" == '160000 '* ]]; then \
+			submodules+=("$${entry#*$$'\t'}"); \
+		fi; \
+	done < <(git ls-files --stage -z); \
+	if [[ $${#submodules[@]} -gt 0 ]] && ! git diff --quiet --ignore-submodules=dirty HEAD -- "$${submodules[@]}"; then \
+		git commit --only -m "Update submodules" -- "$${submodules[@]}"; \
+	else \
+		echo "No submodule updates to commit."; \
+	fi
+	git push
 
 protect-submodules:
 	git submodule update --init --recursive
