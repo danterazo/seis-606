@@ -45,6 +45,17 @@ These are discussion items, not authorization to change code or deployment. Upda
 
 ## Verified Security Posture
 
+### Bounded Activity Logging
+
+- Implemented and tested on 2026-10-20: the active JSONL request log is capped at 1 MiB, with batched atomic compaction retaining recent complete
+  records. Reads inspect only a bounded tail and return up to 500 recent records; oversized existing files shrink on the next successful write.
+- Invalid JSON, invalid encoding, and incomplete records are skipped; subsequent writes recover incomplete trailing records. Logging errors do not
+  break dashboard responses, and log read/clear failures return generic HTTP 503 responses. Failed compaction preserves the original file.
+- Focused tests cover retention, old oversized files, concurrent writes, corruption, simulated filesystem/replacement failures, and API recovery.
+- This is a local convenience log, not a durable audit trail. No deployment, authentication, SSH privilege, or server-lifecycle changes were made.
+
+### Original Review
+
 As reviewed on 2026-10-18:
 
 - The application defaults to `127.0.0.1`.

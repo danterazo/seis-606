@@ -70,7 +70,12 @@ class DashboardHandler(SimpleHTTPRequestHandler):
             self._send_json(status=HTTPStatus.OK, payload={"version": BOOT_ID, "assets": assets})
             return
         if url.path == LOGS_PATH:
-            self._send_json(status=HTTPStatus.OK, payload={"entries": self.activity_log.read()})
+            try:
+                entries = self.activity_log.read()
+            except OSError:
+                self._send_json(status=HTTPStatus.SERVICE_UNAVAILABLE, payload={"error": "Activity log is unavailable."})
+            else:
+                self._send_json(status=HTTPStatus.OK, payload={"entries": entries})
             return
         if url.path == DEVICES_PATH:
             if self.devices is None:
@@ -93,7 +98,11 @@ class DashboardHandler(SimpleHTTPRequestHandler):
             if not self._is_local_same_origin_request(action="clear-logs"):
                 self._send_json(status=HTTPStatus.FORBIDDEN, payload={"error": "Log controls require a same-origin localhost request."})
                 return
-            self.activity_log.clear()
+            try:
+                self.activity_log.clear()
+            except OSError:
+                self._send_json(status=HTTPStatus.SERVICE_UNAVAILABLE, payload={"error": "Activity log could not be cleared."})
+                return
             self._send_json(status=HTTPStatus.OK, payload={"message": "Activity log cleared."})
             return
         if request_path not in (REBOOT_PATH, START_PATH):

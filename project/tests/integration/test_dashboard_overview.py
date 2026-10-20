@@ -191,6 +191,51 @@ def test_activity_log_records_access_without_payload_and_can_be_cleared(tmp_path
         thread.join(timeout=5)
 
 
+@pytest.mark.parametrize("operation", ["read", "clear", "record"])
+def test_activity_log_failures_return_safe_errors_and_recover(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, operation: str) -> None:
+    class UnavailablePve:
+        def fetch(self) -> ClusterSnapshot:
+            raise StatusSourceError("PVE unavailable")
+
+        def fetch_fresh(self) -> ClusterSnapshot:
+            return self.fetch()
+
+    activity_log = ActivityLog(tmp_path / "access.jsonl")
+    http_server = create_server(settings=Settings.from_env(environ={"PORT": "0"}), source=UnavailablePve(), activity_log=activity_log)
+    thread = threading.Thread(target=http_server.serve_forever, daemon=True)
+    thread.start()
+    base = f"http://127.0.0.1:{http_server.server_port}"
+
+    def fail(*args: object, **kwargs: object) -> None:
+        raise PermissionError("private filesystem detail")
+
+    try:
+        with monkeypatch.context() as patch:
+            patch.setattr(activity_log, operation, fail)
+            request = (
+                Request(f"{base}/api/logs/clear", data=b"", method="POST", headers={"Origin": base, "X-Homelab-Action": "clear-logs"})
+                if operation == "clear"
+                else Request(f"{base}/api/logs")
+            )
+            if operation == "record":
+                with urlopen(request, timeout=5) as response:
+                    assert response.status == 200
+                    assert json.load(response) == {"entries": []}
+            else:
+                with pytest.raises(HTTPError) as caught:
+                    urlopen(request, timeout=5)
+                assert caught.value.code == 503
+                payload = json.load(caught.value)
+                assert payload == {"error": "Activity log could not be cleared." if operation == "clear" else "Activity log is unavailable."}
+        with urlopen(f"{base}/api/logs", timeout=5) as response:
+            assert response.status == 200
+            assert "entries" in json.load(response)
+    finally:
+        http_server.shutdown()
+        http_server.server_close()
+        thread.join(timeout=5)
+
+
 def test_reboot_endpoint_checks_origin_and_validates_commands_before_ssh() -> None:
     calls: list[Sequence[str]] = []
 

@@ -104,6 +104,18 @@ Only one reboot submission runs at a time, and attempts for a guest have a 30-se
 guest before retrying. Success means the command was submitted, not that the OS has finished rebooting. Polling and node/router discovery remain
 read-only. Automated tests use fake SSH; browser action tests intercept requests and do not reboot real guests.
 
+### Activity Log
+
+Request metadata is stored locally in `project/logs/access.jsonl`, excluded from Git. The active log is capped at 1 MiB. When an append would exceed
+that cap, the server keeps roughly the newest half of the file as complete records and atomically replaces it before continuing. A temporary file in
+the same directory is used during compaction. Existing oversized logs are read only within the cap and shrink on the next successful write.
+`GET /api/logs` returns up to 500 recent records; malformed, invalidly encoded, and incomplete records are skipped. The next write discards an
+incomplete trailing record so it cannot corrupt the new entry.
+
+Logging failures do not prevent dashboard responses. Log read or clear failures return HTTP 503 with a generic message rather than filesystem details;
+the server retries normally on subsequent requests. Failed compaction preserves the original log. This is a bounded convenience log, not a durable
+security audit trail. Clearing still requires the existing localhost, same-origin, and action-header checks.
+
 ### Device Names and Leases
 
 Hostname display avoids inferred product names, title casing, code splitting, and suffix formatting. ASCII Icelandic and Japanese name parts are
