@@ -1270,10 +1270,10 @@ function renderTopology(nodes) {
         ? [
             svg("image", {
               href: TAILSCALE_LOGO_URL,
-              x: x - 48,
-              y: nodeY + 53,
-              width: 12,
-              height: 12,
+              x: x - 50,
+              y: nodeY + 52,
+              width: 14,
+              height: 14,
               role: "img",
               "aria-label": "Tailscale VPN",
             }),

@@ -1,12 +1,12 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="34 32 60 60">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="38 33 55 55">
   <title>Tailscale mark</title>
   <circle cx="45.6297" cy="60.5186" r="6.62966" fill="#141414" />
   <circle cx="65.5186" cy="60.5186" r="6.62966" fill="#141414" />
-  <circle opacity="0.2" cx="45.6297" cy="80.4077" r="6.62966" fill="#141414" />
-  <circle opacity="0.2" cx="85.4077" cy="80.4077" r="6.62966" fill="#141414" />
+  <circle opacity="0.65" cx="45.6297" cy="80.4077" r="6.62966" fill="#141414" />
+  <circle opacity="0.65" cx="85.4077" cy="80.4077" r="6.62966" fill="#141414" />
   <circle cx="65.5186" cy="80.4077" r="6.62966" fill="#141414" />
   <circle cx="85.4077" cy="60.5186" r="6.62966" fill="#141414" />
-  <circle opacity="0.2" cx="45.6297" cy="40.6297" r="6.62966" fill="#141414" />
-  <circle opacity="0.2" cx="65.5186" cy="40.6297" r="6.62966" fill="#141414" />
-  <circle opacity="0.2" cx="85.4077" cy="40.6297" r="6.62966" fill="#141414" />
+  <circle opacity="0.65" cx="45.6297" cy="40.6297" r="6.62966" fill="#141414" />
+  <circle opacity="0.65" cx="65.5186" cy="40.6297" r="6.62966" fill="#141414" />
+  <circle opacity="0.65" cx="85.4077" cy="40.6297" r="6.62966" fill="#141414" />
 </svg>

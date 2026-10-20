@@ -1780,10 +1780,12 @@ span.health-badge[role="button"] {
   display: inline-flex;
   align-items: center;
   gap: 4px;
+  line-height: 1;
+  vertical-align: middle;
 }
 .vpn-icon {
-  width: 12px;
-  height: 12px;
+  width: 14px;
+  height: 14px;
   flex: none;
 }
 
