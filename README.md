@@ -7,7 +7,9 @@ automatic tasks for this trusted workspace; use **Tasks: Manage Automatic Tasks*
 dashboard automatically. To reopen the pair after closing it, use **Tasks: Run Task** and select **Open default terminal layout**.
 
 The **New Terminal** button creates one ordinary shell, not the startup layout. Deleting a terminal intentionally removes it; session persistence
-restores terminals left open when VS Code closes, not terminals explicitly deleted. There is no Pandoc/PDF export task in this repository.
+restores terminals left open when VS Code closes, not terminals explicitly deleted.
+
+The manual **Markdown: Export PDF (Pandoc)** task exports the active Markdown file to PDF; it does not run automatically with the terminal layout.
 
 The startup `make` tab icon uses pink/magenta and the initial `bash` tab icon uses gold/yellow, with exact shades supplied by the active theme. These
 colors apply only to the two startup tasks; ordinary new Bash terminals and splits retain the default teal color.

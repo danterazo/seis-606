@@ -61,6 +61,23 @@
         "runOn": "folderOpen"
       },
       "problemMatcher": []
+    },
+    {
+      "label": "Markdown: Export PDF (Pandoc)",
+      "type": "process",
+      "command": "pandoc",
+      "args": [
+        "${fileBasename}",
+        "--pdf-engine=xelatex",
+        "-V",
+        "geometry:margin=0.7in",
+        "-o",
+        "${fileDirname}/${fileBasenameNoExtension}.pdf"
+      ],
+      "options": {
+        "cwd": "${fileDirname}"
+      },
+      "problemMatcher": []
     }
   ]
 }
