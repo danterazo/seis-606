@@ -12,6 +12,11 @@ Updated: 2026-10-20
 
 ## Development Workflow
 
+- Manage reusable class-wide maintenance across all top-level class repositories under `/home/dante/code/coursework` (currently `seis-606-vibe` and
+  `seis-765-ops`). For changes applicable across classes, inspect each sibling's instructions and memory, apply every compatible counterpart, and
+  validate and update affected documentation and memory in each repo during the same task. Preserve course-specific differences, unrelated work,
+  independent Git histories, and per-repo commit/push approvals. Do not treat nested course-owned submodules as class repositories or apply
+  assignment-specific changes to other classes. Recheck the sibling inventory for future classes; report incompatible or blocked counterparts.
 - The user runs the local dashboard server to observe changes, commonly on `127.0.0.1:8766`. Reuse its existing shared browser tab without asking the
   user to share it again.
 - If no dashboard tab exists, open a browser tab at the already-running server; do not start a server to create a preview.
