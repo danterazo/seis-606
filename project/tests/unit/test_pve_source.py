@@ -153,6 +153,20 @@ def test_only_tracked_guest_tags_are_kept_and_use_pve_colors() -> None:
     ]
 
 
+def test_vpn_tag_is_tracked_only_for_lxcs() -> None:
+    resources: list[dict[str, Any]] = [
+        {"type": "node", "node": "cerulean", "status": "online"},
+        {"type": "lxc", "vmid": 116, "node": "cerulean", "name": "qbittorrent", "status": "stopped", "pool": "prod", "tags": "vpn"},
+        {"type": "qemu", "vmid": 117, "node": "cerulean", "name": "vm", "status": "running", "pool": "prod", "tags": "vpn"},
+    ]
+    snapshot: ClusterSnapshot = make_source(stdout=documents(resources=resources, cluster_status=[])).fetch()
+
+    container_tags: tuple[GuestTag, ...] = snapshot.nodes[0].guests[0].tags
+    vm_tags: tuple[GuestTag, ...] = snapshot.nodes[0].guests[1].tags
+    assert [(tag.name, tag.color) for tag in container_tags] == [("prod", "#d64545"), ("vpn", "#c86b1a")]
+    assert [tag.name for tag in vm_tags] == ["prod"]
+
+
 def test_dense_pool_guest_is_prod() -> None:
     resources: list[dict[str, Any]] = [
         {"type": "node", "node": "cerulean", "status": "online"},

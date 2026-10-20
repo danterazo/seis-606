@@ -250,6 +250,11 @@ const TAG_ICONS = {
     "M5.3 1.5h1.6V4H5.3zM9.1 1.5h1.6V4H9.1zM5.3 12h1.6v2.5H5.3zM9.1 12h1.6v2.5H9.1z",
     "M1.5 5.3H4v1.6H1.5zM1.5 9.1H4v1.6H1.5zM12 5.3h2.5v1.6H12zM12 9.1h2.5v1.6H12z",
   ],
+  vpn: [
+    "M5 7V5a3 3 0 1 1 6 0v2h-1.5V5a1.5 1.5 0 0 0-3 0v2z",
+    "M3.5 7h9v7h-9z",
+    "M8 9a1 1 0 0 0-.5 1.866V13h1v-2.134A1 1 0 0 0 8 9z",
+  ],
 };
 
 /** brand marks for GPU guests, picked by words in the guest name; the first match wins. `pad` shrinks a mark inside its badge */

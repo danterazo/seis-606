@@ -27,6 +27,7 @@ TRACKED_TAGS: Final[tuple[TrackedTag, ...]] = (
     TrackedTag(name="gpu", letter="G", default_color="#8e55c9"),
     TrackedTag(name="primary", letter="I", default_color="#0f8f94"),
     TrackedTag(name="secondary", letter="II", default_color="#a3174f"),
+    TrackedTag(name="vpn", letter="V", default_color="#c86b1a"),
 )
 # the environment comes from the guest's resource pool, not from tags: members of these pools are prod, everything else is dev
 PROD_POOLS: Final[frozenset[str]] = frozenset({"prod", "dense"})
@@ -59,11 +60,15 @@ def _tag_style_colors(*, cluster_options: Optional[JsonObject]) -> dict[str, tup
     return colors
 
 
-def _parse_tags(*, row: JsonObject, colors: Mapping[str, tuple[str, Optional[str]]]) -> tuple[GuestTag, ...]:
+def _parse_tags(*, row: JsonObject, kind: GuestKind, colors: Mapping[str, tuple[str, Optional[str]]]) -> tuple[GuestTag, ...]:
     is_prod: bool = str(row.get("pool") or "").lower() in PROD_POOLS
     environment: TrackedTag = PROD_TAG if is_prod else DEV_TAG
     names: list[str] = sorted(
-        (name for name in re.split(r"[;, ]+", str(row.get("tags") or "")) if name.lower() in _TRACKED_ORDER),
+        (
+            name
+            for name in re.split(r"[;, ]+", str(row.get("tags") or ""))
+            if name.lower() in _TRACKED_ORDER and (kind is GuestKind.CONTAINER or name.lower() != "vpn")
+        ),
         key=lambda name: _TRACKED_ORDER[name.lower()],
     )
     tracked_tags: list[TrackedTag] = [environment, *(_TRACKED_BY_NAME[name.lower()] for name in names)]
@@ -96,7 +101,7 @@ def _parse_guest(*, row: JsonObject, tag_colors: Mapping[str, tuple[str, Optiona
         kind=kind,
         state=_GUEST_STATES.get(str(row.get("status")), GuestState.UNKNOWN),
         resources=_resources(row=row),
-        tags=_parse_tags(row=row, colors=tag_colors),
+        tags=_parse_tags(row=row, kind=kind, colors=tag_colors),
     )
 
 
