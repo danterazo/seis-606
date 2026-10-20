@@ -13,15 +13,15 @@ Updated: 2026-10-20
 ## Development Workflow
 
 - On 2026-10-20, the user requested a persistent/default VS Code split for this repo. `.vscode/tasks.json` defines an `Open default terminal layout`
-  folder-open/manual task launching the left `run` task and right `bash` shell in one presentation group; automatic tasks require workspace consent.
-  The `run` task executes `make run`, which stops any process already listening on port 8766 before starting the dashboard. New Terminal creates an
-  ordinary teal shell, not the startup pair; use the layout task to recreate deleted panes. Persistence does not restore explicitly deleted terminals.
-  The Pandoc PDF export task is separate and manual. Git-ignored `.vscode/settings.json` explicitly enables persistence, revival on exit/window close,
-  task reconnection, and 10,000 lines of saved scrollback. JSON and configuration assertions pass; actual close/reopen restoration remains unverified
-  to avoid disrupting user-managed terminals.
-- The startup `run` tab uses a pink/magenta play icon (`terminal.ansiMagenta`); the initial `bash` tab icon uses gold/yellow (`terminal.ansiYellow`).
-  Keep later ordinary Bash terminals/splits on the user's default teal (`terminal.ansiCyan`); do not recolor the Bash profile or global default. Exact
-  shades depend on the active theme; visual rendering remains unverified without recreating the user's terminals.
+  folder-open/manual task launching the left `dashboard` task and right `bash` shell in one presentation group; automatic tasks require workspace
+  consent. The `dashboard` task executes `make run`, which stops any process already listening on port 8766 before starting the dashboard. New
+  Terminal creates an ordinary teal shell, not the startup pair; use the layout task to recreate deleted panes. Persistence does not restore
+  explicitly deleted terminals. The Pandoc PDF export task is separate and manual. Git-ignored `.vscode/settings.json` explicitly enables persistence,
+  revival on exit/window close, task reconnection, and 10,000 lines of saved scrollback. JSON and configuration assertions pass; actual close/reopen
+  restoration remains unverified to avoid disrupting user-managed terminals.
+- The startup `dashboard` tab uses a pink/magenta play icon (`terminal.ansiMagenta`); the initial `bash` tab icon uses gold/yellow
+  (`terminal.ansiYellow`). Keep later ordinary Bash terminals/splits on the user's default teal (`terminal.ansiCyan`); do not recolor the Bash profile
+  or global default. Exact shades depend on the active theme; visual rendering remains unverified without recreating the user's terminals.
 - Manage reusable class-wide maintenance across all top-level class repositories under `/home/dante/code/coursework` (currently `seis-606-vibe` and
   `seis-765-ops`). For changes applicable across classes, inspect each sibling's instructions and memory, apply every compatible counterpart, and
   validate and update affected documentation and memory in each repo during the same task. Preserve course-specific differences, unrelated work,
