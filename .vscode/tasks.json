@@ -2,14 +2,14 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "make",
+      "label": "run",
       "type": "process",
       "icon": {
-        "id": "terminal",
+        "id": "play",
         "color": "terminal.ansiMagenta"
       },
-      "command": "bash",
-      "args": ["-i"],
+      "command": "make",
+      "args": ["run"],
       "options": {
         "cwd": "${workspaceFolder}"
       },
@@ -55,7 +55,7 @@
     },
     {
       "label": "Open default terminal layout",
-      "dependsOn": ["make", "bash"],
+      "dependsOn": ["run", "bash"],
       "dependsOrder": "parallel",
       "runOptions": {
         "runOn": "folderOpen"
