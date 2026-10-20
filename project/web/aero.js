@@ -116,6 +116,38 @@ function svg(tag, attrs = {}, children = []) {
   return element;
 }
 
+/** @param {string | null} address */
+const isVpnAddress = (address) => address !== null && /^100\.100\.\d{1,3}\.\d{1,3}$/.test(address);
+
+/** @param {Readonly<Record<string, string | number>>} [attributes] @returns {SVGElement} */
+function vpnIcon(attributes = {}) {
+  return svg(
+    "svg",
+    { viewBox: "0 0 24 24", class: "vpn-icon", role: "img", "aria-label": "VPN address", ...attributes },
+    [
+      svg("rect", { width: 24, height: 24, rx: 7.5, fill: "#1e1e1e" }),
+      ...[
+        [7.5, 7.5, "#808080"],
+        [12, 7.5, "#808080"],
+        [16.5, 7.5, "#808080"],
+        [7.5, 12, "#ffffff"],
+        [12, 12, "#ffffff"],
+        [16.5, 12, "#ffffff"],
+        [7.5, 16.5, "#808080"],
+        [12, 16.5, "#ffffff"],
+        [16.5, 16.5, "#808080"],
+      ].map(([cx, cy, fill]) => svg("circle", { cx, cy, r: 1.5, fill })),
+    ],
+  );
+}
+
+/** @param {string} address */
+function addressLabel(address) {
+  return isVpnAddress(address)
+    ? el("span", { className: "vpn-address" }, [vpnIcon(), address])
+    : document.createTextNode(address);
+}
+
 /** @param {number} value */
 const clamp = (value) => Math.min(100, Math.max(0, value));
 
@@ -642,7 +674,7 @@ function renderNodeList(nodes) {
         el("span", { className: "node-meta" }, [
           el("strong", { text: nodeLabel(node) }),
           statePill(node.state),
-          el("small", { text: node.address ?? "Address unknown" }),
+          el("small", {}, [node.address ? addressLabel(node.address) : "Address unknown"]),
         ]),
       ],
     );
@@ -1254,7 +1286,12 @@ function renderTopology(nodes) {
         ],
       ),
       svgText({ x, y: nodeY + 46, text: nodeLabel(node), className: "topo-label" }),
-      svgText({ x, y: nodeY + 62, text: node.address ?? "Address Unknown", className: "topo-sub" }),
+      ...(isVpnAddress(node.address)
+        ? [
+            vpnIcon({ x: x - 53, y: nodeY + 51, class: "topo-vpn-icon" }),
+            svgText({ x: x + 4, y: nodeY + 62, text: node.address ?? "", className: "topo-sub" }),
+          ]
+        : [svgText({ x, y: nodeY + 62, text: node.address ?? "Address Unknown", className: "topo-sub" })]),
     );
 
     const shown = node.guests.slice(0, MAX_TOPOLOGY_GUESTS);

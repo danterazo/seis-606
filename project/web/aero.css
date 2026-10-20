@@ -1776,6 +1776,16 @@ span.health-badge[role="button"] {
 .tile small {
   color: var(--ink-soft);
 }
+.vpn-address {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.vpn-icon {
+  width: 16px;
+  height: 16px;
+  flex: none;
+}
 
 .node-avatar {
   flex: none;
@@ -2220,6 +2230,10 @@ span.health-badge[role="button"] {
 .topo-sub {
   fill: var(--ink-soft);
   font-size: 11px;
+}
+.topo-vpn-icon {
+  width: 16px;
+  height: 16px;
 }
 .topo-pill {
   fill: rgba(255, 255, 255, 0.92);
