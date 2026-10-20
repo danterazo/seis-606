@@ -13,9 +13,12 @@ Updated: 2026-10-20
 ## Development Workflow
 
 - On 2026-10-20, the user requested a persistent/default VS Code split for this repo: interactive panes labeled `make` and `bash`, without running
-  `make run` automatically. `.vscode/tasks.json` defines folder-open tasks sharing one presentation group; automatic tasks require workspace consent.
-  Git-ignored `.vscode/settings.json` explicitly enables persistence, revival on exit/window close, task reconnection, and 10,000 lines of saved
-  scrollback. JSON and configuration assertions pass; actual close/reopen restoration remains unverified to avoid disrupting user-managed terminals.
+  `make run` automatically. `.vscode/tasks.json` defines an `Open default terminal layout` folder-open/manual task launching both shells in one
+  presentation group; automatic tasks require workspace consent. New Terminal creates an ordinary teal shell, not the startup pair; use the layout
+  task to recreate deleted panes. Persistence does not restore explicitly deleted terminals. The user requested removal of the Pandoc PDF export task,
+  which is no longer defined. Git-ignored `.vscode/settings.json` explicitly enables persistence, revival on exit/window close, task reconnection, and
+  10,000 lines of saved scrollback. JSON and configuration assertions pass; actual close/reopen restoration remains unverified to avoid disrupting
+  user-managed terminals.
 - The default terminal pair uses task-scoped icon colors: `make` is pink/magenta (`terminal.ansiMagenta`), and the initial `bash` is gold/yellow
   (`terminal.ansiYellow`). Keep later ordinary Bash terminals/splits on the user's default teal (`terminal.ansiCyan`); do not recolor the Bash profile
   or global default to implement startup-task colors. Exact shades depend on the active theme; configuration checks pass, visual rendering remains

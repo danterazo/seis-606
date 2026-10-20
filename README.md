@@ -4,7 +4,10 @@
 
 Opening this repository in VS Code starts two interactive Bash panes, labeled `make` and `bash`, in one split terminal group. If prompted, allow
 automatic tasks for this trusted workspace; use **Tasks: Manage Automatic Tasks** to change that choice. Neither pane runs `make` or starts the
-dashboard automatically. The panes can also be opened using **Tasks: Run Task**.
+dashboard automatically. To reopen the pair after closing it, use **Tasks: Run Task** and select **Open default terminal layout**.
+
+The **New Terminal** button creates one ordinary shell, not the startup layout. Deleting a terminal intentionally removes it; session persistence
+restores terminals left open when VS Code closes, not terminals explicitly deleted. There is no Pandoc/PDF export task in this repository.
 
 The startup `make` tab icon uses pink/magenta and the initial `bash` tab icon uses gold/yellow, with exact shades supplied by the active theme. These
 colors apply only to the two startup tasks; ordinary new Bash terminals and splits retain the default teal color.

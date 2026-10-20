@@ -16,7 +16,6 @@
       "isBackground": true,
       "problemMatcher": [],
       "runOptions": {
-        "runOn": "folderOpen",
         "instanceLimit": 1
       },
       "presentation": {
@@ -43,7 +42,6 @@
       "isBackground": true,
       "problemMatcher": [],
       "runOptions": {
-        "runOn": "folderOpen",
         "instanceLimit": 1
       },
       "presentation": {
@@ -56,19 +54,11 @@
       }
     },
     {
-      "label": "Markdown: Export PDF (Pandoc)",
-      "type": "process",
-      "command": "pandoc",
-      "args": [
-        "${fileBasename}",
-        "--pdf-engine=xelatex",
-        "-V",
-        "geometry:margin=0.7in",
-        "-o",
-        "${fileDirname}/${fileBasenameNoExtension}.pdf"
-      ],
-      "options": {
-        "cwd": "${fileDirname}"
+      "label": "Open default terminal layout",
+      "dependsOn": ["make", "bash"],
+      "dependsOrder": "parallel",
+      "runOptions": {
+        "runOn": "folderOpen"
       },
       "problemMatcher": []
     }
