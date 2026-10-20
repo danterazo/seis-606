@@ -25,6 +25,7 @@ _HEX_COLOR: Final[re.Pattern[str]] = re.compile(r"[0-9a-fA-F]{6}")
 TRACKED_TAGS: Final[tuple[TrackedTag, ...]] = (
     TrackedTag(name="docker", letter="K", default_color="#2b7fd6"),
     TrackedTag(name="gpu", letter="G", default_color="#8e55c9"),
+    TrackedTag(name="nas", letter="N", default_color="#5d6b35"),
     TrackedTag(name="primary", letter="I", default_color="#0f8f94"),
     TrackedTag(name="secondary", letter="II", default_color="#a3174f"),
     TrackedTag(name="vpn", letter="V", default_color="#c86b1a"),

@@ -137,7 +137,7 @@ def test_only_tracked_guest_tags_are_kept_and_use_pve_colors() -> None:
             "name": "caddy",
             "status": "running",
             "pool": "prod",
-            "tags": "secondary;dev;gpu;docker;lab;alt-arch",
+            "tags": "secondary;dev;gpu;docker;NAS;lab;alt-arch",
         },
     ]
     options: dict[str, Any] = {"tag-style": "color-map=dev:FFFF00;lab:112233:EEEEEE,shape=full"}
@@ -149,6 +149,7 @@ def test_only_tracked_guest_tags_are_kept_and_use_pve_colors() -> None:
         ("prod", "P", "#d64545", "#ffffff"),
         ("docker", "K", "#2b7fd6", "#ffffff"),
         ("gpu", "G", "#8e55c9", "#ffffff"),
+        ("nas", "N", "#5d6b35", "#ffffff"),
         ("secondary", "II", "#a3174f", "#ffffff"),
     ]
 
