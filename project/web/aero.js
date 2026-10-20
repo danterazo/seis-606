@@ -250,12 +250,7 @@ const TAG_ICONS = {
     "M5.3 1.5h1.6V4H5.3zM9.1 1.5h1.6V4H9.1zM5.3 12h1.6v2.5H5.3zM9.1 12h1.6v2.5H9.1z",
     "M1.5 5.3H4v1.6H1.5zM1.5 9.1H4v1.6H1.5zM12 5.3h2.5v1.6H12zM12 9.1h2.5v1.6H12z",
   ],
-  nas: [
-    "M3 1.5h10A2.5 2.5 0 0 1 15.5 4v8a2.5 2.5 0 0 1-2.5 2.5H3A2.5 2.5 0 0 1 .5 12V4A2.5 2.5 0 0 1 3 1.5z M1 10.75h14v1.25H1z",
-    "M8 2.75a3.25 3.25 0 1 0 0 6.5 3.25 3.25 0 0 0 0-6.5z M8 4.25a1.75 1.75 0 1 1 0 3.5 1.75 1.75 0 0 1 0-3.5z",
-    "M8 5.5a.5.5 0 1 0 0 1 .5.5 0 0 0 0-1z",
-    "M12.5 12a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5z",
-  ],
+  nas: ["M8 1.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13z M8 6a2 2 0 1 1 0 4 2 2 0 0 1 0-4z"],
   vpn: [
     "M8 1.25 14.25 3.7v3.65c0 3.3-2.5 5.8-6.25 7.4-3.75-1.6-6.25-4.1-6.25-7.4V3.7L8 1.25z M8 5a1.55 1.55 0 0 0-1.55 1.55c0 .7.46 1.3 1.1 1.49l-.9 2.7h2.7l-.9-2.7a1.55 1.55 0 0 0 1.1-1.49A1.55 1.55 0 0 0 8 5z",
   ],
@@ -297,9 +292,10 @@ function tagIcon(tag, guest) {
   }
   const paths = TAG_ICONS[/** @type {keyof typeof TAG_ICONS} */ (key)];
   if (paths === undefined) return undefined;
-  return key === "docker"
-    ? { paths, box: 16, pad: 0, transform: "translate(0.75 0) translate(0 -0.825) translate(8 8) scale(1.1) translate(-8 -8)" }
-    : { paths, box: 16, pad: 0 };
+  if (key === "docker")
+    return { paths, box: 16, pad: 0, transform: "translate(0.75 0) translate(0 -0.825) translate(8 8) scale(1.1) translate(-8 -8)" };
+  if (key === "vpn") return { paths, box: 16, pad: 0, transform: "translate(0 0.5)" };
+  return { paths, box: 16, pad: 0 };
 }
 
 /** @param {{ paths: string[], transform?: string }} icon @returns {Node[]} */
