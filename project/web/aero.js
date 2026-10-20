@@ -119,26 +119,11 @@ function svg(tag, attrs = {}, children = []) {
 /** @param {string | null} address */
 const isVpnAddress = (address) => address !== null && /^100\.100\.\d{1,3}\.\d{1,3}$/.test(address);
 
-/** @param {Readonly<Record<string, string | number>>} [attributes] @returns {SVGElement} */
-function vpnIcon(attributes = {}) {
-  return svg(
-    "svg",
-    { viewBox: "0 0 24 24", class: "vpn-icon", role: "img", "aria-label": "VPN address", ...attributes },
-    [
-      svg("rect", { width: 24, height: 24, rx: 7.5, fill: "#1e1e1e" }),
-      ...[
-        [7.5, 7.5, "#808080"],
-        [12, 7.5, "#808080"],
-        [16.5, 7.5, "#808080"],
-        [7.5, 12, "#ffffff"],
-        [12, 12, "#ffffff"],
-        [16.5, 12, "#ffffff"],
-        [7.5, 16.5, "#808080"],
-        [12, 16.5, "#ffffff"],
-        [16.5, 16.5, "#808080"],
-      ].map(([cx, cy, fill]) => svg("circle", { cx, cy, r: 1.5, fill })),
-    ],
-  );
+const TAILSCALE_MARK_URL = "/images/tailscale-mark.svg";
+
+/** @returns {HTMLImageElement} */
+function vpnIcon() {
+  return el("img", { className: "vpn-icon", attrs: { src: TAILSCALE_MARK_URL, alt: "Tailscale VPN" } });
 }
 
 /** @param {string} address */
@@ -1288,7 +1273,15 @@ function renderTopology(nodes) {
       svgText({ x, y: nodeY + 46, text: nodeLabel(node), className: "topo-label" }),
       ...(isVpnAddress(node.address)
         ? [
-            vpnIcon({ x: x - 53, y: nodeY + 51, class: "topo-vpn-icon" }),
+            svg("image", {
+              href: TAILSCALE_MARK_URL,
+              x: x - 48,
+              y: nodeY + 53,
+              width: 12,
+              height: 12,
+              role: "img",
+              "aria-label": "Tailscale VPN",
+            }),
             svgText({ x: x + 4, y: nodeY + 62, text: node.address ?? "", className: "topo-sub" }),
           ]
         : [svgText({ x, y: nodeY + 62, text: node.address ?? "Address Unknown", className: "topo-sub" })]),

@@ -165,7 +165,7 @@ passwords.
 | `project/tests/integration/`                                | End-to-end dashboard behavior tests                                     |
 | `project/tests/unit/`                                       | Focused tests for dashboard modules                                     |
 | `project/web/`                                              | Browser interface, styles, scripts, and frontend tooling                |
-| `project/web/images/`                                       | Decorative and node-specific dashboard images                           |
+| `project/web/images/`                                       | Decorative and node-specific images, including the mark-only [Tailscale logo](https://upload.wikimedia.org/wikipedia/commons/4/4d/Tailscale-Logo-Black.svg) |
 
 ## Test
 

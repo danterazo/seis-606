@@ -1782,8 +1782,8 @@ span.health-badge[role="button"] {
   gap: 4px;
 }
 .vpn-icon {
-  width: 16px;
-  height: 16px;
+  width: 12px;
+  height: 12px;
   flex: none;
 }
 
@@ -2151,7 +2151,7 @@ span.health-badge[role="button"] {
 .topology {
   overflow-x: auto;
 }
-.topology svg {
+.topology > svg {
   display: block;
   width: 100%;
   min-width: 520px;
@@ -2230,10 +2230,6 @@ span.health-badge[role="button"] {
 .topo-sub {
   fill: var(--ink-soft);
   font-size: 11px;
-}
-.topo-vpn-icon {
-  width: 16px;
-  height: 16px;
 }
 .topo-pill {
   fill: rgba(255, 255, 255, 0.92);
