@@ -17,6 +17,9 @@ Updated: 2026-10-20
   validate and update affected documentation and memory in each repo during the same task. Preserve course-specific differences, unrelated work,
   independent Git histories, and per-repo commit/push approvals. Do not treat nested course-owned submodules as class repositories or apply
   assignment-specific changes to other classes. Recheck the sibling inventory for future classes; report incompatible or blocked counterparts.
+- "Other class repos" and "neighboring class repos" mean all sibling class repositories in the current repo's enclosing `coursework` directory,
+  excluding the current repository. Discover them without asking the user for paths or relying on a fixed class list; apply the requested work to
+  every applicable sibling under the maintenance and approval rules above. Do not include nested course-owned submodules.
 - The user runs the local dashboard server to observe changes, commonly on `127.0.0.1:8766`. Reuse its existing shared browser tab without asking the
   user to share it again.
 - If no dashboard tab exists, open a browser tab at the already-running server; do not start a server to create a preview.
