@@ -6,6 +6,9 @@ Opening this repository in VS Code starts two interactive Bash panes, labeled `m
 automatic tasks for this trusted workspace; use **Tasks: Manage Automatic Tasks** to change that choice. Neither pane runs `make` or starts the
 dashboard automatically. The panes can also be opened using **Tasks: Run Task**.
 
+The startup `make` tab icon uses pink/magenta and the initial `bash` tab icon uses gold/yellow, with exact shades supplied by the active theme. These
+colors apply only to the two startup tasks; ordinary new Bash terminals and splits retain the default teal color.
+
 Local workspace settings enable persistent terminal sessions, process revival on exit/window close, task reconnection, and 10,000 lines of saved
 scrollback. These settings live in the Git-ignored `.vscode/settings.json`; the default split is versioned in `.vscode/tasks.json`. Window reloads can
 reconnect to live processes, but full restarts revive shells rather than resume commands typed into them. WSL or host restarts terminate live

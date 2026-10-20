@@ -4,6 +4,10 @@
     {
       "label": "make",
       "type": "process",
+      "icon": {
+        "id": "terminal",
+        "color": "terminal.ansiMagenta"
+      },
       "command": "bash",
       "args": ["-i"],
       "options": {
@@ -27,6 +31,10 @@
     {
       "label": "bash",
       "type": "process",
+      "icon": {
+        "id": "terminal",
+        "color": "terminal.ansiYellow"
+      },
       "command": "bash",
       "args": ["-i"],
       "options": {

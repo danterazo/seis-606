@@ -16,6 +16,10 @@ Updated: 2026-10-20
   `make run` automatically. `.vscode/tasks.json` defines folder-open tasks sharing one presentation group; automatic tasks require workspace consent.
   Git-ignored `.vscode/settings.json` explicitly enables persistence, revival on exit/window close, task reconnection, and 10,000 lines of saved
   scrollback. JSON and configuration assertions pass; actual close/reopen restoration remains unverified to avoid disrupting user-managed terminals.
+- The default terminal pair uses task-scoped icon colors: `make` is pink/magenta (`terminal.ansiMagenta`), and the initial `bash` is gold/yellow
+  (`terminal.ansiYellow`). Keep later ordinary Bash terminals/splits on the user's default teal (`terminal.ansiCyan`); do not recolor the Bash profile
+  or global default to implement startup-task colors. Exact shades depend on the active theme; configuration checks pass, visual rendering remains
+  unverified without recreating the user's terminals.
 - Manage reusable class-wide maintenance across all top-level class repositories under `/home/dante/code/coursework` (currently `seis-606-vibe` and
   `seis-765-ops`). For changes applicable across classes, inspect each sibling's instructions and memory, apply every compatible counterpart, and
   validate and update affected documentation and memory in each repo during the same task. Preserve course-specific differences, unrelated work,
