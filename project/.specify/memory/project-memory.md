@@ -12,10 +12,11 @@ Updated: 2026-10-20
 
 ## Development Workflow
 
-- The user runs the local dashboard server to observe changes, commonly on `127.0.0.1:8766`. Reuse the existing server and browser page for UI
-  validation; do not start, restart, or stop a server the user manages unless explicitly asked.
-- If the existing server is unavailable, ask the user to start it instead of launching a duplicate. Avoid `make run` for previews because it kills the
-  process on port `8766` before starting.
+- The user runs the local dashboard server to observe changes, commonly on `127.0.0.1:8766`. Reuse its existing shared browser tab without asking the
+  user to share it again.
+- If no dashboard tab exists, open a browser tab at the already-running server; do not start a server to create a preview.
+- Do not start, restart, or stop a server the user manages unless explicitly asked. If the existing server is unavailable, ask the user to start it.
+- Avoid `make run` for previews because it kills the process on port `8766` before starting.
 
 ## Presentation
 

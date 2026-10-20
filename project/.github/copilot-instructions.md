@@ -16,7 +16,12 @@ Modify `.vscode/settings.json` only when the user explicitly requests it. Python
 - Verify documented paths, settings, and endpoints against the current workspace and implementation; add new entries and remove stale ones.
 - In README trees, mark explanatory annotations with `#` and keep annotation text lowercase. Preserve the exact case of real paths and identifiers.
 
-## Concurrent Agents and Commits
+## Local Preview Servers
+
+- Reuse the existing dashboard tab; do not ask the user to share it again. Use browser tooling to access it.
+- If no dashboard tab exists, open a new one at the already-running server, commonly `http://127.0.0.1:8766`; do not start a server just for a
+  preview.
+- Do not start, restart, or stop a server the user manages unless explicitly asked. If the existing server is unavailable, ask the user to start it.
 
 - Expect multiple agents to work in this repository concurrently.
 - Track this thread's changes; preserve unrelated staged, unstaged, and untracked work. Unrelated changes are not blockers.
