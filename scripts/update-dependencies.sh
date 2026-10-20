@@ -1,6 +1,10 @@
 #!/bin/bash
 set -euo pipefail
 
+REPO_ROOT=$(git rev-parse --show-toplevel)
+cd "$REPO_ROOT"
+git -c merge.autostash=false pull --ff-only --no-rebase
+
 # update system dependencies
 uv tool upgrade --all
 
@@ -8,7 +12,7 @@ uv tool upgrade --all
 poetry update
 
 # update and install dashboard's web dependencies
-REPO_NAME=$(basename "$(git rev-parse --show-toplevel)")
+REPO_NAME=$(basename "$REPO_ROOT")
 if [[ "$REPO_NAME" == "seis-606-vibe" ]]; then
   npm update --prefix project/web
   npm ci --prefix project/web
@@ -30,3 +34,12 @@ else
     (cd "$DIR" && uv sync --locked)
   done
 fi
+
+DEPENDENCY_FILES=()
+mapfile -d '' -t DEPENDENCY_FILES < <(git ls-files -z -- pyproject.toml poetry.lock project/web/package.json project/web/package-lock.json)
+if [[ ${#DEPENDENCY_FILES[@]} -gt 0 ]] && ! git diff --quiet HEAD -- "${DEPENDENCY_FILES[@]}"; then
+  git commit --only -m "Update dependencies" -- "${DEPENDENCY_FILES[@]}"
+else
+  echo "No dependency changes to commit."
+fi
+git push

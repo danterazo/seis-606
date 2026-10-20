@@ -17,6 +17,8 @@ Updated: 2026-10-20
 - If no dashboard tab exists, open a browser tab at the already-running server; do not start a server to create a preview.
 - Do not start, restart, or stop a server the user manages unless explicitly asked. If the existing server is unavailable, ask the user to start it.
 - Avoid `make run` for previews because it kills the process on port `8766` before starting.
+- `make deps` / `make update` pulls with `--ff-only` before updating dependencies, commits only tracked root Python and dashboard web dependency
+  manifests/lockfiles with `Update dependencies` when changed, and pushes. Unrelated staged files are excluded; failed pulls stop the workflow.
 
 ## Presentation
 
