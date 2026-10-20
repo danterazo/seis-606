@@ -16,13 +16,6 @@ Modify `.vscode/settings.json` only when the user explicitly requests it. Python
 - Verify documented paths, settings, and endpoints against the current workspace and implementation; add new entries and remove stale ones.
 - In README trees, mark explanatory annotations with `#` and keep annotation text lowercase. Preserve the exact case of real paths and identifiers.
 
-## Local Preview Servers
-
-- The user runs the dashboard server to observe changes. Reuse the existing dashboard server and browser page for UI validation; do not start,
-  restart, or stop a server the user manages unless explicitly asked.
-- If the existing server is unavailable, ask the user to start it rather than launching a duplicate. Avoid `make run` for previews because it kills
-  the process on port `8766` before starting.
-
 ## Concurrent Agents and Commits
 
 - Expect multiple agents to work in this repository concurrently.
