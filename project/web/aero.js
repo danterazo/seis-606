@@ -252,7 +252,9 @@ const TAG_ICONS = {
   ],
   nas: ["M3 1.5h8.5L14 4v9.5a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V2.5a1 1 0 0 1 1-1z M10.5 2.5h1.25V5H10.5z M4 7.5h8v5H4z"],
   vpn: [
-    "M8 1.25 14.25 3.7v3.65c0 3.3-2.5 5.8-6.25 7.4-3.75-1.6-6.25-4.1-6.25-7.4V3.7L8 1.25z M8 5a1.55 1.55 0 0 0-1.55 1.55c0 .7.46 1.3 1.1 1.49l-.9 2.7h2.7l-.9-2.7a1.55 1.55 0 0 0 1.1-1.49A1.55 1.55 0 0 0 8 5z",
+    "M0.5 8 3 5.9v1.4h2.2v1.4H3v1.4z M15.5 8 13 5.9v1.4h-2.2v1.4H13v1.4z",
+    "M6.1 7.7V5.8a1.9 1.9 0 0 1 3.8 0v1.9H8.7V5.8a.7.7 0 0 0-1.4 0v1.9z",
+    "M5.3 7.2h5.4c.5 0 .8.3.8.8v5c0 .5-.3.8-.8.8H5.3c-.5 0-.8-.3-.8-.8V8c0-.5.3-.8.8-.8z M8 8.7a.8.8 0 0 0-.5 1.4l-.3 1h1.6l-.3-1A.8.8 0 0 0 8 8.7z",
   ],
 };
 
@@ -294,7 +296,6 @@ function tagIcon(tag, guest) {
   if (paths === undefined) return undefined;
   if (key === "docker")
     return { paths, box: 16, pad: 0, transform: "translate(0.75 0) translate(0 -0.825) translate(8 8) scale(1.1) translate(-8 -8)" };
-  if (key === "vpn") return { paths, box: 16, pad: 0, transform: "translate(0 0.5)" };
   return { paths, box: 16, pad: 0 };
 }
 
