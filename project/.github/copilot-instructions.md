@@ -18,8 +18,10 @@ Modify `.vscode/settings.json` only when the user explicitly requests it. Python
 
 ## Local Preview Servers
 
-- The user runs the dashboard server to observe changes. Reuse the existing dashboard server and browser page for UI validation; do not start, restart, or stop a server the user manages unless explicitly asked.
-- If the existing server is unavailable, ask the user to start it rather than launching a duplicate. Avoid `make run` for previews because it kills the process on port `8766` before starting.
+- The user runs the dashboard server to observe changes. Reuse the existing dashboard server and browser page for UI validation; do not start,
+  restart, or stop a server the user manages unless explicitly asked.
+- If the existing server is unavailable, ask the user to start it rather than launching a duplicate. Avoid `make run` for previews because it kills
+  the process on port `8766` before starting.
 
 ## Concurrent Agents and Commits
 
