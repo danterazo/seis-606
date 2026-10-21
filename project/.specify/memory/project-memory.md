@@ -64,6 +64,8 @@ These are discussion items, not authorization to change code or deployment. Upda
 
 ## Code Cleanup
 
+- On 2026-10-21, aligned the web Biome schema with installed CLI `2.6.2`, clearing the informational schema-version warning from `make fix`.
+  The complete `npm --prefix project/web run lint` chain passed, including JavaScript type-checking; lint rules and dependency policy are unchanged.
 - Use `make fix` for supported Python/web lint fixes, Python/web/tracked-Markdown formatting, and final Python/web lint checks including JavaScript
   type-checking. `make format` is a compatibility alias; `make lint` is check-only. Unsupported fixes still require manual changes.
 - On 2026-10-18, the web fix workflow automatically repaired the HTML `no-raw-characters` ampersand error, and web lint/type-checks passed.
