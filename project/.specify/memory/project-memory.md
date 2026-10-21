@@ -24,7 +24,8 @@ Updated: 2026-10-21
   `terminal.integrated.hideOnStartup: "never"` in the workspace settings: with persistent sessions disabled, VS Code still opened a default shell
   before the folder-open task created the intended split. Restored `"whenEmpty"` to prevent that extra shell. Task commands, split grouping, icons,
   and the preview helper are unchanged; the helper already accepts the `dashboard` task name. New labels apply when the panes are next created; live
-  terminals and the dashboard were not recreated or restarted.
+  terminals and the dashboard were not recreated or restarted. The settings fix, task labels, and documentation were committed and pushed as
+  `a61f66b` (`Fix VS Code startup terminal layout`); unrelated Makefile and concurrent project-memory edits were preserved.
 - On 2026-10-21, Ovedur rollout verified the existing code Syncthing share delivered the dashboard-preview VSIX byte-identically. Ovedur WSL2 runs VS
   Code 1.142.0; its exact upstream source supports the same integrated-browser `reuseUrlFilter` command. Helper 0.1.1 lowers only the declared editor
   minimum to 1.142, without behavior changes or an editor upgrade. Seven tests and package/source checks pass; 0.1.1 is installed on both Marigold and
