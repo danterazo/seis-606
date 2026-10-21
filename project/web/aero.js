@@ -778,7 +778,7 @@ function hardwareErrorBadges(node) {
   const history = errors.incidents.filter((incident) => !incident.current_boot).length;
   const headline =
     errors.level === "unknown"
-      ? "HW Errors N/A"
+      ? "HW: N/A"
       : errors.level === "ok"
         ? "HW: Nominal"
         : current.length > 0
@@ -786,7 +786,7 @@ function hardwareErrorBadges(node) {
           : errors.incidents.length === 0
             ? "HW Errors: Counters"
             : `HW Errors: ${plural(history, "Past Incident")}`;
-  const staleness = errors.stale ? " · Stale" : "";
+  const staleness = errors.stale ? ", Stale" : "";
   const lines = [
     errors.findings.length === 0 ? "No hardware errors reported since the last check" : errors.findings.join("\n"),
     errors.stale ? (errors.error ?? "Data is stale") : null,
