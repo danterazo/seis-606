@@ -2,7 +2,7 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "dashboard | make run",
+      "label": "dashboard",
       "type": "process",
       "icon": {
         "id": "play",
@@ -28,7 +28,7 @@
       }
     },
     {
-      "label": "bash | workbench",
+      "label": "bash",
       "type": "process",
       "icon": {
         "id": "terminal",
@@ -55,7 +55,7 @@
     },
     {
       "label": "Open default terminal layout",
-      "dependsOn": ["dashboard | make run", "bash | workbench"],
+      "dependsOn": ["dashboard", "bash"],
       "dependsOrder": "parallel",
       "runOptions": {
         "runOn": "folderOpen"

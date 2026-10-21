@@ -15,7 +15,7 @@
   "python.languageServer": "Pylance",
   "task.reconnection": false,
   "terminal.integrated.enablePersistentSessions": false,
-  "terminal.integrated.hideOnStartup": "never",
+  "terminal.integrated.hideOnStartup": "whenEmpty",
   "terminal.integrated.persistentSessionReviveProcess": "never",
   "terminal.integrated.scrollback": 10000,
   "terminal.integrated.tabs.enabled": true

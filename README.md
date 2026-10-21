@@ -2,12 +2,12 @@
 
 ## VS Code Terminals
 
-Opening this repository in VS Code starts a split terminal group: the left `dashboard | make run` pane runs `make run`, and the right
-`bash | workbench` pane is an interactive shell. If prompted, allow automatic tasks for this trusted workspace; use **Tasks: Manage Automatic Tasks**
+Opening this repository in VS Code starts a split terminal group: the left `dashboard` pane runs `make run`, and the right `bash` pane is an
+interactive shell. If prompted, allow automatic tasks for this trusted workspace; use **Tasks: Manage Automatic Tasks**
 to change that choice. To reopen the pair after closing it, use **Tasks: Run Task** and select **Open default terminal layout**. The `make run` recipe
 stops any process already listening on port 8766 before starting the dashboard.
 
-The local **Homelab Dashboard Preview** extension waits for the `dashboard | make run` task's server to respond successfully, then loads or refreshes
+The local **Homelab Dashboard Preview** extension waits for the `dashboard` task's server to respond successfully, then loads or refreshes
 the integrated-browser tab at `http://127.0.0.1:8766/`. Existing dashboard tabs (including `localhost` URLs) are reused in place, preserving their pin
 and position. It also handles a dashboard task already running when the extension activates. Failed or stopped tasks do not open a browser; readiness
 checks stop after 60 seconds. Diagnostics appear in the **Homelab Dashboard Preview** output channel.
@@ -27,16 +27,14 @@ The startup `dashboard` tab uses a pink/magenta play icon, and the initial `bash
 theme. These colors apply only to the two startup tasks; ordinary new Bash terminals and splits retain the default teal color.
 
 Versioned workspace settings disable persistent terminal sessions, process revival, and task reconnection so old terminals are not restored alongside
-the default split. `terminal.integrated.hideOnStartup: "whenEmpty"` prevents an empty terminal panel from creating an extra shell before the automatic
-tasks reveal their split. Active terminals retain 10,000 lines of scrollback within the current session. These settings live in
+the default split. `terminal.integrated.hideOnStartup: "whenEmpty"` keeps VS Code from creating a default shell before the automatic tasks reveal
+their split. Active terminals retain 10,000 lines of scrollback within the current session. These settings live in
 `.vscode/settings.json`; the default split is defined in `.vscode/tasks.json`. Closing or reloading the window ends terminal sessions, including the
 dashboard; the automatic tasks recreate the default split when the repository opens again. Running the layout task manually does not close unrelated
 terminals already open in the current window.
 
-The startup terminal names are `dashboard | make run` and `bash | workbench`. The workspace description template omits `${task}` to hide the small
-`Task` suffix while retaining local-terminal and working-directory information when applicable. VS Code does not support independent per-task
-description text, so the extra labels are part of the main names instead. New names apply when the startup terminals are next created; changing task
-configuration does not rename existing live terminals or restart the dashboard.
+The startup terminal names are `dashboard` and `bash`. New names apply when the startup terminals are next created; changing task configuration does
+not rename existing live terminals or restart the dashboard.
 
 ## Dependencies
 
