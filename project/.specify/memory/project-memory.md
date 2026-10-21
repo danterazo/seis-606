@@ -13,6 +13,10 @@ Updated: 2026-10-21
   as authentication.
 
 ## Development Workflow
+
+- On 2026-10-21, fixed the background dolphin GIF stopping after prolonged page use: its NETSCAPE repeat count was 1000, not infinite. Changed only
+  the two repeat-count bytes to zero, preserving all 15 frames and their timing. The asset regression test and focused Ruff checks pass; five browser
+  screenshots showed five distinct frames. Both dolphins in the existing tab loaded the repaired asset without a server restart.
 - On 2026-10-21, made the commit-choice offer a required finalization gate after validation.
 
 - On 2026-10-21, Tailscale icon remains in Nodes, not Cluster Topology.

@@ -23,6 +23,15 @@ from homelab_dashboard.ui.dashboard import build_dashboard_snapshot
 from server import create_server
 
 
+def test_dolphin_gif_loops_indefinitely() -> None:
+    asset: bytes = (Path(__file__).resolve().parents[2] / "web" / "images" / "dolphins.gif").read_bytes()
+    assert asset.startswith((b"GIF87a", b"GIF89a"))
+    loop_extension: bytes = b"\x21\xff\x0bNETSCAPE2.0\x03\x01"
+    assert asset.count(loop_extension) == 1
+    repeat_offset: int = asset.index(loop_extension) + len(loop_extension)
+    assert asset[repeat_offset : repeat_offset + 3] == b"\x00\x00\x00"
+
+
 def test_dashboard_snapshot_includes_label_and_node_counts() -> None:
     snapshot: dict[str, Any] = build_dashboard_snapshot(
         source_label="Mock data",
