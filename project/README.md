@@ -2,8 +2,8 @@
 
 A status dashboard with explicit guest reboot controls for a Proxmox VE cluster, styled after Frutiger Aero / Y2K desktops. The Homelab Haiku panel
 pairs a randomized three-line poem with a cow illustration. Guest tags appear as badges, including VPN badges for tagged LXCs and a hard-drive badge
-for NAS-tagged guests. Resource readings come from Proxmox; display profiles, fallback CPU models, and memory descriptions are configured
-separately. SSH uses hostnames resolved by the local system.
+for NAS-tagged guests. Resource readings come from Proxmox; display profiles, fallback CPU models, and memory descriptions are configured separately.
+SSH uses hostnames resolved by the local system.
 
 ## Run
 
