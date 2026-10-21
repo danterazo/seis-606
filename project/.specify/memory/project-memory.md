@@ -12,6 +12,8 @@ Updated: 2026-10-21
 
 ## Development Workflow
 
+- On 2026-10-21, the floating footer cowsay was replaced with a static ASCII cow beside the randomized three-line poem in the Homelab Haiku
+  panel. The animated bubble is removed; refresh time remains in the dashboard header.
 - On 2026-10-21, user reported duplicate cluster browser tabs despite an existing pinned dashboard. Helper 0.1.3 checks visible VS Code tab labels for
   the dashboard title or exact loopback host/port before opening, leaving an existing tab untouched. A WeakSet prevents repeated events for a
   successfully handled task from opening again. Thirteen tests cover pinned/restored tabs, other ports, and repeated events. The original empty-path
@@ -93,7 +95,6 @@ Updated: 2026-10-21
 
 These are discussion items, not authorization to change code or deployment. Update status only when the user requests or verifies the work.
 
-- [ ] Revisit whether the floating cow remains useful as a live Proxmox refresh indicator or should be removed outright.
 - [ ] Reconcile the README's LAN reverse-proxy plan with the operator-only decision; confirm the access boundary before changing deployment guidance.
 - [ ] Evaluate least-privilege Proxmox/router reads, including scoped PVE API tokens and restricted probes where suitable.
 - [ ] Evaluate reducing root SSH privileges, especially for guest start/reboot actions; retain the current behavior unless a change is explicitly

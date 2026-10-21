@@ -1655,11 +1655,6 @@ function render() {
   syncHardwareErrorsDialog();
   required("#source-label").textContent = state.snapshot?.source ?? "No data source connected";
   const lastUpdate = state.snapshot ? new Date(state.snapshot.fetched_at).toLocaleTimeString() : null;
-  const cowStatus =
-    lastUpdate === null ? (state.error === null ? "Connecting to PVE..." : "PVE update failed") : state.error === null ? `Updated ${lastUpdate}` : `Stale: ${lastUpdate}`;
-  const cow = required(".dns-cow");
-  cow.setAttribute("aria-label", `PVE data status: ${cowStatus}`);
-  required("#cow-status").textContent = cowStatus;
   required("#updated").textContent =
     state.error !== null
       ? lastUpdate === null
@@ -1810,7 +1805,7 @@ document.addEventListener("keydown", (event) => {
 
 const selectedHaiku = HEADER_HAIKUS[Math.floor(Math.random() * HEADER_HAIKUS.length)];
 required("#haiku").replaceChildren(
-  ...selectedHaiku.map((line, index) => el("span", { text: index < selectedHaiku.length - 1 ? `${line} /` : line })),
+  ...selectedHaiku.map((line) => el("span", { text: line })),
 );
 let overviewWidth = 0;
 new ResizeObserver(([entry]) => {
