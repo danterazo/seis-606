@@ -69,6 +69,9 @@ These are discussion items, not authorization to change code or deployment. Upda
 
 ## Code Cleanup
 
+- On 2026-10-21, added matching `make clean` targets to all class repositories. They remove only SyncThing conflict copies and Windows `Zone.Identifier`
+  files outside `.git`; the target is documented in each repository README.
+
 - On 2026-10-21, aligned the web Biome schema with installed CLI `2.6.2`, clearing the informational schema-version warning from `make fix`. The
   complete `npm --prefix project/web run lint` chain passed, including JavaScript type-checking; lint rules and dependency policy are unchanged. A
   subsequent editor trust warning prompted use of the package-local schema instead of a versioned remote URL, avoiding remote schema downloads and

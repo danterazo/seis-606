@@ -23,7 +23,7 @@ upgrade:
 verify-gpu:
 	poetry run python -c "import llama_cpp.llama_cpp as lib; print('supports_gpu_offload =', bool(lib.llama_supports_gpu_offload()))"
 
-.PHONY: format fix fix-python fix-web fix-markdown lint lint-python lint-web pull protect-submodules
+.PHONY: format fix fix-python fix-web fix-markdown lint lint-python lint-web pull protect-submodules clean
 
 format: fix
 
@@ -81,3 +81,7 @@ smi:
 
 sync:
 	@bash scripts/sync-common.sh
+
+clean:
+	find . -type f ! -path './.git/*' \
+		\( -name '*.sync-conflict-*' -o -name 'Zone.Identifier' -o -name '*:Zone.Identifier' \) -print -delete

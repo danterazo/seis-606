@@ -32,3 +32,8 @@ unchanged. Resolve overlapping local changes or diverged history manually before
 Run `make pull` to pull the main repository, initialize and protect submodules against pushes, and update them recursively from `origin/main`. Changed
 submodule pointers are committed in the main repository with `Update submodules`, then pushed. Unrelated staged files are excluded, and no commit is
 created when the pointers are unchanged. A failed pull, submodule update, or commit stops the workflow before pushing.
+
+## Cleanup
+
+Run `make clean` to remove SyncThing conflict copies and Windows `Zone.Identifier` files. The command excludes files under the repository's `.git`
+directory and leaves other files untouched.
