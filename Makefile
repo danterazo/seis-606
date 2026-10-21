@@ -14,7 +14,7 @@ init-ssh-trust:
 update: deps
 
 run:
-	@fuser -k 8766/tcp 2>/dev/null || true
+	@pid=$$(fuser -k 8766/tcp 2>/dev/null || true); pid=$${pid##*:}; pid=$$(printf '%s' "$$pid" | xargs); printf 'PID %s · ' "$${pid:-none}"
 	DASHBOARD_DEV=1 PORT=8766 poetry run python project/dev.py
 
 upgrade:
