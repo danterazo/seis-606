@@ -13,9 +13,9 @@
 | A-01 | AI-assisted review           | Independent security/QA review using a tool different from the one used for most development                              | Not run; the development tool history and a separate review result were not available to verify                                                                           | No AI findings are claimed. The assignment explicitly requires a different tool, tool name, findings, and disposition.                                                           | Deferred: run the prompt below in an independently selected tool, record its name and raw findings, then verify or reject each finding with evidence.                                                               | Required      |
 
 ## AI Review
-I initially used Qwen3.8 27B, ran locally on an RTX 5090, for independent code review. Most development was done using Copilot's cloud/frontier
-models — although Qwen3.8 used Copilot as a harness, I considered it independent. In practice, though, the context size was too limited, so I ended 
-up using using `Gemma4 26B A4B QAT`.
+I initially used `Qwen3.8 27B`, ran locally on an RTX 5090, for independent code review. Most development was done using Copilot's cloud/frontier
+models — although `Qwen3.8 27B` used Copilot as a harness, I considered it independent. In practice, though, the context size was too limited, so I
+ended up using using `Gemma4 26B A4B QAT`.
 
 ### GitHub Copilot Review (gemma-4-26b-a4b-qat)
 #### Security Audit
@@ -28,8 +28,6 @@ up using using `Gemma4 26B A4B QAT`.
 - **Architecture:** Well-structured, modular design with clear separation of concerns.
 - **Testing:** Comprehensive test suite with good coverage.
 - **Documentation:** Good "As-Built" documentation and transparency regarding spec deviations.
-
-
 
 
 ## Manual Usability Record
