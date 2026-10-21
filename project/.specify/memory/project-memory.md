@@ -13,6 +13,8 @@ Updated: 2026-10-21
   as authentication.
 
 ## Development Workflow
+- On 2026-10-21, made the commit-choice offer a required finalization gate after validation.
+
 - On 2026-10-21, Tailscale icon remains in Nodes, not Cluster Topology.
 
 - On 2026-10-21, prepared Project 1 deliverables in `project/deliverables/`: a test log, JUnit XML for 264 passing tests, and a 1-2 page analysis.
