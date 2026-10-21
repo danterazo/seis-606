@@ -1077,7 +1077,7 @@ function renderStorageDialog(node) {
       diskRows,
       storage?.smart_available ? "No disks reported." : "smartctl is not installed on this node.",
     ),
-    el("h3", { text: "ZFS pools" }),
+    el("h3", { text: "ZFS Pools" }),
     table(
       ["Status", "Pool", "Capacity", "Used / Size", "Free", "Frag", "Layout", "Last Scan", "Findings"],
       poolRows,
