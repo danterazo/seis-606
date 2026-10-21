@@ -12,6 +12,8 @@ Updated: 2026-10-21
 
 ## Development Workflow
 
+- On 2026-10-21, the user changed the commit workflow: after an approved commit, push to the configured remote unless explicitly told not to.
+  Keep the existing commit-choice approval step; do not ask for separate push approval. This supersedes the former project-specific no-push default.
 - On 2026-10-21, the user requested only the default split on workspace open. Local `.vscode/settings.json` now disables persistent sessions, process
   revival, and task reconnection, superseding the persistence settings below. Extra terminals opened during a session are not restored on reopen; the
   layout task itself does not close currently live extras. Configuration assertions pass; actual window close/reopen remains unverified to avoid
@@ -66,6 +68,8 @@ These are discussion items, not authorization to change code or deployment. Upda
 
 - On 2026-10-21, aligned the web Biome schema with installed CLI `2.6.2`, clearing the informational schema-version warning from `make fix`.
   The complete `npm --prefix project/web run lint` chain passed, including JavaScript type-checking; lint rules and dependency policy are unchanged.
+  A subsequent editor trust warning prompted use of the package-local schema instead of a versioned remote URL, avoiding remote schema downloads
+  and keeping the schema aligned with the installed Biome package.
 - Use `make fix` for supported Python/web lint fixes, Python/web/tracked-Markdown formatting, and final Python/web lint checks including JavaScript
   type-checking. `make format` is a compatibility alias; `make lint` is check-only. Unsupported fixes still require manual changes.
 - On 2026-10-18, the web fix workflow automatically repaired the HTML `no-raw-characters` ampersand error, and web lint/type-checks passed.

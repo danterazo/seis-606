@@ -29,4 +29,5 @@ Modify `.vscode/settings.json` only when the user explicitly requests it. Python
   one question form.
 - Commit only approved thread-specific files or hunks. Preserve unrelated staging; never stage the entire worktree indiscriminately.
 - If changes overlap and cannot be confidently separated, ask.
-- Do not commit without approval. Do not push unless explicitly requested.
+- Do not commit without approval. After an approved commit, push to the configured remote unless the user explicitly says not to; do not ask for
+  separate push approval.
