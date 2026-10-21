@@ -1805,9 +1805,7 @@ document.addEventListener("keydown", (event) => {
 });
 
 const selectedHaiku = HEADER_HAIKUS[Math.floor(Math.random() * HEADER_HAIKUS.length)];
-required("#haiku").replaceChildren(
-  ...selectedHaiku.map((line) => el("span", { text: line })),
-);
+required("#haiku").replaceChildren(...selectedHaiku.map((line) => el("span", { text: line })));
 required(".haiku-cow").textContent = BORG_COW.join("\n");
 let overviewWidth = 0;
 new ResizeObserver(([entry]) => {
