@@ -9,14 +9,14 @@
     }
   },
   "git.detectSubmodules": false,
-  "python.analysis.extraPaths": ["project"],
+  "python.analysis.extraPaths": [
+    "project"
+  ],
   "python.languageServer": "Pylance",
   "task.reconnection": false,
   "terminal.integrated.enablePersistentSessions": false,
   "terminal.integrated.hideOnStartup": "never",
   "terminal.integrated.persistentSessionReviveProcess": "never",
-  "terminal.integrated.persistentSessionScrollback": 10000,
   "terminal.integrated.scrollback": 10000,
-  "terminal.integrated.tabs.description": "${local}${separator}${cwdFolder}",
   "terminal.integrated.tabs.enabled": true
 }
