@@ -1,6 +1,6 @@
 # Project Memory
 
-Updated: 2026-10-20
+Updated: 2026-10-21
 
 ## Operating Decision
 
@@ -12,6 +12,11 @@ Updated: 2026-10-20
 
 ## Development Workflow
 
+- On 2026-10-21, the user requested only the default split on workspace open. Local `.vscode/settings.json` now disables persistent sessions, process
+  revival, and task reconnection, superseding the persistence settings below. Extra terminals opened during a session are not restored on reopen; the
+  layout task itself does not close currently live extras. Configuration assertions pass; actual window close/reopen remains unverified to avoid
+  interrupting the user-managed dashboard. The attached dashboard tab was cache-bypassing reloaded and returned HTTP 200. The sibling `seis-765-ops`
+  has no startup layout, so no counterpart change applies.
 - On 2026-10-20, the user requested a persistent/default VS Code split for this repo. `.vscode/tasks.json` defines an `Open default terminal layout`
   folder-open/manual task launching the left `dashboard` task and right `bash` shell in one presentation group; automatic tasks require workspace
   consent. The `dashboard` task executes `make run`, which stops any process already listening on port 8766 before starting the dashboard. New
