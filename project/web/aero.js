@@ -716,7 +716,9 @@ function storageBadges(node) {
     const flagged = storage.disks.filter((disk) => disk.level !== "ok");
     const hottest = Math.max(...storage.disks.map((disk) => disk.temperature_celsius ?? -Infinity));
     const text =
-      flagged.length === 0 ? "SMART OK" : `SMART ${flagged.length} ${level === "unknown" ? "UNREADABLE" : level === "warning" ? "WARN" : "CRITICAL"}`;
+      flagged.length === 0
+        ? "SMART OK"
+        : `SMART: ${flagged.length} ${level === "unknown" ? "Unreadable" : level === "warning" ? "Warning" : "Critical"}`;
     const lines =
       flagged.length === 0
         ? [`All ${plural(storage.disks.length, "Disk")} Healthy${Number.isFinite(hottest) ? `, Hottest ${hottest} °C` : ""}`]
