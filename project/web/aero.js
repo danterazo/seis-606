@@ -780,7 +780,7 @@ function hardwareErrorBadges(node) {
     errors.level === "unknown"
       ? "HW Errors N/A"
       : errors.level === "ok"
-        ? "HW Errors: None"
+        ? "HW: Nominal"
         : current.length > 0
           ? `HW: ${plural(current.length, "Error")}`
           : errors.incidents.length === 0
