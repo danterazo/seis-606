@@ -15,7 +15,7 @@ function isDashboard(execution) {
     vscode.workspace.workspaceFolders?.some(
       (folder) => folder.uri.fsPath === root,
     ) &&
-    task.name === "dashboard" &&
+    ["dashboard", "dashboard | make run"].includes(task.name) &&
     task.execution instanceof vscode.ProcessExecution &&
     path.basename(task.execution.process) === "make" &&
     task.execution.args.length === 1 &&

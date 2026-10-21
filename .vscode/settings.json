@@ -19,5 +19,6 @@
   "terminal.integrated.persistentSessionReviveProcess": "never",
   "terminal.integrated.persistentSessionScrollback": 10000,
   "terminal.integrated.scrollback": 10000,
+  "terminal.integrated.tabs.description": "${local}${separator}${cwdFolder}",
   "terminal.integrated.tabs.enabled": true
 }

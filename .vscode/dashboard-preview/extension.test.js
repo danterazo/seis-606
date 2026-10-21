@@ -25,7 +25,7 @@ function fixture({
   }
   const execution = {
     task: {
-      name: "dashboard",
+      name: "dashboard | make run",
       scope: { uri: { fsPath: "/repo" } },
       execution: new ProcessExecution(),
     },
@@ -134,6 +134,14 @@ test("waits through connection refusal and non-200 responses", async () => {
 test("handles later task starts and suppresses duplicate start events", async () => {
   const state = fixture({ running: false });
   state.listeners.onDidStartTaskProcess({ execution: state.execution });
+  state.listeners.onDidStartTaskProcess({ execution: state.execution });
+  await settle();
+  assert.equal(state.commands.length, 1);
+});
+
+test("still recognizes the original dashboard task name", async () => {
+  const state = fixture({ running: false });
+  state.execution.task.name = "dashboard";
   state.listeners.onDidStartTaskProcess({ execution: state.execution });
   await settle();
   assert.equal(state.commands.length, 1);

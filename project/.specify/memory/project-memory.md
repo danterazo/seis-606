@@ -12,6 +12,12 @@ Updated: 2026-10-21
 
 ## Development Workflow
 
+- On 2026-10-21, the user approved naming the startup terminals `dashboard | make run` and `bash | workbench` and hiding the small `Task` suffix.
+  VS Code has no independent per-task description field, so the flavor text is part of the main task labels. The description template omits only
+  `${task}`, retaining local/cwd details. Task commands, split grouping, icons and unrelated settings are unchanged; live terminals are not recreated.
+  Helper 0.1.2 accepts both the old `dashboard` name and the new left task name. Eight focused tests, configuration assertions and VSIX checks pass;
+  0.1.2 is installed on both WSL2 nodes with version/source verification. Source/config/package changes use Syncthing; only extension installation
+  is node-local. New terminal names remain to be verified when the panes are next created; no live terminal/server restart was performed.
 - On 2026-10-21, Ovedur rollout verified the existing code Syncthing share delivered the dashboard-preview VSIX byte-identically. Ovedur WSL2 runs
   VS Code 1.142.0; its exact upstream source supports the same integrated-browser `reuseUrlFilter` command. Helper 0.1.1 lowers only the declared
   editor minimum to 1.142, without behavior changes or an editor upgrade. Seven tests and package/source checks pass; 0.1.1 is installed on both
