@@ -12,6 +12,14 @@ Updated: 2026-10-21
 
 ## Development Workflow
 
+- On 2026-10-21, the user approved creating/installing a local task-ready browser helper. `.vscode/dashboard-preview/` contains extension source and
+  mocked Node tests; `.vscode/dashboard-preview.vsix` is its installable package. It reacts only to this workspace's `dashboard` process task running
+  `make run`, waits up to 60 seconds for HTTP 200 on loopback port 8766, then uses VS Code's integrated-browser `reuseUrlFilter` to navigate the
+  existing dashboard tab in place (or open it if absent). Existing running tasks are checked on activation; task end/disposal cancels pending work.
+  It does not start servers, bypass automatic-task consent, or change forwarding settings. Version 0.1.0 is installed on Marigold WSL2; installed
+  source matches the package, live activation logged a successful browser open/refresh, and the existing dashboard returned HTTP 200. Seven mocked
+  tests, syntax, formatting and editor diagnostics pass. No server restart/window reload was performed; next-open behavior is not separately verified.
+  Source sync alone does not install the helper on another host.
 - On 2026-10-21, follow-up on Marigold WSL2 found `.vscode/settings.json` absent, leaving user-level terminal persistence and revival enabled. Added
   terminal-only workspace settings and removed their Git ignore so the fix can be versioned. Set `terminal.integrated.hideOnStartup` to `whenEmpty` to
   prevent VS Code creating an ordinary shell before folder-open tasks populate the split; task grouping was already correct. This supersedes the

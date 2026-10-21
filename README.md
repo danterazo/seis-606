@@ -7,6 +7,17 @@ interactive shell. If prompted, allow automatic tasks for this trusted workspace
 reopen the pair after closing it, use **Tasks: Run Task** and select **Open default terminal layout**. The `make run` recipe stops any process already
 listening on port 8766 before starting the dashboard.
 
+The local **Homelab Dashboard Preview** extension waits for the `dashboard` task's server to respond successfully, then loads or refreshes the
+integrated-browser tab at `http://127.0.0.1:8766/`. Existing dashboard tabs (including `localhost` URLs) are reused in place, preserving their pin and
+position. It also handles a dashboard task already running when the extension activates. Failed or stopped tasks do not open a browser; readiness
+checks stop after 60 seconds. Diagnostics appear in the **Homelab Dashboard Preview** output channel.
+
+Install the bundled helper once in each VS Code environment using **Extensions: Install from VSIX...** and `.vscode/dashboard-preview.vsix`, or run
+`code --install-extension .vscode/dashboard-preview.vsix` from this repository. Reload the window if VS Code requests it. Sources and focused tests
+are in `.vscode/dashboard-preview/`; run `node --test .vscode/dashboard-preview/extension.test.js` to test them. Source sync does not install
+extensions. The helper requires VS Code 1.143 or newer, a trusted workspace, and permitted folder-open tasks. It does not launch or restart the server
+itself.
+
 The **New Terminal** button creates one ordinary shell, not the startup layout. Extra terminals can be opened during a session, but are not restored
 when this workspace opens again.
 
