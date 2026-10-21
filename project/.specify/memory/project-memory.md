@@ -12,6 +12,11 @@ Updated: 2026-10-21
 
 ## Development Workflow
 
+- On 2026-10-21, Ovedur rollout verified the existing code Syncthing share delivered the dashboard-preview VSIX byte-identically. Ovedur WSL2 runs
+  VS Code 1.142.0; its exact upstream source supports the same integrated-browser `reuseUrlFilter` command. Helper 0.1.1 lowers only the declared
+  editor minimum to 1.142, without behavior changes or an editor upgrade. Seven tests and package/source checks pass; 0.1.1 is installed on both
+  Marigold and Ovedur WSL2, with installed version/source verification. Ovedur's next-open live activation remains unverified; no editor/server
+  restart was performed. Shared source and package arrived through Syncthing; only the extension installation required a node-local action.
 - On 2026-10-21, the user approved creating/installing a local task-ready browser helper. `.vscode/dashboard-preview/` contains extension source and
   mocked Node tests; `.vscode/dashboard-preview.vsix` is its installable package. It reacts only to this workspace's `dashboard` process task running
   `make run`, waits up to 60 seconds for HTTP 200 on loopback port 8766, then uses VS Code's integrated-browser `reuseUrlFilter` to navigate the
