@@ -49,6 +49,7 @@ const HEADER_HAIKUS = [
   ["I watch the lights blink", "I don't know what they tell me", "They blink anyway"],
   ["I cannot connect", "Another night comes undone", "Of course: DNS"],
 ];
+const BORG_COW = ["       ^__^", "       (==)\\_______", "       (__)\\       )\\/\\", "           ||----w |", "           ||     ||"];
 
 /** @type {ViewState} */
 const state = { snapshot: null, error: null, selectedNode: null, filter: "all", query: "" };
@@ -1807,6 +1808,7 @@ const selectedHaiku = HEADER_HAIKUS[Math.floor(Math.random() * HEADER_HAIKUS.len
 required("#haiku").replaceChildren(
   ...selectedHaiku.map((line) => el("span", { text: line })),
 );
+required(".haiku-cow").textContent = BORG_COW.join("\n");
 let overviewWidth = 0;
 new ResizeObserver(([entry]) => {
   if (entry.contentRect.width === overviewWidth) return;

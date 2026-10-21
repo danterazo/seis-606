@@ -1519,7 +1519,7 @@ span.health-badge[role="button"] {
 }
 .haiku-content {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 120px;
+  grid-template-columns: minmax(0, 1fr) 160px;
   align-items: center;
   gap: 10px;
   min-width: 0;
