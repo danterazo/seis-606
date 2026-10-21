@@ -12,25 +12,25 @@ Updated: 2026-10-21
 
 ## Development Workflow
 
-- On 2026-10-21, the user approved naming the startup terminals `dashboard | make run` and `bash | workbench` and hiding the small `Task` suffix.
-  VS Code has no independent per-task description field, so the flavor text is part of the main task labels. The description template omits only
+- On 2026-10-21, the user approved naming the startup terminals `dashboard | make run` and `bash | workbench` and hiding the small `Task` suffix. VS
+  Code has no independent per-task description field, so the flavor text is part of the main task labels. The description template omits only
   `${task}`, retaining local/cwd details. Task commands, split grouping, icons and unrelated settings are unchanged; live terminals are not recreated.
   Helper 0.1.2 accepts both the old `dashboard` name and the new left task name. Eight focused tests, configuration assertions and VSIX checks pass;
-  0.1.2 is installed on both WSL2 nodes with version/source verification. Source/config/package changes use Syncthing; only extension installation
-  is node-local. New terminal names remain to be verified when the panes are next created; no live terminal/server restart was performed.
-- On 2026-10-21, Ovedur rollout verified the existing code Syncthing share delivered the dashboard-preview VSIX byte-identically. Ovedur WSL2 runs
-  VS Code 1.142.0; its exact upstream source supports the same integrated-browser `reuseUrlFilter` command. Helper 0.1.1 lowers only the declared
-  editor minimum to 1.142, without behavior changes or an editor upgrade. Seven tests and package/source checks pass; 0.1.1 is installed on both
-  Marigold and Ovedur WSL2, with installed version/source verification. Ovedur's next-open live activation remains unverified; no editor/server
-  restart was performed. Shared source and package arrived through Syncthing; only the extension installation required a node-local action.
+  0.1.2 is installed on both WSL2 nodes with version/source verification. Source/config/package changes use Syncthing; only extension installation is
+  node-local. New terminal names remain to be verified when the panes are next created; no live terminal/server restart was performed.
+- On 2026-10-21, Ovedur rollout verified the existing code Syncthing share delivered the dashboard-preview VSIX byte-identically. Ovedur WSL2 runs VS
+  Code 1.142.0; its exact upstream source supports the same integrated-browser `reuseUrlFilter` command. Helper 0.1.1 lowers only the declared editor
+  minimum to 1.142, without behavior changes or an editor upgrade. Seven tests and package/source checks pass; 0.1.1 is installed on both Marigold and
+  Ovedur WSL2, with installed version/source verification. Ovedur's next-open live activation remains unverified; no editor/server restart was
+  performed. Shared source and package arrived through Syncthing; only the extension installation required a node-local action.
 - On 2026-10-21, the user approved creating/installing a local task-ready browser helper. `.vscode/dashboard-preview/` contains extension source and
   mocked Node tests; `.vscode/dashboard-preview.vsix` is its installable package. It reacts only to this workspace's `dashboard` process task running
   `make run`, waits up to 60 seconds for HTTP 200 on loopback port 8766, then uses VS Code's integrated-browser `reuseUrlFilter` to navigate the
-  existing dashboard tab in place (or open it if absent). Existing running tasks are checked on activation; task end/disposal cancels pending work.
-  It does not start servers, bypass automatic-task consent, or change forwarding settings. Version 0.1.0 is installed on Marigold WSL2; installed
-  source matches the package, live activation logged a successful browser open/refresh, and the existing dashboard returned HTTP 200. Seven mocked
-  tests, syntax, formatting and editor diagnostics pass. No server restart/window reload was performed; next-open behavior is not separately verified.
-  Source sync alone does not install the helper on another host.
+  existing dashboard tab in place (or open it if absent). Existing running tasks are checked on activation; task end/disposal cancels pending work. It
+  does not start servers, bypass automatic-task consent, or change forwarding settings. Version 0.1.0 is installed on Marigold WSL2; installed source
+  matches the package, live activation logged a successful browser open/refresh, and the existing dashboard returned HTTP 200. Seven mocked tests,
+  syntax, formatting and editor diagnostics pass. No server restart/window reload was performed; next-open behavior is not separately verified. Source
+  sync alone does not install the helper on another host.
 - On 2026-10-21, follow-up on Marigold WSL2 found `.vscode/settings.json` absent, leaving user-level terminal persistence and revival enabled. Added
   terminal-only workspace settings and removed their Git ignore so the fix can be versioned. Set `terminal.integrated.hideOnStartup` to `whenEmpty` to
   prevent VS Code creating an ordinary shell before folder-open tasks populate the split; task grouping was already correct. This supersedes the
@@ -95,8 +95,8 @@ These are discussion items, not authorization to change code or deployment. Upda
 ## Code Cleanup
 
 - On 2026-10-21, both class repositories ignore SyncThing temporary files matching `.syncthing.*.tmp`; ordinary `.tmp` files remain trackable.
-- On 2026-10-21, added matching `make clean` targets to all class repositories. They remove only SyncThing conflict copies and Windows `Zone.Identifier`
-  files outside `.git`; the target is documented in each repository README.
+- On 2026-10-21, added matching `make clean` targets to all class repositories. They remove only SyncThing conflict copies and Windows
+  `Zone.Identifier` files outside `.git`; the target is documented in each repository README.
 
 - On 2026-10-21, aligned the web Biome schema with installed CLI `2.6.2`, clearing the informational schema-version warning from `make fix`. The
   complete `npm --prefix project/web run lint` chain passed, including JavaScript type-checking; lint rules and dependency policy are unchanged. A

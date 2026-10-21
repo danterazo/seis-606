@@ -9,9 +9,7 @@
     }
   },
   "git.detectSubmodules": false,
-  "python.analysis.extraPaths": [
-    "project"
-  ],
+  "python.analysis.extraPaths": ["project"],
   "python.languageServer": "Pylance",
   "task.reconnection": false,
   "terminal.integrated.enablePersistentSessions": false,

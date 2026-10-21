@@ -1,70 +1,64 @@
 [tool.poetry]
-    name = "seis-606"
-    version = "0.1.0"
-    description = "SEIS-606 Coursework & Assignments"
-    authors = ["Dante Razo <razo3843@stthomas.edu>"]
-    readme = "README.md"
-    package-mode = false
+name = "seis-606"
+version = "0.1.0"
+description = "SEIS-606 Coursework & Assignments"
+authors = ["Dante Razo <razo3843@stthomas.edu>"]
+readme = "README.md"
+package-mode = false
 
 [tool.poetry.dependencies]
-    python = ">=3.14"
-
-    # common
-    ipykernel = "*"
-    jupyter = "*"
-    nbconvert = "*"
-    pylance = "*"
-    torch = { version = "*", source = "torch-cuda" } # torch w/ GPU acceleration
-    nvidia-cublas = "==13.1.1.3"
-    nvidia-cuda-nvrtc = "==13.0.88"
-    dotenv = "*"
-
-    # first used in hw2
-    diffusers = "*"
-    optimum-quanto = "*"
-    bitsandbytes = "*"
-    
-    # first used in hw3
-    specify-cli = "*"
-
-    # project
-    proxmoxer = "*"
-    pydantic = "*"
-    pytest = "*"
-    ruff = "*"
-    watchfiles = "*"
-
+python = ">=3.14"
+# common
+ipykernel = "*"
+jupyter = "*"
+nbconvert = "*"
+pylance = "*"
+torch = { version = "*", source = "torch-cuda" } # torch w/ GPU acceleration
+nvidia-cublas = "==13.1.1.3"
+nvidia-cuda-nvrtc = "==13.0.88"
+dotenv = "*"
+# first used in hw2
+diffusers = "*"
+optimum-quanto = "*"
+bitsandbytes = "*"
+# first used in hw3
+specify-cli = "*"
+# project
+proxmoxer = "*"
+pydantic = "*"
+pytest = "*"
+ruff = "*"
+watchfiles = "*"
 
 [[tool.poetry.source]]
-    name = "pypi"
-    priority = "primary"
-
+name = "pypi"
+priority = "primary"
 
 # for desktop
 [[tool.poetry.source]]
-    name = "torch-cuda"
-    url = "https://download.pytorch.org/whl/cu130"
-    priority = "explicit"
+name = "torch-cuda"
+url = "https://download.pytorch.org/whl/cu130"
+priority = "explicit"
 
 # for server
 [[tool.poetry.source]]
-    name = "torch-rocm"
-    url = "https://download.pytorch.org/whl/rocm7.0"
-    priority = "explicit"
+name = "torch-rocm"
+url = "https://download.pytorch.org/whl/rocm7.0"
+priority = "explicit"
 
 [build-system]
-    requires = ["poetry-core"]
-    build-backend = "poetry.core.masonry.api"
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
 
 [tool.ruff]
-    line-length = 150
-    exclude = [".git", ".venv"]
+line-length = 150
+exclude = [".git", ".venv"]
 
 [tool.ruff.lint]
-    ignore = ["UP007", "UP045"]
+ignore = ["UP007", "UP045"]
 
 [tool.pytest.ini_options]
-    pythonpath = ["project"]
+pythonpath = ["project"]
 
 [tool.pyright]
-    extraPaths = ["assignments/*", "project/*"]
+extraPaths = ["assignments/*", "project/*"]
