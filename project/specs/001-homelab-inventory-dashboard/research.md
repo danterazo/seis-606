@@ -11,9 +11,9 @@ the MVP. A custom HTML/CSS-only app would make responsive stateful dashboard beh
 
 ## Decision: Normalize all sources behind a read-only status-source protocol
 
-**Rationale**: The UI must not know whether data came from live Proxmox, a future MCP integration, or deterministic fixtures. A protocol returning
-validated Node, Workload, observation, and source-error values gives all paths the same handling for missing fields, unknown states, connection
-failures, and freshness. The live Proxmox adapter is the default when configured; fixture mode is explicit and labeled.
+**Rationale**: The UI must not know whether data came from live Proxmox or deterministic fixtures. A protocol returning validated Node, Workload,
+observation, and source-error values gives all paths the same handling for missing fields, unknown states, connection failures, and freshness. The
+live Proxmox adapter is the default when configured; fixture mode is explicit and labeled.
 
 **Alternatives considered**: Calling Proxmox directly from Streamlit would couple rendering to transport failures and make repeatable tests difficult.
 A database would preserve history that the MVP does not require and could make stale data look current.

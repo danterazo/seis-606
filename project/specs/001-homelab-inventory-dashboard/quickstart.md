@@ -1,35 +1,38 @@
 # Quickstart Validation Guide
 
-The app is a custom HTML/CSS/JavaScript status page served by Python's standard-library HTTP server. By default it reads PVE node and VM/LXC status
-using this WSL instance's existing OpenSSH setup and read-only `pvesh` queries.
+This guide validates the intended spec-kit feature: a Streamlit dashboard using a read-only Proxmox API token by default and fixtures only when
+explicitly selected. It is not a run guide for the evolved SSH-based application currently in `project/`; see [project/README.md](../../README.md) and
+the as-built note in [spec.md](spec.md) for that implementation.
 
 ## Prerequisites
 
 - Python 3.14+
-- OpenSSH client
+- Poetry
 - A browser
+- A Proxmox API token restricted to the read permissions required by the dashboard (for live mode)
 
 ## Install and run
 
-From the repository root:
+From the repository root, install dependencies and start the planned Streamlit application:
 
 ```bash
-python3 project/app.py
+poetry install
+poetry run streamlit run project/app.py
 ```
 
-Open `http://127.0.0.1:8765`. SSH uses public-key authentication in `BatchMode`; it does not ask for a password or disable host-key checking. If you
-have a configured host alias, set `HOMELAB_PVE_SSH_TARGET` to that alias. For the manual fallback, run
-`HOMELAB_STATUS_SOURCE=manual python3 project/app.py`. If Cerulean expects another account, set `HOMELAB_PVE_SSH_USER`; SSH still uses existing WSL
-identities.
+Open the local URL printed by Streamlit. Configure the variables below through the deployment environment; never commit the token secret.
 
-On first connection, compare the fingerprint from `ssh-keyscan -t ed25519 cerulean | ssh-keygen -lf -` with the fingerprint shown on Cerulean's local
-console by `ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub`. Only after they match, add the verified host key with:
-
-```bash
-ssh-keyscan -H -t ed25519 cerulean >> ~/.ssh/known_hosts
+```text
+HOMELAB_STATUS_SOURCE=proxmox
+PROXMOX_API_URL=https://proxmox.example/api2/json
+PROXMOX_TOKEN_ID=read-only-dashboard@pam!status
+PROXMOX_TOKEN_SECRET=<deployment secret>
+PROXMOX_VERIFY_TLS=true
+PROXMOX_TIMEOUT_SECONDS=10
 ```
 
-Never use `StrictHostKeyChecking=no` or accept an unverified key.
+For deterministic test/demo data, select fixture mode explicitly with `HOMELAB_STATUS_SOURCE=mock`. The interface must label that data as mock.
+Failure to connect in live mode must not silently select fixtures.
 
 ## Automated checks
 
@@ -41,11 +44,13 @@ poetry run ruff format --check project
 
 ## Acceptance scenarios
 
-1. Load the page and confirm `LIVE PVE / SSH`, node status, CPU/memory, and VM/ container counts reflect the PVE response.
-2. Confirm offline nodes are shown from the live cluster response.
-3. Refresh manually and wait 30 seconds to verify automatic polling.
-4. Break SSH access in a test environment and confirm the page shows an explicit error instead of falling back to the manual report.
-5. Set `HOMELAB_STATUS_SOURCE=manual`; confirm the report is labeled manual and unknown values remain unknown.
-6. Check desktop and mobile widths for clipped text or horizontal page overflow.
+1. Configure the read-only token and confirm the source label identifies live Proxmox data.
+2. Confirm returned node and workload values are source-driven, and that offline nodes retain identity and last-successful timestamps without stale
+   values presented as current.
+3. Refresh manually and wait 30 seconds to verify the shared refresh path is used by automatic refresh.
+4. In a safe test environment, cause a timeout or incomplete response and confirm the dashboard reports the failure without exposing secrets or
+   switching to mock data.
+5. Explicitly select mock mode and confirm the interface labels fixture data as mock while preserving unknown values.
+6. Check desktop and mobile widths and a configured reverse-proxy base path for clipping, routing, and reload behavior.
 
-Future work includes per-guest details, status history, and reverse-proxy base-path support. SSH reads do not modify cluster resources.
+Inventory management, mutation controls, and automatic remediation remain out of scope for this feature.

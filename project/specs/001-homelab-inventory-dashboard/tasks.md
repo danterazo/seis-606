@@ -10,6 +10,10 @@ description: "Actionable implementation tasks for the Homelab Status Dashboard"
 
 **Tests**: Tests are included because the plan and quickstart require unit, contract, and Streamlit smoke coverage.
 
+This task list tracks the intended feature described by the spec-kit artifacts. The current application evolved along a different implementation path;
+Phase 7 records the remaining convergence work. Checked historical tasks do not by themselves establish that all specification acceptance criteria are
+met by the current application.
+
 ## Phase 1: Setup (Shared Infrastructure)
 
 **Purpose**: Establish the Python application structure and development tooling.
@@ -182,8 +186,9 @@ fields, and last successful update behavior.
       by the configured live source per Constitution II, FR-001, and FR-003 (contradicts)
 - [ ] T039 CRITICAL Preserve an absent restart count as unknown instead of defaulting it to zero, and keep health decisions evidence-based per
       Constitution II, FR-010, and US2/AC1 (contradicts)
-- [ ] T040 Implement validated source configuration, a read-only Proxmox adapter using a dedicated read-only API token, and a deterministic fixture
-      source; use live Proxmox when configured and require explicit fixture/demo selection per FR-017 and the plan's source decision (missing)
+- [ ] T040 Verify whether a configured Proxmox MCP provides the required read-only status and freshness data; then implement validated source
+      configuration, the appropriate live adapter using a dedicated read-only API token, and a deterministic fixture source. Use live Proxmox when
+      configured and require explicit fixture/demo selection per FR-017 and the plan's source decision (missing)
 - [ ] T041 Render the source-driven node overview and workload inspection in Streamlit, including required node summaries, health findings and
       reported reasons, duplicate-name identity, ARM VM filtering, and empty/loading states per FR-001-FR-007, US1, and US2 (partial)
 - [ ] T042 Replace unvalidated domain dataclasses with the plan's validated Pydantic models while preserving unknown and unavailable values per the
@@ -196,4 +201,3 @@ fields, and last successful update behavior.
       and operational limitations in `project/README.md` per FR-014 and the deployment plan (missing)
 - [ ] T046 Add acceptance coverage for 20 nodes and 200 workloads rendering within 30 seconds, then run the complete quickstart test and lint/format
       validation per SC-001, the plan's performance goal, and T036 (missing)
-- [ ] T047 Review the unused `Workload.tags` field and remove it or document a requirement that justifies it (unrequested)

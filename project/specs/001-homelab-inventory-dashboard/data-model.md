@@ -64,7 +64,7 @@ A user-visible finding derived from source evidence.
 
 The immutable normalized result rendered by one refresh.
 
-- `source_kind`: `live_proxmox`, `mcp`, or `mock`
+- `source_kind`: `live_proxmox` or `mock`
 - `source_label`: safe display label; mock snapshots must say `Mock data`
 - `refreshed_at`: completion timestamp for the snapshot
 - `nodes`: current returned node set, with no retention of removed nodes

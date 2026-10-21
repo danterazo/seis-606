@@ -24,11 +24,14 @@ Updated: 2026-10-21
 
 - On 2026-10-21, Tailscale icon remains in Nodes, not Cluster Topology.
 
-- On 2026-10-21, prepared Project 1 deliverables in `project/deliverables/`: a test log, JUnit XML for 264 passing tests, and a 1-2 page analysis.
-  The first suite run had two stale hostname-format assertions; updated only those expectations, confirmed the focused 30-test file, then reran all
-  264 tests successfully. The local page returned HTTP 200 and showed one of three nodes unavailable. The unauthenticated local status endpoint
-  returned HTTP 200; page-source key-pattern and browser-storage scans found no matches. Human usability testing and the required independent AI
-  review remain unverified. The existing PowerPoint was not edited; the user maintains its working copy outside VS Code/WSL2.
+- On 2026-10-21, prepared Project 1 deliverables in `project/deliverables/`: a test log, JUnit XML for 264 passing tests, and a 1-2 page analysis. The
+  first suite run had two stale hostname-format assertions; updated only those expectations, confirmed the focused 30-test file, then reran all 264
+  tests successfully. The local page returned HTTP 200 and showed one of three nodes unavailable. The unauthenticated local status endpoint returned
+  HTTP 200; page-source key-pattern and browser-storage scans found no matches. Human usability testing and the required independent AI review remain
+  unverified. The existing PowerPoint was not edited; the user maintains its working copy outside VS Code/WSL2.
+- On 2026-10-21, aligned the spec-kit plan, quickstart, data model, source contract, and task framing around the original intended Streamlit/read-only
+  Proxmox API-token design. Kept the evolved SSH-based dashboard as an explicit as-built deviation rather than rewriting the feature requirements to
+  match it. The current test suite does not establish completion of the original acceptance criteria.
 
 - On 2026-10-21, the floating footer cowsay was replaced with a static ASCII cow beside the randomized three-line poem in the Homelab Haiku panel. The
   original animated Borg bubble remains in hidden footer markup for a possible future Easter egg; refresh time remains in the dashboard header.

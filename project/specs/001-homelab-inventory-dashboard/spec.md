@@ -177,10 +177,10 @@ freshness information for each case.
 
 ## Project 1 As-Built Note (2026-10-21)
 
-This original design is not a complete description of the submitted implementation. The current dashboard uses SSH-based Proxmox and router sources,
-shows DHCP lease and hardware/storage information, and exposes guest start/reboot and activity-log clearing controls. The spec above instead requires
-a read-only Proxmox API-token integration and excludes state-changing controls. The current dashboard displays checks every second, rather than the
-specified 30-second interval. ARM VM filtering, reverse-proxy base-path support, and the listed usability/performance acceptance criteria have not
-been established by the current test results. See
-`project/deliverables/analysis-writeup.md` for the gap analysis and prioritized follow-up. Passing implementation tests do not imply those original
-requirements were met.
+This original design is not a complete description of the evolved implementation. The current dashboard uses SSH-based Proxmox and router sources,
+shows DHCP lease and hardware/storage information, and exposes guest start/reboot and activity-log clearing controls. This specification instead
+requires a read-only Proxmox API-token integration and excludes state-changing controls. The current dashboard refreshes checks more frequently than
+the specified 30-second interval. ARM VM filtering, reverse-proxy base-path support, and the listed usability/performance acceptance criteria have not
+been established by the current test results. The intended design and implementation gaps are tracked separately in [plan.md](plan.md) and the
+convergence tasks in [tasks.md](tasks.md); current automated-test evidence is in [test-log.md](../../deliverables/test-log.md). Passing implementation
+tests do not imply the original requirements were met.

@@ -10,7 +10,7 @@ get_snapshot() -> RefreshResult
 
 `RefreshResult` contains:
 
-- `source_kind`: `live_proxmox`, `mcp`, or `mock`
+- `source_kind`: `live_proxmox` or `mock`
 - `source_label`: safe display label
 - `attempted_at` and `completed_at`
 - `nodes`: normalized current node records
