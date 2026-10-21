@@ -33,7 +33,9 @@ INTERESTING: Final[re.Pattern[str]] = re.compile(
 
 def run(*, command: list[str]) -> Optional[str]:
     try:
-        completed = subprocess.run(command, capture_output=True, text=True, timeout=COMMAND_TIMEOUT_SECONDS, stdin=subprocess.DEVNULL, check=False)
+        completed: subprocess.CompletedProcess[str] = subprocess.run(
+            command, capture_output=True, text=True, timeout=COMMAND_TIMEOUT_SECONDS, stdin=subprocess.DEVNULL, check=False
+        )
     except (subprocess.TimeoutExpired, OSError):
         return None
     return completed.stdout if completed.returncode == 0 else None
@@ -47,7 +49,7 @@ def read_text(*, path: Path) -> Optional[str]:
 
 
 def read_count(*, path: Path) -> Optional[int]:
-    text = read_text(path=path)
+    text: Optional[str] = read_text(path=path)
     return int(text) if text is not None and text.isdigit() else None
 
 
@@ -63,7 +65,7 @@ def collect_edac() -> Optional[list[dict[str, Any]]]:
         return None
     controllers: list[dict[str, Any]] = []
     for controller in sorted(EDAC_ROOT.glob("mc[0-9]*")):
-        dimms = []
+        dimms: list[dict[str, Any]] = []
         for dimm in sorted(controller.glob("dimm[0-9]*")):
             dimms.append(
                 {
@@ -86,26 +88,28 @@ def collect_edac() -> Optional[list[dict[str, Any]]]:
 def stream_journal(*, matches: list[str], source: str) -> Optional[list[dict[str, Any]]]:
     if shutil.which("journalctl") is None:
         return None
-    command = ["journalctl", "--no-pager", "-o", "json", "--output-fields=MESSAGE,_BOOT_ID", "--since", LOOKBACK, *matches]
+    command: list[str] = ["journalctl", "--no-pager", "-o", "json", "--output-fields=MESSAGE,_BOOT_ID", "--since", LOOKBACK, *matches]
     try:
-        process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, stdin=subprocess.DEVNULL, text=True, errors="replace")
+        process: subprocess.Popen[str] = subprocess.Popen(
+            command, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, stdin=subprocess.DEVNULL, text=True, errors="replace"
+        )
     except OSError:
         return None
     assert process.stdout is not None
     kept: collections.deque[dict[str, Any]] = collections.deque(maxlen=MAX_EVENTS)
-    deadline = time.monotonic() + JOURNAL_DEADLINE_SECONDS
+    deadline: float = time.monotonic() + JOURNAL_DEADLINE_SECONDS
     for line in process.stdout:
         if time.monotonic() > deadline:
             process.kill()
             break
         try:
-            entry = json.loads(line)
+            entry: Any = json.loads(line)
         except ValueError:
             continue
-        message = entry.get("MESSAGE")
+        message: object = entry.get("MESSAGE")
         if not isinstance(message, str) or not INTERESTING.search(message):
             continue
-        timestamp = iso(microseconds=entry.get("__REALTIME_TIMESTAMP"))
+        timestamp: Optional[str] = iso(microseconds=entry.get("__REALTIME_TIMESTAMP"))
         if timestamp is None:
             continue
         kept.append({"timestamp": timestamp, "boot_id": str(entry.get("_BOOT_ID", "")), "source": source, "message": message[:MAX_MESSAGE_CHARS]})
@@ -114,17 +118,18 @@ def stream_journal(*, matches: list[str], source: str) -> Optional[list[dict[str
 
 
 def collect_events() -> Optional[list[dict[str, Any]]]:
-    kernel = stream_journal(matches=["_TRANSPORT=kernel"], source="kernel")
-    rasdaemon = stream_journal(matches=["SYSLOG_IDENTIFIER=rasdaemon"], source="rasdaemon")
+    kernel: Optional[list[dict[str, Any]]] = stream_journal(matches=["_TRANSPORT=kernel"], source="kernel")
+    rasdaemon: Optional[list[dict[str, Any]]] = stream_journal(matches=["SYSLOG_IDENTIFIER=rasdaemon"], source="rasdaemon")
     if kernel is None and rasdaemon is None:
         return None
-    return sorted([*(kernel or []), *(rasdaemon or [])], key=lambda event: event["timestamp"])[-MAX_EVENTS:]
+    events: list[dict[str, Any]] = [*(kernel or []), *(rasdaemon or [])]
+    return sorted(events, key=lambda event: event["timestamp"])[-MAX_EVENTS:]
 
 
 def collect_boots() -> list[dict[str, Any]]:
-    output = run(command=["journalctl", "--list-boots", "--no-pager", "-o", "json"]) if shutil.which("journalctl") else None
+    output: Optional[str] = run(command=["journalctl", "--list-boots", "--no-pager", "-o", "json"]) if shutil.which("journalctl") else None
     try:
-        rows = json.loads(output) if output else []
+        rows: Any = json.loads(output) if output else []
     except ValueError:
         return []
     return [
@@ -143,8 +148,8 @@ def collect_ras_summary() -> Optional[str]:
 
 
 def main() -> None:
-    uptime_text = (read_text(path=Path("/proc/uptime")) or "").split()
-    document = {
+    uptime_text: list[str] = (read_text(path=Path("/proc/uptime")) or "").split()
+    document: dict[str, Any] = {
         "now": datetime.now(tz=UTC).isoformat(),
         "boot_id": (read_text(path=Path("/proc/sys/kernel/random/boot_id")) or "").replace("-", ""),
         "uptime_seconds": float(uptime_text[0]) if uptime_text else None,

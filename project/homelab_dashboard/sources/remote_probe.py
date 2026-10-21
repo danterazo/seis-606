@@ -31,16 +31,18 @@ def read_text(*, path: str) -> Optional[str]:
 
 
 def read_int(*, path: str) -> Optional[int]:
-    text = read_text(path=path)
+    text: Optional[str] = read_text(path=path)
     return int(text) if text is not None and text.isdigit() else None
 
 
 def run(*, command: list[str], timeout: float = 4.0) -> str:
     try:
-        completed = subprocess.run(command, capture_output=True, text=True, timeout=timeout, stdin=subprocess.DEVNULL, check=False)
+        completed: subprocess.CompletedProcess[str] = subprocess.run(
+            command, capture_output=True, text=True, timeout=timeout, stdin=subprocess.DEVNULL, check=False
+        )
     except subprocess.TimeoutExpired as error:
         # intel_gpu_top is stopped with SIGINT by `timeout`; keep whatever it printed
-        partial = error.stdout
+        partial: Optional[bytes] = error.stdout
         return partial.decode() if isinstance(partial, bytes) else (partial or "")
     except OSError:
         return ""
@@ -70,19 +72,19 @@ def cpu_topology() -> tuple[Optional[int], Optional[int]]:
 
     records = [record for record in records if record]
     threads: Optional[int] = sum("processor" in record for record in records) or None
-    core_pairs = {(record.get("physical id", "0"), record["core id"]) for record in records if "core id" in record}
+    core_pairs: set[tuple[str, str]] = {(record.get("physical id", "0"), record["core id"]) for record in records if "core id" in record}
     if core_pairs:
         cores: Optional[int] = len(core_pairs)
     else:
-        core_counts = {int(record["cpu cores"]) for record in records if record.get("cpu cores", "").isdigit()}
-        sockets = {record.get("physical id", "0") for record in records}
+        core_counts: set[int] = {int(record["cpu cores"]) for record in records if record.get("cpu cores", "").isdigit()}
+        sockets: set[str] = {record.get("physical id", "0") for record in records}
         cores = next(iter(core_counts)) * len(sockets) if core_counts and sockets else None
     return cores, threads
 
 
 def pretty_gpu_name(*, device: str, vendor: str) -> str:
     """Prefer the marketing name in brackets and make sure the vendor is named."""
-    match = re.search(r"^(.*?)\s*\[([^\]]+)\]\s*$", device)
+    match: Optional[re.Match[str]] = re.search(r"^(.*?)\s*\[([^\]]+)\]\s*$", device)
     if match is None:
         return device if not vendor or vendor.lower() in device.lower() else f"{vendor} {device}"
     chip, marketing = match.group(1), match.group(2)
@@ -93,7 +95,7 @@ def pretty_gpu_name(*, device: str, vendor: str) -> str:
 
 def lspci_device_name(*, slot: str) -> Optional[str]:
     for line in run(command=["lspci", "-mm", "-s", slot]).splitlines():
-        fields = shlex.split(line)
+        fields: list[str] = shlex.split(line)
         if len(fields) > 3:
             return fields[3]
     return None
@@ -103,7 +105,7 @@ def parse_nvidia(*, output: str) -> dict[str, NvidiaReading]:
     """Map PCI slot -> (utilization percent, memory used bytes, memory total bytes)."""
     readings: dict[str, NvidiaReading] = {}
     for line in output.splitlines():
-        parts = [part.strip() for part in line.split(",")]
+        parts: list[str] = [part.strip() for part in line.split(",")]
         if len(parts) != 4:
             continue
         bus_id, utilization, used, total = parts
@@ -117,13 +119,13 @@ def parse_nvidia(*, output: str) -> dict[str, NvidiaReading]:
 
 def parse_intel_busy(*, output: str) -> Optional[float]:
     """intel_gpu_top streams a JSON array that is never closed; use the busiest engine of the last complete sample."""
-    start = output.find("[")
+    start: int = output.find("[")
     if start == -1:
         return None
-    decoder = json.JSONDecoder()
-    text = output[start + 1 :]
+    decoder: json.JSONDecoder = json.JSONDecoder()
+    text: str = output[start + 1 :]
     samples: list[dict[str, Any]] = []
-    index = 0
+    index: int = 0
     while True:
         while index < len(text) and text[index] in " \r\n\t,":
             index += 1
@@ -136,8 +138,8 @@ def parse_intel_busy(*, output: str) -> Optional[float]:
         samples.append(sample)
     if not samples:
         return None
-    engines = samples[-1].get("engines", {})
-    busy = [engine["busy"] for engine in engines.values() if isinstance(engine.get("busy"), (int, float))]
+    engines: dict[str, Any] = samples[-1].get("engines", {})
+    busy: list[Any] = [engine["busy"] for engine in engines.values() if isinstance(engine.get("busy"), (int, float))]
     return float(max(busy)) if busy else None
 
 
@@ -157,28 +159,39 @@ def driver_of(*, path: str) -> Optional[str]:
 
 
 def collect_gpus() -> list[dict[str, Any]]:
-    slots = display_slots()
+    slots: list[str] = display_slots()
     nvidia: dict[str, NvidiaReading] = {}
     if slots:
-        query = ["nvidia-smi", "--query-gpu=pci.bus_id,utilization.gpu,memory.used,memory.total", "--format=csv,noheader,nounits"]
+        query: list[str] = ["nvidia-smi", "--query-gpu=pci.bus_id,utilization.gpu,memory.used,memory.total", "--format=csv,noheader,nounits"]
         nvidia = parse_nvidia(output=run(command=query))
     gpus: list[dict[str, Any]] = []
     for slot in slots:
-        path = f"{PCI_ROOT}/{slot}"
-        vendor = VENDOR_NAMES.get(read_text(path=f"{path}/vendor") or "", "")
-        driver = driver_of(path=path)
-        device = lspci_device_name(slot=slot) or f"GPU {(read_text(path=f'{path}/device') or '').removeprefix('0x')}"
+        path: str = f"{PCI_ROOT}/{slot}"
+        vendor: str = VENDOR_NAMES.get(read_text(path=f"{path}/vendor") or "", "")
+        driver: Optional[str] = driver_of(path=path)
+        device: str = lspci_device_name(slot=slot) or f"GPU {(read_text(path=f'{path}/device') or '').removeprefix('0x')}"
         utilization: Optional[float] = None
         used: Optional[int] = None
         total: Optional[int] = None
         if driver == "amdgpu":
-            busy = read_int(path=f"{path}/gpu_busy_percent")
+            busy: Optional[int] = read_int(path=f"{path}/gpu_busy_percent")
             utilization = None if busy is None else float(busy)
             used, total = read_int(path=f"{path}/mem_info_vram_used"), read_int(path=f"{path}/mem_info_vram_total")
         elif driver == "nvidia":
             utilization, used, total = nvidia.get(slot, (None, None, None))
         elif driver in ("i915", "xe"):
-            command = ["timeout", "-s", "INT", INTEL_WINDOW_SECONDS, "intel_gpu_top", "-J", "-s", INTEL_SAMPLE_MS, "-d", f"pci:slot={slot}"]
+            command: list[str] = [
+                "timeout",
+                "-s",
+                "INT",
+                INTEL_WINDOW_SECONDS,
+                "intel_gpu_top",
+                "-J",
+                "-s",
+                INTEL_SAMPLE_MS,
+                "-d",
+                f"pci:slot={slot}",
+            ]
             utilization = parse_intel_busy(output=run(command=command, timeout=6.0))
         gpus.append(
             {
@@ -207,7 +220,7 @@ def ecc_supported() -> Optional[bool]:
 
 def zfs_arc_stat(*, name: str) -> Optional[int]:
     for line in (read_text(path="/proc/spl/kstat/zfs/arcstats") or "").splitlines():
-        fields = line.split()
+        fields: list[str] = line.split()
         if len(fields) == 3 and fields[0] == name and fields[2].isdigit():
             return int(fields[2])
     return None
@@ -215,7 +228,7 @@ def zfs_arc_stat(*, name: str) -> Optional[int]:
 
 def main() -> None:
     cores, threads = cpu_topology()
-    arc = {"zfs_arc_bytes": zfs_arc_stat(name="size"), "zfs_arc_max_bytes": zfs_arc_stat(name="c_max")}
+    arc: dict[str, Optional[int]] = {"zfs_arc_bytes": zfs_arc_stat(name="size"), "zfs_arc_max_bytes": zfs_arc_stat(name="c_max")}
     print(json.dumps({"cpu_model": cpu_model(), "cpu_cores": cores, "cpu_threads": threads, "ecc_supported": ecc_supported(), **arc, "gpus": []}))
 
 

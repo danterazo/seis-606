@@ -17,7 +17,9 @@ NVME_FIELDS: Final[tuple[str, ...]] = ("critical_warning", "available_spare", "a
 
 def run(*, command: list[str], timeout: float) -> str:
     try:
-        completed = subprocess.run(command, capture_output=True, text=True, timeout=timeout, stdin=subprocess.DEVNULL, check=False)
+        completed: subprocess.CompletedProcess[str] = subprocess.run(
+            command, capture_output=True, text=True, timeout=timeout, stdin=subprocess.DEVNULL, check=False
+        )
     except (subprocess.TimeoutExpired, OSError):
         return ""
     return completed.stdout
@@ -26,7 +28,7 @@ def run(*, command: list[str], timeout: float) -> str:
 def run_json(*, command: list[str]) -> Optional[dict[str, Any]]:
     # smartctl exits non-zero to flag SMART findings while still printing valid JSON, so ignore the exit status
     try:
-        document = json.loads(run(command=command, timeout=SMARTCTL_TIMEOUT_SECONDS))
+        document: Any = json.loads(run(command=command, timeout=SMARTCTL_TIMEOUT_SECONDS))
     except ValueError:
         return None
     return document if isinstance(document, dict) else None
@@ -35,9 +37,9 @@ def run_json(*, command: list[str]) -> Optional[dict[str, Any]]:
 def describe_disk(*, name: str, report: Optional[dict[str, Any]]) -> dict[str, Any]:
     if report is None:
         return {"device": name, "read_failed": True}
-    messages = " ".join(str(message.get("string", "")) for message in report.get("smartctl", {}).get("messages", []))
-    nvme = report.get("nvme_smart_health_information_log", {})
-    attributes = [
+    messages: str = " ".join(str(message.get("string", "")) for message in report.get("smartctl", {}).get("messages", []))
+    nvme: dict[str, Any] = report.get("nvme_smart_health_information_log", {})
+    attributes: list[dict[str, Any]] = [
         {
             "id": row.get("id"),
             "name": row.get("name"),
@@ -48,7 +50,7 @@ def describe_disk(*, name: str, report: Optional[dict[str, Any]]) -> dict[str, A
         }
         for row in report.get("ata_smart_attributes", {}).get("table", [])
     ]
-    temperature = report.get("temperature", {}).get("current")
+    temperature: object = report.get("temperature", {}).get("current")
     return {
         "device": name,
         "model": report.get("model_name"),
@@ -68,13 +70,13 @@ def describe_disk(*, name: str, report: Optional[dict[str, Any]]) -> dict[str, A
 def collect_disks() -> Optional[list[dict[str, Any]]]:
     if shutil.which("smartctl") is None:
         return None
-    scan = run_json(command=["smartctl", "--scan", "-j"]) or {}
+    scan: dict[str, Any] = run_json(command=["smartctl", "--scan", "-j"]) or {}
     disks: list[dict[str, Any]] = []
     for entry in scan.get("devices", []):
-        name = entry.get("name")
+        name: object = entry.get("name")
         if not isinstance(name, str):
             continue
-        command = ["smartctl", "-a", "-j", "-n", "standby", name]
+        command: list[str] = ["smartctl", "-a", "-j", "-n", "standby", name]
         # using `-d scsi` on a SATA disk behind an HBA hides its ATA data; auto-detection handles it
         if isinstance(entry.get("type"), str) and entry["type"] != "scsi":
             command[1:1] = ["-d", entry["type"]]
@@ -85,16 +87,18 @@ def collect_disks() -> Optional[list[dict[str, Any]]]:
 def collect_pools() -> Optional[list[dict[str, Any]]]:
     if shutil.which("zpool") is None:
         return None
-    listing = run(command=["zpool", "list", "-Hp", "-o", "name,health,capacity,size,allocated,free,fragmentation"], timeout=ZPOOL_TIMEOUT_SECONDS)
+    listing: str = run(
+        command=["zpool", "list", "-Hp", "-o", "name,health,capacity,size,allocated,free,fragmentation"], timeout=ZPOOL_TIMEOUT_SECONDS
+    )
     pools: list[dict[str, Any]] = []
     for line in listing.splitlines():
-        fields = line.split("\t")
+        fields: list[str] = line.split("\t")
         if len(fields) != 7:
             continue
         name, health, capacity, size, allocated, free, fragmentation = fields
-        status = run(command=["zpool", "status", "-p", name], timeout=ZPOOL_TIMEOUT_SECONDS)
-        dataset = run(command=["zfs", "get", "-Hp", "-d", "0", "-o", "name,value", "available", name], timeout=ZPOOL_TIMEOUT_SECONDS)
-        dataset_available = next(
+        status: str = run(command=["zpool", "status", "-p", name], timeout=ZPOOL_TIMEOUT_SECONDS)
+        dataset: str = run(command=["zfs", "get", "-Hp", "-d", "0", "-o", "name,value", "available", name], timeout=ZPOOL_TIMEOUT_SECONDS)
+        dataset_available: Optional[int] = next(
             (int(value) for line in dataset.splitlines() if len((row := line.split("\t"))) == 2 and row[0] == name and (value := row[1]).isdigit()),
             None,
         )

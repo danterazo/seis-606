@@ -8,6 +8,7 @@ from homelab_dashboard.models import (
     ClusterSnapshot,
     ErrorCategory,
     ErrorClass,
+    ErrorIncident,
     Hardware,
     HardwareErrors,
     HardwareSource,
@@ -112,9 +113,9 @@ def test_kernel_mce_lines_cmci_storms_and_soft_offlining_are_separate_categories
             event(message="mce: [Hardware Error]: CPU 5: Machine Check: 0 Bank 0: 90000040000f0005", minute=4),
         )
     )
-    categories = {incident.category for incident in result.incidents}
+    categories: set[ErrorCategory] = {incident.category for incident in result.incidents}
     assert categories == {ErrorCategory.CPU_MCE, ErrorCategory.PAGE_OFFLINE}
-    offline = next(incident for incident in result.incidents if incident.category is ErrorCategory.PAGE_OFFLINE)
+    offline: ErrorIncident = next(incident for incident in result.incidents if incident.category is ErrorCategory.PAGE_OFFLINE)
     assert dict(offline.fields)["page_frame"] == "0x17c08ac"
     assert "containment" in offline.title
     assert any(dict(incident.fields).get("note") == "CMCI storm" for incident in result.incidents)
@@ -129,7 +130,7 @@ def test_pcie_and_storage_path_errors_are_tracked_without_double_counting_contin
             event(message="blk_update_request: I/O error, dev sdb, sector 0", minute=3),
         )
     )
-    by_category = {incident.category: incident for incident in result.incidents}
+    by_category: dict[ErrorCategory, ErrorIncident] = {incident.category: incident for incident in result.incidents}
     assert by_category[ErrorCategory.PCIE].count == 1
     assert by_category[ErrorCategory.PCIE].classification is ErrorClass.UNCORRECTED
     assert dict(by_category[ErrorCategory.PCIE].fields)["device"] == "0000:00:1c.0"

@@ -4,6 +4,7 @@ import subprocess
 import threading
 from collections.abc import Sequence
 from datetime import UTC, datetime
+from http.server import ThreadingHTTPServer
 from pathlib import Path
 from typing import Any, Optional
 from urllib.error import HTTPError
@@ -54,28 +55,28 @@ def test_dev_version_reports_web_asset_changes_without_server_restart(tmp_path: 
         def fetch_fresh(self) -> ClusterSnapshot:
             return self.fetch()
 
-    web_root = tmp_path / "web"
+    web_root: Path = tmp_path / "web"
     web_root.mkdir()
-    asset = web_root / "aero.css"
+    asset: Path = web_root / "aero.css"
     asset.write_text("body { color: black; }")
     monkeypatch.setattr(target=server, name="WEB_ROOT", value=web_root)
     monkeypatch.setenv(name="DASHBOARD_DEV", value="1")
-    activity_log = ActivityLog(tmp_path / "logs" / "access.jsonl")
-    http_server = create_server(
+    activity_log: ActivityLog = ActivityLog(tmp_path / "logs" / "access.jsonl")
+    http_server: ThreadingHTTPServer = create_server(
         settings=Settings.from_env(environ={"PORT": "0"}),
         source=UnavailablePve(),
         activity_log=activity_log,
     )
-    thread = threading.Thread(target=http_server.serve_forever, daemon=True)
+    thread: threading.Thread = threading.Thread(target=http_server.serve_forever, daemon=True)
     thread.start()
-    base = f"http://127.0.0.1:{http_server.server_port}"
+    base: str = f"http://127.0.0.1:{http_server.server_port}"
     try:
         with urlopen(f"{base}/__dev/version", timeout=5) as response:
-            initial_payload = json.load(response)
-        current_mtime = asset.stat().st_mtime_ns
+            initial_payload: dict[str, Any] = json.load(response)
+        current_mtime: int = asset.stat().st_mtime_ns
         os.utime(asset, ns=(current_mtime + 1_000_000_000, current_mtime + 1_000_000_000))
         with urlopen(f"{base}/__dev/version", timeout=5) as response:
-            current_payload = json.load(response)
+            current_payload: dict[str, Any] = json.load(response)
         assert current_payload["version"] == initial_payload["version"]
         assert current_payload["assets"]["/aero.css"] > initial_payload["assets"]["/aero.css"]
     finally:
@@ -98,14 +99,14 @@ def test_devices_endpoint_is_independent_of_pve_and_can_force_refresh() -> None:
         def fetch_fresh(self) -> ClusterSnapshot:
             return self.fetch()
 
-    devices = OpenWrtLeaseSource(target=SshTarget(host="192.168.10.1"), runner=runner)
-    server = create_server(settings=Settings.from_env(environ={"PORT": "0"}), source=UnavailablePve(), devices=devices)
-    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    devices: OpenWrtLeaseSource = OpenWrtLeaseSource(target=SshTarget(host="192.168.10.1"), runner=runner)
+    server: ThreadingHTTPServer = create_server(settings=Settings.from_env(environ={"PORT": "0"}), source=UnavailablePve(), devices=devices)
+    thread: threading.Thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()
-    base = f"http://127.0.0.1:{server.server_port}"
+    base: str = f"http://127.0.0.1:{server.server_port}"
     try:
         with urlopen(f"{base}/api/devices", timeout=5) as response:
-            payload = json.load(response)
+            payload: dict[str, Any] = json.load(response)
             assert payload["leases"][0]["display_name"] == "\u3055\u308b"
             assert payload["error"] is None
         with urlopen(f"{base}/api/devices", timeout=5):
@@ -133,11 +134,11 @@ def test_activity_log_records_access_without_payload_and_can_be_cleared(tmp_path
         def fetch_fresh(self) -> ClusterSnapshot:
             return self.fetch()
 
-    activity_log = ActivityLog(tmp_path / "logs" / "access.jsonl")
-    server = create_server(settings=Settings.from_env(environ={"PORT": "0"}), source=UnavailablePve(), activity_log=activity_log)
-    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    activity_log: ActivityLog = ActivityLog(tmp_path / "logs" / "access.jsonl")
+    server: ThreadingHTTPServer = create_server(settings=Settings.from_env(environ={"PORT": "0"}), source=UnavailablePve(), activity_log=activity_log)
+    thread: threading.Thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()
-    base = f"http://127.0.0.1:{server.server_port}"
+    base: str = f"http://127.0.0.1:{server.server_port}"
     try:
         try:
             with urlopen(f"{base}/api/status?refresh=1", timeout=5):
@@ -145,15 +146,15 @@ def test_activity_log_records_access_without_payload_and_can_be_cleared(tmp_path
         except HTTPError as error:
             assert error.code == 503
         with urlopen(f"{base}/api/logs", timeout=5) as response:
-            entries = json.load(response)["entries"]
-        status_entry = next(entry for entry in entries if entry["path"] == "/api/status")
+            entries: list[dict[str, Any]] = json.load(response)["entries"]
+        status_entry: dict[str, Any] = next(entry for entry in entries if entry["path"] == "/api/status")
         assert status_entry["method"] == "GET"
         assert status_entry["status"] == 503
         assert set(status_entry) == {"timestamp", "method", "path", "status", "client"}
         assert "refresh" not in status_entry["path"]
         assert "PVE unavailable" not in json.dumps(entries)
 
-        unauthorized = Request(
+        unauthorized: Request = Request(
             f"{base}/api/logs/clear",
             data=b"",
             method="POST",
@@ -170,7 +171,7 @@ def test_activity_log_records_access_without_payload_and_can_be_cleared(tmp_path
             raise AssertionError("Expected a cross-origin clear request to be rejected")
         assert any(entry["path"] == "/api/status" for entry in activity_log.read())
 
-        request = Request(
+        request: Request = Request(
             f"{base}/api/logs/clear",
             data=b"",
             method="POST",
@@ -181,7 +182,7 @@ def test_activity_log_records_access_without_payload_and_can_be_cleared(tmp_path
         )
         with urlopen(request, timeout=5) as response:
             assert response.status == 200
-        cleared_entries = activity_log.read()
+        cleared_entries: list[dict[str, Any]] = activity_log.read()
         assert len(cleared_entries) == 1
         assert cleared_entries[0]["path"] == "/api/logs/clear"
         assert cleared_entries[0]["status"] == 200
@@ -200,11 +201,13 @@ def test_activity_log_failures_return_safe_errors_and_recover(tmp_path: Path, mo
         def fetch_fresh(self) -> ClusterSnapshot:
             return self.fetch()
 
-    activity_log = ActivityLog(tmp_path / "access.jsonl")
-    http_server = create_server(settings=Settings.from_env(environ={"PORT": "0"}), source=UnavailablePve(), activity_log=activity_log)
-    thread = threading.Thread(target=http_server.serve_forever, daemon=True)
+    activity_log: ActivityLog = ActivityLog(tmp_path / "access.jsonl")
+    http_server: ThreadingHTTPServer = create_server(
+        settings=Settings.from_env(environ={"PORT": "0"}), source=UnavailablePve(), activity_log=activity_log
+    )
+    thread: threading.Thread = threading.Thread(target=http_server.serve_forever, daemon=True)
     thread.start()
-    base = f"http://127.0.0.1:{http_server.server_port}"
+    base: str = f"http://127.0.0.1:{http_server.server_port}"
 
     def fail(*args: object, **kwargs: object) -> None:
         raise PermissionError("private filesystem detail")
@@ -212,7 +215,7 @@ def test_activity_log_failures_return_safe_errors_and_recover(tmp_path: Path, mo
     try:
         with monkeypatch.context() as patch:
             patch.setattr(activity_log, operation, fail)
-            request = (
+            request: Request = (
                 Request(f"{base}/api/logs/clear", data=b"", method="POST", headers={"Origin": base, "X-Homelab-Action": "clear-logs"})
                 if operation == "clear"
                 else Request(f"{base}/api/logs")
@@ -225,7 +228,7 @@ def test_activity_log_failures_return_safe_errors_and_recover(tmp_path: Path, mo
                 with pytest.raises(HTTPError) as caught:
                     urlopen(request, timeout=5)
                 assert caught.value.code == 503
-                payload = json.load(caught.value)
+                payload: dict[str, Any] = json.load(caught.value)
                 assert payload == {"error": "Activity log could not be cleared." if operation == "clear" else "Activity log is unavailable."}
         with urlopen(f"{base}/api/logs", timeout=5) as response:
             assert response.status == 200
@@ -264,15 +267,15 @@ def test_reboot_endpoint_checks_origin_and_validates_commands_before_ssh() -> No
         def fetch_fresh(self) -> ClusterSnapshot:
             return self.fetch()
 
-    source = FakePve()
-    rebooter = GuestRebooter(source=source, runner=runner)
-    server = create_server(settings=Settings.from_env(environ={"PORT": "0"}), source=source, rebooter=rebooter)
-    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    source: FakePve = FakePve()
+    rebooter: GuestRebooter = GuestRebooter(source=source, runner=runner)
+    server: ThreadingHTTPServer = create_server(settings=Settings.from_env(environ={"PORT": "0"}), source=source, rebooter=rebooter)
+    thread: threading.Thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()
-    base = f"http://127.0.0.1:{server.server_port}"
+    base: str = f"http://127.0.0.1:{server.server_port}"
 
     def post(*, body: object, origin: str = base, action: str = "reboot", content_type: str = "application/json") -> int:
-        request = Request(
+        request: Request = Request(
             f"{base}/api/guests/reboot",
             data=json.dumps(body).encode(),
             method="POST",
@@ -291,7 +294,7 @@ def test_reboot_endpoint_checks_origin_and_validates_commands_before_ssh() -> No
             return error.code
 
     try:
-        valid = {"vmid": 112, "node": "cerulean"}
+        valid: dict[str, object] = {"vmid": 112, "node": "cerulean"}
         assert post(body=valid, origin="https://evil.example") == 403
         assert post(body=valid, origin="") == 403
         assert post(body=valid, action="") == 403

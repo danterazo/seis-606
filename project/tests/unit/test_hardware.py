@@ -116,7 +116,7 @@ def test_parse_hardware_rejects_non_objects() -> None:
 
 
 def test_probe_parses_nvidia_csv_by_pci_slot() -> None:
-    readings = remote_probe.parse_nvidia(output="00000000:01:00.0, 37, 2048, 16311\n")
+    readings: dict[str, remote_probe.NvidiaReading] = remote_probe.parse_nvidia(output="00000000:01:00.0, 37, 2048, 16311\n")
     assert readings == {"0000:01:00.0": (37.0, 2048 * 1024 * 1024, 16311 * 1024 * 1024)}
 
 

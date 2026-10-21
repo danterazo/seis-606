@@ -5,15 +5,17 @@ import socket
 import socketserver
 import sys
 import time
+from collections.abc import Callable
 from functools import partial
 from http import HTTPStatus
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any, Final, Optional, Union
-from urllib.parse import parse_qs, urlparse
+from urllib.parse import ParseResult, parse_qs, urlparse
 
 from homelab_dashboard.activity_log import ActivityLog
 from homelab_dashboard.config import Settings
+from homelab_dashboard.models import ClusterSnapshot
 from homelab_dashboard.node_profiles import expected_hardware_for
 from homelab_dashboard.presentation import present_payload
 from homelab_dashboard.services.guests import GuestRebooter
@@ -62,7 +64,7 @@ class DashboardHandler(SimpleHTTPRequestHandler):
         super().__init__(request, client_address, server, directory=str(WEB_ROOT))
 
     def do_GET(self) -> None:
-        url = urlparse(self.path)
+        url: ParseResult = urlparse(self.path)
         if url.path == DEV_VERSION_PATH and os.environ.get("DASHBOARD_DEV") == "1":
             assets: dict[str, int] = {
                 f"/{path.relative_to(WEB_ROOT).as_posix()}": path.stat().st_mtime_ns for path in sorted(WEB_ROOT.rglob("*")) if path.is_file()
@@ -71,7 +73,7 @@ class DashboardHandler(SimpleHTTPRequestHandler):
             return
         if url.path == LOGS_PATH:
             try:
-                entries = self.activity_log.read()
+                entries: list[dict[str, Any]] = self.activity_log.read()
             except OSError:
                 self._send_json(status=HTTPStatus.SERVICE_UNAVAILABLE, payload={"error": "Activity log is unavailable."})
             else:
@@ -126,7 +128,7 @@ class DashboardHandler(SimpleHTTPRequestHandler):
             document: object = json.loads(self.rfile.read(length))
             if not isinstance(document, dict) or set(document) != {"vmid", "node"}:
                 raise ValueError("A guest ID and node name are required; no other fields are accepted.")
-            submit = self.rebooter.reboot if verb == "reboot" else self.rebooter.start
+            submit: Callable[..., None] = self.rebooter.reboot if verb == "reboot" else self.rebooter.start
             submit(vmid=document["vmid"], node_name=document["node"])
         except (ValueError, UnicodeDecodeError) as error:
             self._send_json(status=HTTPStatus.BAD_REQUEST, payload={"error": str(error)})
@@ -141,7 +143,7 @@ class DashboardHandler(SimpleHTTPRequestHandler):
 
     def _is_local_same_origin_request(self, *, action: str) -> bool:
         host: str = self.headers.get("Host", "")
-        origin = urlparse(self.headers.get("Origin", ""))
+        origin: ParseResult = urlparse(self.headers.get("Origin", ""))
         return not (
             not ipaddress.ip_address(self.client_address[0]).is_loopback
             or urlparse(f"//{host}").hostname not in ("localhost", "127.0.0.1", "::1")
@@ -163,7 +165,7 @@ class DashboardHandler(SimpleHTTPRequestHandler):
             self.log_message("Could not write activity log: %s", error)
 
     def _status_payload(self, *, force_refresh: bool) -> dict[str, Any]:
-        snapshot = self.source.fetch_fresh() if force_refresh else self.source.fetch()
+        snapshot: ClusterSnapshot = self.source.fetch_fresh() if force_refresh else self.source.fetch()
         return present_payload(payload=snapshot.to_payload(), image_dir=NODE_IMAGE_DIR)
 
     def end_headers(self) -> None:

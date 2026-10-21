@@ -13,7 +13,7 @@ def test_workload_counts_are_derived_from_returned_workloads() -> None:
         ],
     )
 
-    counts = workload_counts_for(node=node)
+    counts: dict[str, int] = workload_counts_for(node=node)
 
     assert counts == {"virtual_machine": 2, "container": 1}
     assert node.workload_counts == counts
@@ -35,6 +35,6 @@ def test_duplicate_names_are_kept_distinct_by_node() -> None:
         ),
     ]
 
-    names = {workload.name for node in nodes for workload in node.workloads}
+    names: set[str] = {workload.name for node in nodes for workload in node.workloads}
     assert len(names) == 1
     assert [node.node_id for node in nodes] == ["node-a", "node-b"]

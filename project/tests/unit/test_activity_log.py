@@ -1,6 +1,8 @@
 import json
+from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
+from typing import Any
 
 import pytest
 from homelab_dashboard import activity_log
@@ -12,11 +14,11 @@ def record(log: ActivityLog, path: str = "/api/status") -> None:
 
 
 def test_retains_newest_complete_records_within_storage_limit(tmp_path: Path) -> None:
-    log = ActivityLog(tmp_path / "logs" / "access.jsonl", max_bytes=512)
+    log: ActivityLog = ActivityLog(tmp_path / "logs" / "access.jsonl", max_bytes=512)
     for index in range(30):
         record(log, f"/request/{index}")
         assert log.path.stat().st_size <= log.max_bytes
-    entries = log.read()
+    entries: list[dict[str, Any]] = log.read()
     assert 0 < len(entries) < 30
     assert [entry["path"] for entry in entries] == [f"/request/{index}" for index in range(30 - len(entries), 30)]
     assert len(log.path.read_bytes().splitlines()) == len(entries)
@@ -26,7 +28,7 @@ def test_retains_newest_complete_records_within_storage_limit(tmp_path: Path) ->
 
 
 def test_oversized_existing_log_is_bounded_on_read_and_next_write(tmp_path: Path) -> None:
-    log = ActivityLog(tmp_path / "access.jsonl", max_bytes=512)
+    log: ActivityLog = ActivityLog(tmp_path / "access.jsonl", max_bytes=512)
     log.path.write_bytes(b"x" * 100_000 + b'\n{"path":"/retained"}\n')
     assert log.read() == [{"path": "/retained"}]
     record(log)
@@ -35,15 +37,15 @@ def test_oversized_existing_log_is_bounded_on_read_and_next_write(tmp_path: Path
 
 
 def test_tail_preserves_record_exactly_on_boundary(tmp_path: Path) -> None:
-    data = b'{"path":"/retained"}\n'
-    log = ActivityLog(tmp_path / "access.jsonl", max_bytes=len(data))
+    data: bytes = b'{"path":"/retained"}\n'
+    log: ActivityLog = ActivityLog(tmp_path / "access.jsonl", max_bytes=len(data))
     log.path.write_bytes(b"discard\n" + data)
     assert log.read() == [{"path": "/retained"}]
 
 
 def test_compaction_leaves_room_for_subsequent_appends(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    log = ActivityLog(tmp_path / "access.jsonl", max_bytes=512)
-    replace = activity_log.os.replace
+    log: ActivityLog = ActivityLog(tmp_path / "access.jsonl", max_bytes=512)
+    replace: Callable[..., None] = activity_log.os.replace
     replacements: list[Path] = []
 
     def track_replace(source: Path, destination: Path) -> None:
@@ -58,13 +60,13 @@ def test_compaction_leaves_room_for_subsequent_appends(tmp_path: Path, monkeypat
 
 
 def test_corrupt_non_object_and_incomplete_records_are_skipped(tmp_path: Path) -> None:
-    log = ActivityLog(tmp_path / "access.jsonl")
+    log: ActivityLog = ActivityLog(tmp_path / "access.jsonl")
     log.path.write_bytes(b'broken\n\xff\n[]\nnull\n{"path":"/valid"}\n{"partial":')
     assert log.read() == [{"path": "/valid"}]
 
 
 def test_missing_log_and_clear(tmp_path: Path) -> None:
-    log = ActivityLog(tmp_path / "logs" / "access.jsonl")
+    log: ActivityLog = ActivityLog(tmp_path / "logs" / "access.jsonl")
     assert log.read() == []
     record(log, '/\u00fe\nquoted"')
     assert log.read()[0]["path"] == '/\u00fe\nquoted"'
@@ -77,18 +79,18 @@ def test_missing_log_and_clear(tmp_path: Path) -> None:
 
 
 def test_next_write_recovers_from_incomplete_trailing_record(tmp_path: Path) -> None:
-    log = ActivityLog(tmp_path / "access.jsonl")
+    log: ActivityLog = ActivityLog(tmp_path / "access.jsonl")
     log.path.write_bytes(b'{"path":"/valid"}\n{"partial":')
     record(log, "/next")
     assert [entry["path"] for entry in log.read()] == ["/valid", "/next"]
 
 
 def test_concurrent_writes_remain_complete_and_bounded(tmp_path: Path) -> None:
-    log = ActivityLog(tmp_path / "access.jsonl", max_bytes=512)
+    log: ActivityLog = ActivityLog(tmp_path / "access.jsonl", max_bytes=512)
     with ThreadPoolExecutor(max_workers=8) as executor:
         list(executor.map(lambda index: record(log, f"/request/{index}"), range(100)))
     assert log.path.stat().st_size <= log.max_bytes
-    entries = log.read()
+    entries: list[dict[str, Any]] = log.read()
     assert entries
     assert len(entries) == len(log.path.read_bytes().splitlines())
     assert len({entry["path"] for entry in entries}) == len(entries)
@@ -101,18 +103,18 @@ def test_invalid_storage_limit_is_rejected(tmp_path: Path, max_bytes: int) -> No
 
 
 def test_oversized_entry_preserves_existing_log(tmp_path: Path) -> None:
-    log = ActivityLog(tmp_path / "access.jsonl", max_bytes=512)
+    log: ActivityLog = ActivityLog(tmp_path / "access.jsonl", max_bytes=512)
     record(log)
-    before = log.path.read_bytes()
+    before: bytes = log.path.read_bytes()
     with pytest.raises(OSError, match="storage limit"):
         record(log, "x" * 1024)
     assert log.path.read_bytes() == before
 
 
 def test_failed_compaction_preserves_existing_log(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    log = ActivityLog(tmp_path / "access.jsonl", max_bytes=200)
+    log: ActivityLog = ActivityLog(tmp_path / "access.jsonl", max_bytes=200)
     record(log)
-    before = log.path.read_bytes()
+    before: bytes = log.path.read_bytes()
 
     def fail_replace(source: Path, destination: Path) -> None:
         raise OSError("simulated disk failure")
@@ -126,7 +128,7 @@ def test_failed_compaction_preserves_existing_log(tmp_path: Path, monkeypatch: p
 
 
 def test_filesystem_errors_are_not_silently_treated_as_empty(tmp_path: Path) -> None:
-    log = ActivityLog(tmp_path)
+    log: ActivityLog = ActivityLog(tmp_path)
     with pytest.raises(OSError):
         log.read()
     with pytest.raises(OSError):

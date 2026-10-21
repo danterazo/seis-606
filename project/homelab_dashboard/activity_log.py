@@ -4,7 +4,7 @@ import tempfile
 import threading
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, Optional
 
 
 class ActivityLog:
@@ -42,7 +42,7 @@ class ActivityLog:
                     log_file.write(encoded)
                 return
             retained: bytes = self._tail(min(self.max_bytes // 2, self.max_bytes - len(encoded)))
-            temporary: Path | None = None
+            temporary: Optional[Path] = None
             try:
                 with tempfile.NamedTemporaryFile(dir=self.path.parent, prefix=f".{self.path.name}.", delete=False) as log_file:
                     temporary = Path(log_file.name)

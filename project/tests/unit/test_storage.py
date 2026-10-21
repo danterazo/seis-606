@@ -5,7 +5,7 @@ from datetime import UTC, datetime
 from typing import Any, Optional
 
 import pytest
-from homelab_dashboard.models import ClusterSnapshot, Hardware, HardwareSource, HealthLevel, Node, NodeState, Resources, Storage
+from homelab_dashboard.models import ClusterSnapshot, Disk, Hardware, HardwareSource, HealthLevel, Node, NodeState, Pool, Resources, Storage
 from homelab_dashboard.node_profiles import expected_hardware_for
 from homelab_dashboard.sources import storage_probe
 from homelab_dashboard.sources.base import StatusSourceError
@@ -51,7 +51,7 @@ def test_failed_smart_and_bad_attributes_are_reported_worst_first() -> None:
         {"id": 9, "name": "Power_On_Hours", "value": 90, "thresh": 0, "raw": 5000, "when_failed": ""},
         {"id": 3, "name": "Spin_Up_Time", "value": 5, "thresh": 21, "raw": 0, "when_failed": "FAILING_NOW"},
     ]
-    disk = parse_storage(document={"disks": [hdd(smart_passed=False, attributes=attributes)]}).disks[0]
+    disk: Disk = parse_storage(document={"disks": [hdd(smart_passed=False, attributes=attributes)]}).disks[0]
     assert disk.level is HealthLevel.CRITICAL
     assert disk.findings[0] == "SMART overall health check failed"
     assert "Reallocated_Sector_Ct: 8" in disk.findings
@@ -66,7 +66,7 @@ def test_nvme_health_log_is_judged() -> None:
         "temperature": 40,
         "nvme": {"critical_warning": 0, "available_spare": 4, "available_spare_threshold": 10, "percentage_used": 95, "media_errors": 0},
     }
-    disk = parse_storage(document={"disks": [nvme]}).disks[0]
+    disk: Disk = parse_storage(document={"disks": [nvme]}).disks[0]
     assert disk.kind == "nvme"
     assert disk.level is HealthLevel.CRITICAL
     assert len(disk.findings) == 2
@@ -82,7 +82,7 @@ HEALTHY_STATUS: str = "  pool: rpool\n state: ONLINE\n  scan: scrub repaired 0B 
 
 
 def test_healthy_pool() -> None:
-    pool = parse_storage(
+    pool: Pool = parse_storage(
         document={
             "pools": [{"name": "rpool", "health": "ONLINE", "capacity": "12", "size": "1000", "dataset_available": "400", "status": HEALTHY_STATUS}]
         }
@@ -94,7 +94,7 @@ def test_healthy_pool() -> None:
 @pytest.mark.parametrize(argnames=("scan", "expected"), argvalues=[("scrub", "Scrub Running"), ("resilver", "Resilver Running")])
 def test_pool_scan_in_progress_is_capitalized(scan: str, expected: str) -> None:
     status: str = HEALTHY_STATUS.replace("scan: scrub repaired 0B in 00:10:00 with 0 errors on Sun", f"scan: {scan} in progress")
-    pool = parse_storage(document={"pools": [{"name": "rpool", "health": "ONLINE", "status": status}]}).pools[0]
+    pool: Pool = parse_storage(document={"pools": [{"name": "rpool", "health": "ONLINE", "status": status}]}).pools[0]
     assert pool.scan == expected
 
 
@@ -102,7 +102,7 @@ def test_pool_problems() -> None:
     status: str = HEALTHY_STATUS.replace("rpool       ONLINE       0     0     0", "rpool       ONLINE       0     0     3").replace(
         "No known data errors", "Permanent errors have been detected"
     )
-    pool = parse_storage(document={"pools": [{"name": "rpool", "health": "DEGRADED", "capacity": "93", "status": status}]}).pools[0]
+    pool: Pool = parse_storage(document={"pools": [{"name": "rpool", "health": "DEGRADED", "capacity": "93", "status": status}]}).pools[0]
     assert pool.level is HealthLevel.CRITICAL
     assert any("checksum 3" in finding for finding in pool.findings)
     assert "93% full" in pool.findings and "Pool is DEGRADED" in pool.findings
@@ -142,7 +142,7 @@ def test_pool_probe_reads_available_from_only_the_root_dataset(monkeypatch: pyte
     monkeypatch.setattr(target=storage_probe.shutil, name="which", value=lambda name: "/sbin/zpool" if name == "zpool" else None)
     monkeypatch.setattr(target=storage_probe, name="run", value=fake_run)
 
-    pools = storage_probe.collect_pools()
+    pools: Optional[list[dict[str, Any]]] = storage_probe.collect_pools()
 
     assert pools is not None
     assert pools[0]["dataset_available"] == 600

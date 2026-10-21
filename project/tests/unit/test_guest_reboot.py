@@ -45,8 +45,8 @@ def test_reboot_uses_the_current_node_hostname_and_server_derived_kind(kind: Gue
         calls.append(command)
         return subprocess.CompletedProcess(args=command, returncode=0, stdout="", stderr="")
 
-    source = FakeSource(kind=kind)
-    service = GuestRebooter(source=source, runner=runner)
+    source: FakeSource = FakeSource(kind=kind)
+    service: GuestRebooter = GuestRebooter(source=source, runner=runner)
     service.reboot(vmid=112, node_name="cerulean")
     assert source.calls == 1
     assert calls[0][0] == SSH_EXECUTABLE
@@ -63,14 +63,14 @@ def forbidden_runner(command: Sequence[str], *, timeout: float, stdin: Optional[
 
 @pytest.mark.parametrize(argnames="vmid", argvalues=[True, "112", "112; reboot", 99, 1000000000, None])
 def test_invalid_ids_never_run_ssh(vmid: object) -> None:
-    service = GuestRebooter(source=FakeSource(), runner=forbidden_runner)
+    service: GuestRebooter = GuestRebooter(source=FakeSource(), runner=forbidden_runner)
     with pytest.raises(expected_exception=ValueError, match="Guest ID"):
         service.reboot(vmid=vmid, node_name="cerulean")
 
 
 @pytest.mark.parametrize(argnames=("vmid", "node"), argvalues=[(113, "cerulean"), (112, "kex"), (112, "cerulean; reboot"), (112, "")])
 def test_missing_or_moved_guests_never_run_ssh(vmid: int, node: str) -> None:
-    service = GuestRebooter(source=FakeSource(), runner=forbidden_runner)
+    service: GuestRebooter = GuestRebooter(source=FakeSource(), runner=forbidden_runner)
     with pytest.raises(expected_exception=ValueError):
         service.reboot(vmid=vmid, node_name=node)
 
@@ -79,7 +79,7 @@ def test_missing_or_moved_guests_never_run_ssh(vmid: int, node: str) -> None:
     argnames=("guest_state", "node_state"), argvalues=[(GuestState.STOPPED, NodeState.ONLINE), (GuestState.RUNNING, NodeState.OFFLINE)]
 )
 def test_unavailable_guests_never_run_ssh(guest_state: GuestState, node_state: NodeState) -> None:
-    service = GuestRebooter(source=FakeSource(guest_state=guest_state, node_state=node_state), runner=forbidden_runner)
+    service: GuestRebooter = GuestRebooter(source=FakeSource(guest_state=guest_state, node_state=node_state), runner=forbidden_runner)
     with pytest.raises(expected_exception=ValueError, match="Only running"):
         service.reboot(vmid=112, node_name="cerulean")
 
@@ -88,7 +88,7 @@ def test_command_failure_does_not_claim_a_successful_reboot() -> None:
     def runner(command: Sequence[str], *, timeout: float, stdin: Optional[str] = None) -> "subprocess.CompletedProcess[str]":
         return subprocess.CompletedProcess(args=command, returncode=255, stdout="", stderr="Permission denied")
 
-    service = GuestRebooter(source=FakeSource(), runner=runner)
+    service: GuestRebooter = GuestRebooter(source=FakeSource(), runner=runner)
     with pytest.raises(expected_exception=StatusSourceError, match="refused"):
         service.reboot(vmid=112, node_name="cerulean")
 
@@ -97,7 +97,7 @@ def test_command_timeout_warns_against_blind_retries() -> None:
     def runner(command: Sequence[str], *, timeout: float, stdin: Optional[str] = None) -> "subprocess.CompletedProcess[str]":
         raise subprocess.TimeoutExpired(cmd=command, timeout=timeout)
 
-    service = GuestRebooter(source=FakeSource(), runner=runner)
+    service: GuestRebooter = GuestRebooter(source=FakeSource(), runner=runner)
     with pytest.raises(expected_exception=StatusSourceError, match="may still be running"):
         service.reboot(vmid=112, node_name="cerulean")
 

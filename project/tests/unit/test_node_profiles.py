@@ -2,7 +2,7 @@ import re
 from typing import Final
 
 import pytest
-from homelab_dashboard.node_profiles import FALLBACK_PALETTE, NODE_PROFILES, display_name_for, node_sort_key, profile_for_node
+from homelab_dashboard.node_profiles import FALLBACK_PALETTE, NODE_PROFILES, NodeProfile, display_name_for, node_sort_key, profile_for_node
 
 HEX_COLOR: Final[str] = r"#[0-9a-f]{6}"
 
@@ -18,7 +18,7 @@ def test_nodes_are_displayed_with_capital_letters() -> None:
 
 
 def test_badge_initials_are_one_letter_and_unique_among_configured_nodes() -> None:
-    initials = [profile.initial for profile in NODE_PROFILES.values()]
+    initials: list[str] = [profile.initial for profile in NODE_PROFILES.values()]
 
     assert all(len(initial) == 1 and initial.isupper() for initial in initials)
     assert len(set(initials)) == len(initials)
@@ -101,12 +101,12 @@ def test_hostnames_only_apply_transliteration_and_kp125m_separator(name: str, di
 
 
 def test_node_order_uses_ip_addresses_including_new_nodes() -> None:
-    addresses = {"kveikur": "192.168.20.46", "cerulean": "192.168.20.43", "kex": "192.168.20.42", "new-node": "192.168.20.41"}
+    addresses: dict[str, str] = {"kveikur": "192.168.20.46", "cerulean": "192.168.20.43", "kex": "192.168.20.42", "new-node": "192.168.20.41"}
     assert sorted(addresses, key=lambda name: node_sort_key(node_name=name, address=addresses[name])) == ["new-node", "kex", "cerulean", "kveikur"]
 
 
 def test_nodes_without_addresses_sort_last_alphabetically() -> None:
-    names = ["zeta", "kveikur", "alpha", "kex"]
+    names: list[str] = ["zeta", "kveikur", "alpha", "kex"]
 
     assert sorted(names, key=lambda name: node_sort_key(node_name=name)) == ["alpha", "kex", "kveikur", "zeta"]
 
@@ -120,7 +120,7 @@ def test_duplicate_addresses_use_a_stable_name_tiebreaker() -> None:
 
 
 def test_unknown_nodes_keep_the_reported_name_in_their_profile() -> None:
-    first = profile_for_node(node_name="new-node")
+    first: NodeProfile = profile_for_node(node_name="new-node")
 
     assert first == profile_for_node(node_name="new-node")
     assert first.color in FALLBACK_PALETTE

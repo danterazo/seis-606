@@ -8,7 +8,7 @@ import time
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
-from typing import Any, Final, Optional
+from typing import Any, Final, Optional, Union
 
 from homelab_dashboard.node_profiles import display_name_for
 from homelab_dashboard.sources.base import StatusSourceError
@@ -172,7 +172,7 @@ def _device_sort_key(device: dict[str, Any]) -> tuple[bool, bool, int, int, str]
             pass
         else:
             unnamed = True
-    address = ipaddress.ip_address(device["address"] or device["ipv6_addresses"][0])
+    address: Union[ipaddress.IPv4Address, ipaddress.IPv6Address] = ipaddress.ip_address(device["address"] or device["ipv6_addresses"][0])
     outside_lan: bool = device["network_group"] != "lan"
     return (outside_lan, unnamed, address.version, int(address), device["mac"] or "")
 

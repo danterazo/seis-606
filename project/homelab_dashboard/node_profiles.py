@@ -2,7 +2,7 @@ import ipaddress
 import re
 import zlib
 from dataclasses import dataclass
-from typing import Final, Optional
+from typing import Final, Optional, Union
 
 from homelab_dashboard.models import Hardware, HardwareSource
 
@@ -91,7 +91,7 @@ def node_sort_key(*, node_name: str, address: Optional[str] = None) -> tuple[boo
     if address is None:
         return (True, 0, 0, node_name.casefold())
     try:
-        parsed_address = ipaddress.ip_address(address)
+        parsed_address: Union[ipaddress.IPv4Address, ipaddress.IPv6Address] = ipaddress.ip_address(address)
     except ValueError:
         return (True, 0, 0, node_name.casefold())
     return (False, parsed_address.version, int(parsed_address), node_name.casefold())

@@ -1,7 +1,7 @@
 import subprocess
 from collections.abc import Sequence
 from datetime import UTC, datetime
-from typing import Optional
+from typing import Any, Optional
 
 import pytest
 from homelab_dashboard.sources.base import StatusSourceError
@@ -9,6 +9,8 @@ from homelab_dashboard.sources.mac_manufacturer import MacManufacturerLookup
 from homelab_dashboard.sources.openwrt_ssh import (
     REMOTE_COMMAND,
     ROUTER_LEASES_SEPARATOR,
+    DhcpLease,
+    Ipv6Record,
     OpenWrtLeaseSource,
     build_device_payloads,
     parse_ipv6_records,
@@ -40,7 +42,7 @@ def test_mac_manufacturer_lookup_uses_the_most_specific_registered_prefix() -> N
         'MA-M,001122A,"Medium Manufacturer",Address\n'
         'MA-S,001122ABC,"Specific Manufacturer",Address\n'
     )
-    lookup = MacManufacturerLookup(fetch_registry=lambda: registry)
+    lookup: MacManufacturerLookup = MacManufacturerLookup(fetch_registry=lambda: registry)
 
     assert lookup.lookup(mac="00:11:22:AB:CD:EF") == "Specific Manufacturer"
     assert lookup.lookup(mac="00:11:22:AF:CD:EF") == "Medium Manufacturer"
@@ -55,7 +57,7 @@ def test_mac_manufacturer_skips_locally_administered_addresses() -> None:
         called = True
         raise AssertionError("A locally administered MAC should not query the registry.")
 
-    lookup = MacManufacturerLookup(fetch_registry=fetch_registry)
+    lookup: MacManufacturerLookup = MacManufacturerLookup(fetch_registry=fetch_registry)
 
     assert lookup.lookup(mac="02:11:22:AB:CD:EF") is None
     assert called is False
@@ -65,7 +67,7 @@ def test_mac_manufacturer_registry_failure_is_non_blocking() -> None:
     def fetch_registry() -> str:
         raise OSError("Registry unavailable")
 
-    lookup = MacManufacturerLookup(fetch_registry=fetch_registry)
+    lookup: MacManufacturerLookup = MacManufacturerLookup(fetch_registry=fetch_registry)
 
     assert lookup.lookup(mac="00:11:22:AB:CD:EF") is None
 
@@ -99,10 +101,10 @@ class FakeRunner:
 
 
 def test_router_source_caches_failures_and_retains_last_good_data() -> None:
-    runner = FakeRunner()
+    runner: FakeRunner = FakeRunner()
     ticks: list[float] = [0.0]
-    source = OpenWrtLeaseSource(target=SshTarget(host="192.168.10.1"), runner=runner, now=lambda: NOW, clock=lambda: ticks[0])
-    first = source.fetch()
+    source: OpenWrtLeaseSource = OpenWrtLeaseSource(target=SshTarget(host="192.168.10.1"), runner=runner, now=lambda: NOW, clock=lambda: ticks[0])
+    first: dict[str, Any] = source.fetch()
     assert len(first["leases"]) == 2
     assert first["stale"] is False
     assert first["router"] == "192.168.10.1"
@@ -110,14 +112,14 @@ def test_router_source_caches_failures_and_retains_last_good_data() -> None:
     assert "ipv6_error" not in first
     source.fetch()
     assert len(runner.calls) == 1
-    command = runner.calls[0]
+    command: Sequence[str] = runner.calls[0]
     assert "-oStrictHostKeyChecking=yes" in command
     assert "-oBatchMode=yes" in command
     assert command[-2:] == ("root@192.168.10.1", REMOTE_COMMAND)
     ticks[0] = 60.0
     runner.returncode = 255
     runner.stderr = "Host key verification failed."
-    failed = source.fetch()
+    failed: dict[str, Any] = source.fetch()
     assert failed["stale"] is True
     assert "host key" in failed["error"]
     assert failed["leases"] == first["leases"]
@@ -131,15 +133,15 @@ def test_router_source_caches_failures_and_retains_last_good_data() -> None:
 
 
 def test_router_source_exposes_resolved_address_and_openwrt_version() -> None:
-    runner = FakeRunner()
+    runner: FakeRunner = FakeRunner()
     runner.stdout = '{"release":{"version":"25.12.5"}}\n' + ROUTER_LEASES_SEPARATOR + "\n" + LEASES
-    source = OpenWrtLeaseSource(
+    source: OpenWrtLeaseSource = OpenWrtLeaseSource(
         target=SshTarget(host="samskeyti"),
         runner=runner,
         resolver=lambda host: "192.168.10.1",
     )
 
-    payload = source.fetch()
+    payload: dict[str, Any] = source.fetch()
 
     assert payload["router"] == "samskeyti"
     assert payload["router_address"] == "192.168.10.1"
@@ -150,35 +152,37 @@ def test_router_source_exposes_resolved_address_and_openwrt_version() -> None:
 
 
 def test_router_source_adds_registered_manufacturer_to_lease_payload() -> None:
-    runner = FakeRunner()
+    runner: FakeRunner = FakeRunner()
     runner.stdout = "0 00:11:22:AB:CD:EF 192.168.10.2 suika *"
     registry: str = "Registry,Assignment,Organization Name,Organization Address\nMA-L,001122,Test Manufacturer,Address\n"
-    source = OpenWrtLeaseSource(
+    source: OpenWrtLeaseSource = OpenWrtLeaseSource(
         target=SshTarget(host="router"),
         runner=runner,
         manufacturer_lookup=MacManufacturerLookup(fetch_registry=lambda: registry),
     )
 
-    payload = source.fetch()
+    payload: dict[str, Any] = source.fetch()
 
     assert payload["leases"][0]["manufacturer"] == "Test Manufacturer"
 
 
 def test_first_failure_has_no_fake_leases_or_success_timestamp() -> None:
-    runner = FakeRunner()
+    runner: FakeRunner = FakeRunner()
     runner.returncode = 255
-    source = OpenWrtLeaseSource(target=SshTarget(host="router"), runner=runner)
-    payload = source.fetch()
+    source: OpenWrtLeaseSource = OpenWrtLeaseSource(target=SshTarget(host="router"), runner=runner)
+    payload: dict[str, Any] = source.fetch()
     assert payload["leases"] == []
     assert payload["fetched_at"] is None
     assert payload["error"] is not None
 
 
 def test_expired_leases_are_filtered_even_when_the_cache_is_fresh() -> None:
-    runner = FakeRunner()
+    runner: FakeRunner = FakeRunner()
     runner.stdout = "100 aa:bb:cc:dd:ee:ff 192.168.10.2 suika *"
     seconds: list[int] = [99]
-    source = OpenWrtLeaseSource(target=SshTarget(host="router"), runner=runner, now=lambda: datetime.fromtimestamp(timestamp=seconds[0], tz=UTC))
+    source: OpenWrtLeaseSource = OpenWrtLeaseSource(
+        target=SshTarget(host="router"), runner=runner, now=lambda: datetime.fromtimestamp(timestamp=seconds[0], tz=UTC)
+    )
     assert len(source.fetch()["leases"]) == 1
     seconds[0] = 100
     assert source.fetch()["leases"] == []
@@ -186,23 +190,23 @@ def test_expired_leases_are_filtered_even_when_the_cache_is_fresh() -> None:
 
 
 def test_leases_are_grouped_lan_first_and_sorted_by_numeric_ip() -> None:
-    runner = FakeRunner()
+    runner: FakeRunner = FakeRunner()
     addresses: list[str] = ["172.16.10.170", "192.168.20.30", "192.168.10.10", "172.16.0.2", "192.168.10.2"]
     runner.stdout = "\n".join(f"0 aa:bb:cc:dd:ee:ff {address} device *" for address in addresses)
-    source = OpenWrtLeaseSource(target=SshTarget(host="router"), runner=runner)
-    leases = source.fetch()["leases"]
+    source: OpenWrtLeaseSource = OpenWrtLeaseSource(target=SshTarget(host="router"), runner=runner)
+    leases: list[dict[str, Any]] = source.fetch()["leases"]
     assert [lease["address"] for lease in leases] == ["192.168.10.2", "192.168.10.10", "192.168.20.30", "172.16.0.2", "172.16.10.170"]
     assert [lease["network_group"] for lease in leases] == ["lan", "lan", "lan", "guest_iot", "guest_iot"]
 
 
 @pytest.mark.parametrize(argnames="address", argvalues=["192.168.0.1", "192.168.255.254", "172.16.0.1", "10.0.0.1", "192.169.0.1"])
 def test_network_groups_include_all_non_lan_devices_in_the_second_panel(address: str) -> None:
-    lease = parse_leases(text=f"0 aa:bb:cc:dd:ee:ff {address} device *")[0]
+    lease: DhcpLease = parse_leases(text=f"0 aa:bb:cc:dd:ee:ff {address} device *")[0]
     assert lease.to_payload()["network_group"] == ("lan" if address.startswith("192.168.") else "guest_iot")
 
 
 def test_named_devices_precede_ip_only_devices_in_both_panels() -> None:
-    runner = FakeRunner()
+    runner: FakeRunner = FakeRunner()
     runner.stdout = """0 aa:bb:cc:dd:ee:01 172.16.0.2 * *
 0 aa:bb:cc:dd:ee:02 172.16.0.3 172.16.0.3 *
 0 aa:bb:cc:dd:ee:03 172.16.10.170 creality-k1c-wifi *
@@ -211,9 +215,9 @@ def test_named_devices_precede_ip_only_devices_in_both_panels() -> None:
 0 aa:bb:cc:dd:ee:06 192.168.10.2 * *
 0 aa:bb:cc:dd:ee:07 172.16.0.112 KP125M *
 0 aa:bb:cc:dd:ee:08 192.168.10.3 192.168.10.3 *"""
-    source = OpenWrtLeaseSource(target=SshTarget(host="router"), runner=runner)
-    leases = source.fetch()["leases"]
-    addresses = [lease["address"] for lease in leases]
+    source: OpenWrtLeaseSource = OpenWrtLeaseSource(target=SshTarget(host="router"), runner=runner)
+    leases: list[dict[str, Any]] = source.fetch()["leases"]
+    addresses: list[Any] = [lease["address"] for lease in leases]
     assert addresses == [
         "192.168.10.10",
         "192.168.10.2",
@@ -232,12 +236,12 @@ def test_transport_errors_stay_local_to_the_devices_payload(error: Exception) ->
     def runner(command: Sequence[str], *, timeout: float, stdin: Optional[str] = None) -> "subprocess.CompletedProcess[str]":
         raise error
 
-    source = OpenWrtLeaseSource(target=SshTarget(host="router"), runner=runner)
+    source: OpenWrtLeaseSource = OpenWrtLeaseSource(target=SshTarget(host="router"), runner=runner)
     assert source.fetch()["stale"] is True
 
 
 def test_ipv6_neighbors_and_ethernet_duids_match_ipv4_by_mac_not_hostname() -> None:
-    document = {
+    document: dict[str, Any] = {
         "device": {
             "br-lan": {
                 "leases": [
@@ -253,17 +257,17 @@ def test_ipv6_neighbors_and_ethernet_duids_match_ipv4_by_mac_not_hostname() -> N
             }
         }
     }
-    neighbors = [{"dst": "fe80::1234", "dev": "br-lan", "lladdr": "aa:bb:cc:dd:ee:ff", "state": ["STALE"]}]
-    records = parse_ipv6_records(leases=document, neighbors=neighbors, now=NOW)
-    devices = build_device_payloads(leases=parse_leases(text=LEASES), ipv6=records, now=NOW)
-    named = next(device for device in devices if device["address"] == "192.168.10.23")
+    neighbors: list[dict[str, Any]] = [{"dst": "fe80::1234", "dev": "br-lan", "lladdr": "aa:bb:cc:dd:ee:ff", "state": ["STALE"]}]
+    records: tuple[Ipv6Record, ...] = parse_ipv6_records(leases=document, neighbors=neighbors, now=NOW)
+    devices: list[dict[str, Any]] = build_device_payloads(leases=parse_leases(text=LEASES), ipv6=records, now=NOW)
+    named: dict[str, Any] = next(device for device in devices if device["address"] == "192.168.10.23")
     assert named["ipv6_addresses"] == ["fdda:beef:1::30", "fe80::1234"]
     assert named["hostname"] == "ringom4-wifi"
     assert len(devices) == 2
 
 
 def test_enterprise_duid_does_not_get_guessed_as_a_mac_and_remains_ipv6_only() -> None:
-    document = {
+    document: dict[str, Any] = {
         "device": {
             "br-lan": {
                 "leases": [
@@ -278,9 +282,9 @@ def test_enterprise_duid_does_not_get_guessed_as_a_mac_and_remains_ipv6_only() -
             }
         }
     }
-    records = parse_ipv6_records(leases=document, neighbors=[], now=NOW)
-    devices = build_device_payloads(leases=parse_leases(text=LEASES), ipv6=records, now=NOW)
-    unmatched = next(device for device in devices if device["address"] is None)
+    records: tuple[Ipv6Record, ...] = parse_ipv6_records(leases=document, neighbors=[], now=NOW)
+    devices: list[dict[str, Any]] = build_device_payloads(leases=parse_leases(text=LEASES), ipv6=records, now=NOW)
+    unmatched: dict[str, Any] = next(device for device in devices if device["address"] is None)
     assert unmatched["mac"] is None
     assert unmatched["network_group"] == "lan"
     assert unmatched["ipv6_addresses"] == ["fdda:beef:1::18b"]
@@ -288,7 +292,7 @@ def test_enterprise_duid_does_not_get_guessed_as_a_mac_and_remains_ipv6_only() -
 
 
 def test_exact_neighbor_address_links_an_enterprise_duid_and_deduplicates_addresses() -> None:
-    document = {
+    document: dict[str, Any] = {
         "device": {
             "br-lan": {
                 "leases": [
@@ -303,14 +307,16 @@ def test_exact_neighbor_address_links_an_enterprise_duid_and_deduplicates_addres
             }
         }
     }
-    neighbors = [{"dst": "fdda:beef:1::30", "dev": "br-lan", "lladdr": "aa:bb:cc:dd:ee:ff", "state": ["REACHABLE"]}]
-    devices = build_device_payloads(leases=parse_leases(text=LEASES), ipv6=parse_ipv6_records(leases=document, neighbors=neighbors, now=NOW), now=NOW)
+    neighbors: list[dict[str, Any]] = [{"dst": "fdda:beef:1::30", "dev": "br-lan", "lladdr": "aa:bb:cc:dd:ee:ff", "state": ["REACHABLE"]}]
+    devices: list[dict[str, Any]] = build_device_payloads(
+        leases=parse_leases(text=LEASES), ipv6=parse_ipv6_records(leases=document, neighbors=neighbors, now=NOW), now=NOW
+    )
     assert len(devices) == 2
     assert devices[0]["ipv6_addresses"] == ["fdda:beef:1::30"]
 
 
 def test_ipv6_records_expire_and_failed_or_wan_neighbors_are_not_inventory() -> None:
-    document = {
+    document: dict[str, Any] = {
         "device": {
             "br-iot": {
                 "leases": [
@@ -326,14 +332,14 @@ def test_ipv6_records_expire_and_failed_or_wan_neighbors_are_not_inventory() -> 
             }
         }
     }
-    neighbors = [
+    neighbors: list[dict[str, Any]] = [
         {"dst": "fe80::1", "dev": "eth1", "lladdr": "aa:bb:cc:dd:ee:ff", "state": ["STALE"]},
         {"dst": "fe80::2", "dev": "br-iot", "lladdr": "aa:bb:cc:dd:ee:ff", "state": ["FAILED"]},
     ]
-    records = parse_ipv6_records(leases=document, neighbors=neighbors, now=NOW)
+    records: tuple[Ipv6Record, ...] = parse_ipv6_records(leases=document, neighbors=neighbors, now=NOW)
     assert len(records) == 1
     assert records[0].mac == "aa:bb:cc:dd:ee:ff"
-    devices = build_device_payloads(leases=(), ipv6=records, now=NOW)
+    devices: list[dict[str, Any]] = build_device_payloads(leases=(), ipv6=records, now=NOW)
     assert devices[0]["network_group"] == "guest_iot"
     assert build_device_payloads(leases=(), ipv6=records, now=datetime.fromtimestamp(timestamp=NOW.timestamp() + 1, tz=UTC)) == []
 
@@ -344,9 +350,9 @@ def test_malformed_ipv6_documents_are_reported() -> None:
 
 
 def test_active_source_returns_only_ipv4_and_never_queries_ipv6() -> None:
-    runner = FakeRunner()
-    source = OpenWrtLeaseSource(target=SshTarget(host="router"), runner=runner, now=lambda: NOW)
-    payload = source.fetch()
+    runner: FakeRunner = FakeRunner()
+    source: OpenWrtLeaseSource = OpenWrtLeaseSource(target=SshTarget(host="router"), runner=runner, now=lambda: NOW)
+    payload: dict[str, Any] = source.fetch()
     assert payload["error"] is None
     assert len(payload["leases"]) == 2
     assert all(lease["address"] is not None and "ipv6_addresses" not in lease for lease in payload["leases"])
@@ -356,7 +362,7 @@ def test_active_source_returns_only_ipv4_and_never_queries_ipv6() -> None:
 
 
 def test_multiple_ipv6_leases_for_the_same_duid_share_one_card() -> None:
-    document = {
+    document: dict[str, Any] = {
         "device": {
             "br-lan": {
                 "leases": [
@@ -366,7 +372,7 @@ def test_multiple_ipv6_leases_for_the_same_duid_share_one_card() -> None:
             }
         }
     }
-    records = parse_ipv6_records(leases=document, neighbors=[], now=NOW)
-    devices = build_device_payloads(leases=(), ipv6=records, now=NOW)
+    records: tuple[Ipv6Record, ...] = parse_ipv6_records(leases=document, neighbors=[], now=NOW)
+    devices: list[dict[str, Any]] = build_device_payloads(leases=(), ipv6=records, now=NOW)
     assert len(devices) == 1
     assert devices[0]["ipv6_addresses"] == ["fdda:beef:1::1", "fdda:beef:1::2"]

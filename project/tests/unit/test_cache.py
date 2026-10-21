@@ -34,7 +34,7 @@ def make_cache(*, source: ScriptedSource, clock: FakeClock, ttl: float = 4.0) ->
 
 def test_repeated_fetches_within_the_ttl_share_one_query() -> None:
     source, clock = ScriptedSource(), FakeClock()
-    cache = make_cache(source=source, clock=clock)
+    cache: CachedStatusSource = make_cache(source=source, clock=clock)
 
     results: list[str] = [cache.fetch().source for _ in range(3)]
     clock.now = 3.9
@@ -46,7 +46,7 @@ def test_repeated_fetches_within_the_ttl_share_one_query() -> None:
 
 def test_a_new_query_is_made_once_the_ttl_has_passed() -> None:
     source, clock = ScriptedSource(), FakeClock()
-    cache = make_cache(source=source, clock=clock)
+    cache: CachedStatusSource = make_cache(source=source, clock=clock)
 
     cache.fetch()
     clock.now = 4.0
@@ -56,7 +56,7 @@ def test_a_new_query_is_made_once_the_ttl_has_passed() -> None:
 
 def test_fetch_fresh_ignores_the_cache() -> None:
     source, clock = ScriptedSource(), FakeClock()
-    cache = make_cache(source=source, clock=clock)
+    cache: CachedStatusSource = make_cache(source=source, clock=clock)
 
     cache.fetch()
 
@@ -67,7 +67,7 @@ def test_fetch_fresh_ignores_the_cache() -> None:
 def test_failures_are_cached_so_a_down_node_is_not_retried_per_request() -> None:
     source, clock = ScriptedSource(), FakeClock()
     source.fail = True
-    cache = make_cache(source=source, clock=clock)
+    cache: CachedStatusSource = make_cache(source=source, clock=clock)
 
     for _ in range(3):
         with pytest.raises(expected_exception=StatusSourceError, match="down"):
@@ -79,12 +79,12 @@ def test_failures_are_cached_so_a_down_node_is_not_retried_per_request() -> None
 def test_recovery_is_picked_up_after_the_ttl() -> None:
     source, clock = ScriptedSource(), FakeClock()
     source.fail = True
-    cache = make_cache(source=source, clock=clock)
+    cache: CachedStatusSource = make_cache(source=source, clock=clock)
     with pytest.raises(expected_exception=StatusSourceError):
         cache.fetch()
 
     source.fail = False
     clock.now = 5.0
-    recovered = cache.fetch()
+    recovered: ClusterSnapshot = cache.fetch()
 
     assert recovered.source == "call-2"
