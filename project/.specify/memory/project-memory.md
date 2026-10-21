@@ -55,8 +55,8 @@ Updated: 2026-10-21
   layout task itself does not close currently live extras. Configuration assertions pass; actual window close/reopen remains unverified to avoid
   interrupting the user-managed dashboard. The attached dashboard tab was cache-bypassing reloaded and returned HTTP 200. The sibling `seis-765-ops`
   has no startup layout, so no counterpart change applies.
-- On 2026-10-21, `make run` formats the PID of the process stopped on port 8766
-  as `PID <id> · ` immediately before the echoed dashboard startup command.
+- On 2026-10-21, `make run` formats the PID of the process stopped on port 8766 as `PID <id> · ` immediately before the echoed dashboard startup
+  command.
 - On 2026-10-20, the user requested a persistent/default VS Code split for this repo. `.vscode/tasks.json` defines an `Open default terminal layout`
   folder-open/manual task launching the left `dashboard` task and right `bash` shell in one presentation group; automatic tasks require workspace
   consent. The `dashboard` task executes `make run`, which stops any process already listening on port 8766 before starting the dashboard. New
