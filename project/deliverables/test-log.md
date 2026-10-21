@@ -17,7 +17,10 @@ fixtures and the already-running loopback dashboard. No production guest action 
 | U-01 | Usability                    | A new person locating an unavailable node and explaining its status                                                       | Not run; no participant feedback was available during this pass                                                                                                           | No usability result is claimed.                                                                                                                                                  | Deferred: have one person outside the development work use the app without coaching; record their first action, hesitation, and any confusion here before submission.                                               | Required      |
 | A-01 | AI-assisted review           | Independent security/QA review using a tool different from the one used for most development                              | Not run; the development tool history and a separate review result were not available to verify                                                                           | No AI findings are claimed. The assignment explicitly requires a different tool, tool name, findings, and disposition.                                                           | Deferred: run the prompt below in an independently selected tool, record its name and raw findings, then verify or reject each finding with evidence.                                                               | Required      |
 
-## AI Review Prompt
+## AI Review
+I initially used Qwen3.8 27B, ran locally on an RTX 5090, for independent code review. Most development was done using Copilot's cloud/frontier models, so 
+although Qwen3.8 used Copilot as a harness, I considered it independent. In practice, though, the context size was too limited, so I ended up using used
+`Gemma4 26B A4B QAT`
 
 Use a tool different from the one used for most development. Review this repository as a security and QA tester. Focus on concrete, reproducible
 defects in local-only HTTP access, same-origin write protections, SSH command construction, error handling, secret exposure, stale data, and tests. Do
