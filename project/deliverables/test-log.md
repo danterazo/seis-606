@@ -1,10 +1,5 @@
 # Project 1 Test Log
-
-**App:** Homelab Dashboard | **Tester:** Dante Razo | **Date:** 2026-10-21 **Scope:** This is the user's own application, tested with its automated
-fixtures and the already-running loopback dashboard. No production guest action was submitted.
-
 ## Results
-
 | ID   | Category                     | What I tested                                                                                                             | How                                                                                                                                                                       | What happened                                                                                                                                                                    | Action                                                                                                                                                                                                              | Severity      |
 | ---- | ---------------------------- | ------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------- |
 | F-01 | Functional                   | Unit and integration behavior across the implemented dashboard                                                            | Ran `poetry run pytest project/tests -q`; saved full report to `automated-test-results.xml`                                                                               | 264 passed, 0 failed, 0 errors, 0 skipped. Coverage includes parsing, snapshots, source/cache behavior, UI/API behavior, guest controls with fake SSH, logs, and error handling. | Fixed two stale hostname-format expectations in the tests to match `node_profiles.display_name_for` and the README; focused file passed 30/30, then the full suite passed. Production formatter was unchanged.      | Low           |
@@ -18,29 +13,14 @@ fixtures and the already-running loopback dashboard. No production guest action 
 | A-01 | AI-assisted review           | Independent security/QA review using a tool different from the one used for most development                              | Not run; the development tool history and a separate review result were not available to verify                                                                           | No AI findings are claimed. The assignment explicitly requires a different tool, tool name, findings, and disposition.                                                           | Deferred: run the prompt below in an independently selected tool, record its name and raw findings, then verify or reject each finding with evidence.                                                               | Required      |
 
 ## AI Review
-I initially used Qwen3.8 27B, ran locally on an RTX 5090, for independent code review. Most development was done using Copilot's cloud/frontier models, so 
-although Qwen3.8 used Copilot as a harness, I considered it independent. In practice, though, the context size was too limited, so I ended up using used
-`Gemma4 26B A4B QAT`
+I initially used Qwen3.8 27B, ran locally on an RTX 5090, for independent code review. Most development was done using Copilot's cloud/frontier
+models — although Qwen3.8 used Copilot as a harness, I considered it independent. In practice, though, the context size was too limited, so I ended 
+up using using `Gemma4 26B A4B QAT`.
 
-Use a tool different from the one used for most development. Review this repository as a security and QA tester. Focus on concrete, reproducible
-defects in local-only HTTP access, same-origin write protections, SSH command construction, error handling, secret exposure, stale data, and tests. Do
-not execute commands, contact hosts, or perform state-changing actions. For every finding, give severity, file/function, a plausible impact, and a
-safe verification method. Also call out uncertainties and areas the tests do not cover. Do not assume a finding is true until it is checked against
-the code.
 
 ## Manual Usability Record
-
-Complete after the participant test:
-
-- Participant (classmate or outside class):
-- Date and test setup:
-- Task given, without coaching:
-- What they tried first:
-- Where they paused or struggled:
-- What they understood correctly:
-- Change made, deferred, or consciously not made:
+N/A, due to personal nature of application.
 
 ## Limitations
-
 The automated suite uses fixtures and fake SSH. It does not validate real Proxmox/router connectivity, browser refresh during an in-flight action,
-rapid clicking by a human, or recovery from a real node outage. The existing presentation deck was not reviewed or changed in this workspace.
+rapid clicking by a human, or recovery from a real node outage.
