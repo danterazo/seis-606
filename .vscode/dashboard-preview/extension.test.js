@@ -11,6 +11,7 @@ function fixture({
   trusted = true,
   exists = true,
   commandFails = false,
+  tabs = [],
 } = {}) {
   const listeners = {};
   const commands = [];
@@ -44,6 +45,7 @@ function fixture({
       },
     },
     window: {
+      tabGroups: { all: [{ tabs }] },
       createOutputChannel: () => ({
         appendLine: (message) => logs.push(message),
         dispose() {},
@@ -120,14 +122,72 @@ test("loads an already-running dashboard and reuses its loopback browser tab", a
   assert.equal(state.commands[0][1].url, "http://127.0.0.1:8766/");
   assert.equal(
     state.commands[0][1].reuseUrlFilter,
-    "http://{127.0.0.1,localhost}:8766",
+    "http://{127.0.0.1,localhost}:8766/**",
   );
+});
+
+test("reuse filter matches existing dashboard URLs but not other services", async () => {
+  const state = fixture();
+  await settle();
+  const filter = state.commands[0][1].reuseUrlFilter;
+  for (const hostname of ["localhost", "127.0.0.1"]) {
+    for (const suffix of ["/", "/?view=nodes", "/#nodes", "/nodes/"]) {
+      assert(path.matchesGlob(`http://${hostname}:8766${suffix}`, filter));
+    }
+  }
+  for (const url of [
+    "http://localhost:8767/",
+    "http://localhost:87660/",
+    "http://example.com:8766/",
+    "https://localhost:8766/",
+  ]) {
+    assert.equal(path.matchesGlob(url, filter), false);
+  }
 });
 
 test("waits through connection refusal and non-200 responses", async () => {
   const state = fixture({ statuses: [0, 503, 200] });
   await settle();
   assert.equal(state.requests(), 3);
+  assert.equal(state.commands.length, 1);
+});
+
+test("keeps existing pinned dashboard tabs without issuing an open command", async () => {
+  for (const label of [
+    "Dante's Cluster",
+    "http://localhost:8766/",
+    "http://127.0.0.1:8766/",
+  ]) {
+    const tab = { label, isPinned: true };
+    const state = fixture({ tabs: [tab] });
+    await settle();
+    assert.equal(state.commands.length, 0);
+    assert.equal(tab.isPinned, true);
+    assert(state.logs.some((message) => message.includes("kept its existing")));
+  }
+});
+
+test("checks for a restored dashboard tab after waiting for server readiness", async () => {
+  const tabs = [];
+  const state = fixture({ tabs, statuses: [503, 200] });
+  tabs.push({ label: "Dante's Cluster", isPinned: true });
+  await settle();
+  assert.equal(state.commands.length, 0);
+});
+
+test("does not mistake other tabs or ports for the dashboard", async () => {
+  const state = fixture({
+    tabs: [{ label: "Other app" }, { label: "http://localhost:87660/" }],
+  });
+  await settle();
+  assert.equal(state.commands.length, 1);
+});
+
+test("does not reopen a handled task after its readiness check finishes", async () => {
+  const state = fixture();
+  await settle();
+  state.listeners.onDidStartTaskProcess({ execution: state.execution });
+  await settle();
   assert.equal(state.commands.length, 1);
 });
 

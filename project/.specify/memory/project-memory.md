@@ -12,6 +12,12 @@ Updated: 2026-10-21
 
 ## Development Workflow
 
+- On 2026-10-21, user reported duplicate cluster browser tabs despite an existing pinned dashboard. Helper 0.1.3 checks visible VS Code tab labels for
+  the dashboard title or exact loopback host/port before opening, leaving an existing tab untouched. A WeakSet prevents repeated events for a
+  successfully handled task from opening again. Thirteen tests cover pinned/restored tabs, other ports, and repeated events. The original empty-path
+  reuse filter was not the root cause: installed VS Code source treats it as unrestricted. The path-inclusive fallback filter is retained, but the
+  explicit existing-tab guard is the behavioral fix. Version 0.1.3 was packaged and installed on both WSL2 nodes from the synced VSIX; no server
+  restart or window reload was performed. Natural next-start verification remains in the shared ledger.
 - On 2026-10-21, the startup terminal task labels were shortened to `dashboard` and `bash`. Diagnosis found
   `terminal.integrated.hideOnStartup: "never"` in the workspace settings: with persistent sessions disabled, VS Code still opened a default shell
   before the folder-open task created the intended split. Restored `"whenEmpty"` to prevent that extra shell. Task commands, split grouping, icons,

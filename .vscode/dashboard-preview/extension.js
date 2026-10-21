@@ -6,6 +6,16 @@ const vscode = require("vscode");
 
 const dashboardUrl = "http://127.0.0.1:8766/";
 
+function hasDashboardTab() {
+  return vscode.window.tabGroups.all.some((group) =>
+    group.tabs.some(
+      (tab) =>
+        tab.label === "Dante's Cluster" ||
+        /^http:\/\/(localhost|127\.0\.0\.1):8766(?:[/?#]|$)/.test(tab.label),
+    ),
+  );
+}
+
 function isDashboard(execution) {
   const task = execution.task;
   const root = task.scope?.uri?.fsPath;
@@ -38,11 +48,17 @@ function isReady(signal) {
 
 function activate(context) {
   const pending = new Map();
+  const handled = new WeakSet();
   const output = vscode.window.createOutputChannel("Homelab Dashboard Preview");
   context.subscriptions.push(output);
 
   async function openWhenReady(execution) {
-    if (!isDashboard(execution) || pending.has(execution)) return;
+    if (
+      !isDashboard(execution) ||
+      pending.has(execution) ||
+      handled.has(execution)
+    )
+      return;
     const controller = new AbortController();
     pending.set(execution, controller);
     try {
@@ -50,13 +66,21 @@ function activate(context) {
       while (!controller.signal.aborted && Date.now() < deadline) {
         if (await isReady(controller.signal)) {
           if (controller.signal.aborted) return;
+          if (hasDashboardTab()) {
+            handled.add(execution);
+            output.appendLine(
+              "Dashboard ready; kept its existing browser tab.",
+            );
+            return;
+          }
           await vscode.commands.executeCommand(
             "workbench.action.browser.open",
             {
               url: dashboardUrl,
-              reuseUrlFilter: "http://{127.0.0.1,localhost}:8766",
+              reuseUrlFilter: "http://{127.0.0.1,localhost}:8766/**",
             },
           );
+          handled.add(execution);
           output.appendLine(
             "Dashboard ready; opened or refreshed its browser tab.",
           );

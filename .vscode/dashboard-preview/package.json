@@ -2,7 +2,7 @@
   "name": "homelab-dashboard-preview",
   "displayName": "Homelab Dashboard Preview",
   "description": "Load the dashboard browser tab when its workspace task is ready.",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "publisher": "local-tools",
   "engines": {
     "vscode": "^1.142.0"
