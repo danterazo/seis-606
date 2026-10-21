@@ -1,7 +1,23 @@
 {
+  "[markdown]": {
+    "editor.wordWrap": "off"
+  },
+  "chat.tools.terminal.autoApprove": {
+    "/^node --check project/web/aero\\.js$/": {
+      "approve": true,
+      "matchCommandLine": true
+    }
+  },
+  "git.detectSubmodules": false,
+  "python.analysis.extraPaths": [
+    "project"
+  ],
+  "python.languageServer": "Pylance",
+  "task.reconnection": false,
   "terminal.integrated.enablePersistentSessions": false,
-  "terminal.integrated.hideOnStartup": "whenEmpty",
+  "terminal.integrated.hideOnStartup": "never",
   "terminal.integrated.persistentSessionReviveProcess": "never",
+  "terminal.integrated.persistentSessionScrollback": 10000,
   "terminal.integrated.scrollback": 10000,
-  "task.reconnection": false
+  "terminal.integrated.tabs.enabled": true
 }
