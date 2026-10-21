@@ -13,3 +13,4 @@ project/logs/
 
 # Sync conflicts
 *.sync-conflict-*
+.syncthing.*.tmp

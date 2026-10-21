@@ -75,6 +75,7 @@ These are discussion items, not authorization to change code or deployment. Upda
 
 ## Code Cleanup
 
+- On 2026-10-21, both class repositories ignore SyncThing temporary files matching `.syncthing.*.tmp`; ordinary `.tmp` files remain trackable.
 - On 2026-10-21, added matching `make clean` targets to all class repositories. They remove only SyncThing conflict copies and Windows `Zone.Identifier`
   files outside `.git`; the target is documented in each repository README.
 
