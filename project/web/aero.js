@@ -1275,20 +1275,7 @@ function renderTopology(nodes) {
         ],
       ),
       svgText({ x, y: nodeY + 46, text: nodeLabel(node), className: "topo-label" }),
-      ...(isVpnAddress(node.address)
-        ? [
-            svg("image", {
-              href: TAILSCALE_LOGO_URL,
-              x: x - 50,
-              y: nodeY + 52,
-              width: 14,
-              height: 14,
-              role: "img",
-              "aria-label": "Tailscale VPN",
-            }),
-            svgText({ x: x + 4, y: nodeY + 62, text: node.address ?? "", className: "topo-sub" }),
-          ]
-        : [svgText({ x, y: nodeY + 62, text: node.address ?? "Address Unknown", className: "topo-sub" })]),
+      svgText({ x, y: nodeY + 62, text: node.address ?? "Address Unknown", className: "topo-sub" }),
     );
 
     const shown = node.guests.slice(0, MAX_TOPOLOGY_GUESTS);

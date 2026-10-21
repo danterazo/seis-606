@@ -13,6 +13,7 @@ Updated: 2026-10-21
   as authentication.
 
 ## Development Workflow
+- On 2026-10-21, Tailscale icon remains in Nodes, not Cluster Topology.
 
 - On 2026-10-21, prepared Project 1 deliverables in `project/deliverables/`: a test log, JUnit XML for 264 passing tests, and a 1-2 page analysis.
   The first suite run had two stale hostname-format assertions; updated only those expectations, confirmed the focused 30-test file, then reran all
