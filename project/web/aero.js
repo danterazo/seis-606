@@ -782,7 +782,7 @@ function hardwareErrorBadges(node) {
       : errors.level === "ok"
         ? "HW Errors: None"
         : current.length > 0
-          ? `HW Errors: ${plural(current.length, "Incident")}`
+          ? `HW: ${plural(current.length, "Error")}`
           : errors.incidents.length === 0
             ? "HW Errors: Counters"
             : `HW Errors: ${plural(history, "Past Incident")}`;
