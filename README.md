@@ -15,11 +15,15 @@ The manual **Markdown: Export PDF (Pandoc)** task exports the active Markdown fi
 The startup `dashboard` tab uses a pink/magenta play icon, and the initial `bash` tab icon uses gold/yellow, with exact shades supplied by the active
 theme. These colors apply only to the two startup tasks; ordinary new Bash terminals and splits retain the default teal color.
 
-Local workspace settings disable persistent terminal sessions, process revival, and task reconnection so old terminals are not restored alongside the
-default split. Active terminals retain 10,000 lines of scrollback within the current session. These settings live in the Git-ignored
-`.vscode/settings.json`; the default split is versioned in `.vscode/tasks.json`. Closing or reloading the window ends terminal sessions, including the
+Versioned workspace settings disable persistent terminal sessions, process revival, and task reconnection so old terminals are not restored alongside
+the default split. `terminal.integrated.hideOnStartup: "whenEmpty"` prevents an empty terminal panel from creating an extra shell before the automatic
+tasks reveal their split. Active terminals retain 10,000 lines of scrollback within the current session. These settings live in
+`.vscode/settings.json`; the default split is defined in `.vscode/tasks.json`. Closing or reloading the window ends terminal sessions, including the
 dashboard; the automatic tasks recreate the default split when the repository opens again. Running the layout task manually does not close unrelated
 terminals already open in the current window.
+
+The `Task` suffix is supplied by `${task}` in `terminal.integrated.tabs.description`. That workspace-wide description template can omit the variable
+or use custom text; individual task definitions cannot configure a separate tab-description suffix.
 
 ## Dependencies
 

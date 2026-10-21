@@ -12,6 +12,12 @@ Updated: 2026-10-21
 
 ## Development Workflow
 
+- On 2026-10-21, follow-up on Marigold WSL2 found `.vscode/settings.json` absent, leaving user-level terminal persistence and revival enabled. Added
+  terminal-only workspace settings and removed their Git ignore so the fix can be versioned. Set `terminal.integrated.hideOnStartup` to `whenEmpty` to
+  prevent VS Code creating an ordinary shell before folder-open tasks populate the split; task grouping was already correct. This supersedes the
+  local-only settings policy below. Configuration/source checks pass; actual close/reopen remains unverified, and live terminals were preserved to
+  avoid interrupting the dashboard. The `Task` suffix comes from `${task}` in the workspace-wide tab description template; no per-task suffix field
+  exists, and the description remains unchanged.
 - On 2026-10-21, the user requested separate commits and PRs for independent concerns, specifically Copilot guidance versus Biome schema fixes. Keep
   implementation-specific memory with its corresponding concern. The existing combined commit is accepted as-is; do not rewrite it for this
   correction.

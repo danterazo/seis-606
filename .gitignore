@@ -11,6 +11,5 @@ __pycache__/
 # Runtime activity logs
 project/logs/
 
-# IDE
-.vscode/settings.json
+# Sync conflicts
 *.sync-conflict-*

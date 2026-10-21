@@ -1,0 +1,7 @@
+{
+  "terminal.integrated.enablePersistentSessions": false,
+  "terminal.integrated.hideOnStartup": "whenEmpty",
+  "terminal.integrated.persistentSessionReviveProcess": "never",
+  "terminal.integrated.scrollback": 10000,
+  "task.reconnection": false
+}
