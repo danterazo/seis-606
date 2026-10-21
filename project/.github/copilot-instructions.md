@@ -28,6 +28,8 @@ Modify `.vscode/settings.json` only when the user explicitly requests it. Python
 - After validation, offer to commit only this thread's changes. Provide a suggested commit message, accept a custom message, and offer no commit in
   one question form.
 - Commit only approved thread-specific files or hunks. Preserve unrelated staging; never stage the entire worktree indiscriminately.
+- Keep independent concerns in separate commits and PRs. In particular, do not bundle Copilot instructions or workflow preferences with application,
+  dependency, or tooling fixes. Keep implementation-specific memory with its relevant concern.
 - If changes overlap and cannot be confidently separated, ask.
 - Do not commit without approval. After an approved commit, push to the configured remote unless the user explicitly says not to; do not ask for
   separate push approval.

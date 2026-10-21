@@ -12,6 +12,9 @@ Updated: 2026-10-21
 
 ## Development Workflow
 
+- On 2026-10-21, the user requested separate commits and PRs for independent concerns, specifically Copilot guidance versus Biome schema fixes.
+  Keep implementation-specific memory with its corresponding concern. The existing combined commit is accepted as-is; do not rewrite it for this
+  correction.
 - On 2026-10-21, the user changed the commit workflow: after an approved commit, push to the configured remote unless explicitly told not to.
   Keep the existing commit-choice approval step; do not ask for separate push approval. This supersedes the former project-specific no-push default.
 - On 2026-10-21, the user requested only the default split on workspace open. Local `.vscode/settings.json` now disables persistent sessions, process
