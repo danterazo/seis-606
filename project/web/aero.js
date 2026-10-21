@@ -1655,6 +1655,11 @@ function render() {
   syncHardwareErrorsDialog();
   required("#source-label").textContent = state.snapshot?.source ?? "No data source connected";
   const lastUpdate = state.snapshot ? new Date(state.snapshot.fetched_at).toLocaleTimeString() : null;
+  const cowStatus =
+    lastUpdate === null ? (state.error === null ? "Connecting to PVE..." : "PVE update failed") : state.error === null ? `Updated ${lastUpdate}` : `Stale: ${lastUpdate}`;
+  const cow = required(".dns-cow");
+  cow.setAttribute("aria-label", `PVE data status: ${cowStatus}`);
+  required("#cow-status").textContent = cowStatus;
   required("#updated").textContent =
     state.error !== null
       ? lastUpdate === null

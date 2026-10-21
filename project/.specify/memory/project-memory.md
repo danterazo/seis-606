@@ -87,6 +87,7 @@ Updated: 2026-10-21
 
 These are discussion items, not authorization to change code or deployment. Update status only when the user requests or verifies the work.
 
+- [ ] Revisit whether the floating cow remains useful as a live Proxmox refresh indicator or should be removed outright.
 - [ ] Reconcile the README's LAN reverse-proxy plan with the operator-only decision; confirm the access boundary before changing deployment guidance.
 - [ ] Evaluate least-privilege Proxmox/router reads, including scoped PVE API tokens and restricted probes where suitable.
 - [ ] Evaluate reducing root SSH privileges, especially for guest start/reboot actions; retain the current behavior unless a change is explicitly

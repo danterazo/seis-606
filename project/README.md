@@ -1,8 +1,9 @@
 # Homelab Dashboard
 
-A status dashboard with explicit guest reboot controls for a Proxmox VE cluster, styled after Frutiger Aero / Y2K desktops. Guest tags appear as
-badges, including VPN badges for tagged LXCs and a hard-drive badge for NAS-tagged guests. Resource readings come from Proxmox; display profiles,
-fallback CPU models, and memory descriptions are configured separately. SSH uses hostnames resolved by the local system.
+A status dashboard with explicit guest reboot controls for a Proxmox VE cluster, styled after Frutiger Aero / Y2K desktops. The floating cowsay bubble
+shows when Proxmox data was last updated and indicates when the latest refresh failed. Guest tags appear as badges, including VPN badges for tagged
+LXCs and a hard-drive badge for NAS-tagged guests. Resource readings come from Proxmox; display profiles, fallback CPU models, and memory
+descriptions are configured separately. SSH uses hostnames resolved by the local system.
 
 ## Run
 
