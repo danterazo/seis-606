@@ -2,14 +2,16 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "dashboard",
+      "label": "run",
       "type": "process",
       "icon": {
         "id": "play",
         "color": "terminal.ansiMagenta"
       },
       "command": "make",
-      "args": ["run"],
+      "args": [
+        "run"
+      ],
       "options": {
         "cwd": "${workspaceFolder}"
       },
@@ -35,7 +37,9 @@
         "color": "terminal.ansiYellow"
       },
       "command": "bash",
-      "args": ["-i"],
+      "args": [
+        "-i"
+      ],
       "options": {
         "cwd": "${workspaceFolder}"
       },
@@ -54,8 +58,11 @@
       }
     },
     {
-      "label": "Open default terminal layout",
-      "dependsOn": ["dashboard", "bash"],
+      "label": "Open Default Terminal Layout",
+      "dependsOn": [
+        "run",
+        "bash"
+      ],
       "dependsOrder": "parallel",
       "runOptions": {
         "runOn": "folderOpen"
