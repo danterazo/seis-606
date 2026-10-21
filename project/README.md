@@ -66,11 +66,12 @@ resources.
 I have plenty of experience making apps accessible from the internet, but this app is deliberately not public: it would be a privacy nightmare. It has
 no user login, and its read endpoints reveal detailed node and guest information, device names, DHCP leases, IP/MAC addresses, and request metadata.
 
-The intended deployment is on my home network so any machine on my LAN can access it, through a local-only reverse proxy at
-`https://dash.samskeyti.net`. The proxy, DNS, firewall, and router must keep that hostname and service unreachable from the public internet; do not
-use port forwarding or a public tunnel. HTTPS protects data in transit, but does not add authentication: LAN clients can read the dashboard's status,
-lease, and activity-log endpoints. Keep `HOMELAB_UI_HOST=127.0.0.1` for local development, and allow LAN clients to reach only the reverse proxy;
-allow the app upstream to accept connections only from that proxy.
+The intended deployment is on my home network, which is LAN-only and single-occupant, through a local-only reverse proxy at
+`https://dash.samskeyti.net`. This matches the intended personal use, but it is not user authentication: any person or device that can reach the
+service on the LAN can read the dashboard's status, lease, and activity-log endpoints. The proxy, DNS, firewall, and router must keep that hostname
+and service unreachable from the public internet; do not use port forwarding or a public tunnel. HTTPS protects data in transit, not access. Keep
+`HOMELAB_UI_HOST=127.0.0.1` for local development, and allow LAN clients to reach only the reverse proxy; allow the app upstream to accept
+connections only from that proxy.
 
 Guest start/reboot and log-clear requests are restricted to loopback clients with a matching localhost Host and Origin plus an app-specific action
 header. These checks help prevent remote and cross-origin writes; they are not user authentication. Other processes or users on the same machine
@@ -179,7 +180,6 @@ passwords.
 | `project/tests/unit/`                                       | Focused tests for dashboard modules                                     |
 | `project/web/`                                              | Browser interface, styles, scripts, and frontend tooling                |
 | `project/web/images/`                                       | Dashboard imagery and logos                                             |
-
 ## Test
 
 From the repository root, run `make fix` to apply supported Python and web lint fixes, format Python/web files and tracked Markdown, then run Python
@@ -190,6 +190,15 @@ without modifying files. Problems without a supported automatic fix still fail t
 python3 -m pytest project/tests
 python3 -m mypy --strict project/server.py project/homelab_dashboard
 ```
+
+## Project 1 Deliverables
+
+- [Test log](deliverables/test-log.md), with the full automated result in [automated-test-results.xml](deliverables/automated-test-results.xml).
+- [Analysis write-up](deliverables/analysis-writeup.md).
+- The existing five-slide presentation is [project-presentation.pptx](deliverables/project-presentation.pptx); its working copy is maintained outside
+      this workspace and was not edited here.
+- The feature spec, plan, and task artifacts are in `project/specs/001-homelab-inventory-dashboard/`. The test log and analysis document call out
+      known differences between that original design and the current implementation.
 
 ## Hardware Details
 

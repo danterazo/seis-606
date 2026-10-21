@@ -25,7 +25,7 @@ def test_dnsmasq_leases_preserve_identity_and_use_shared_names() -> None:
     assert named.mac == "aa:bb:cc:dd:ee:ff"
     assert named.to_payload()["mac"] == "AA:BB:CC:DD:EE:FF"
     assert named.hostname == "ringom4-wifi"
-    assert named.to_payload()["display_name"] == "\u308a\u3093\u3054 (M4) (WiFi)"
+    assert named.to_payload()["display_name"] == "\u308a\u3093\u3054m4-wifi"
     assert named.expires_at == datetime.fromtimestamp(timestamp=2000000000, tz=UTC)
     assert unnamed.expires_at is None
     assert unnamed.hostname is None
@@ -224,7 +224,7 @@ def test_named_devices_precede_ip_only_devices_in_both_panels() -> None:
         "172.16.0.2",
         "172.16.0.3",
     ]
-    assert next(lease["display_name"] for lease in leases if lease["address"] == "172.16.0.238") == "EcoFlow DELTA 3 Plus (Server Rack)"
+    assert next(lease["display_name"] for lease in leases if lease["address"] == "172.16.0.238") == "ecoflow"
 
 
 @pytest.mark.parametrize(argnames="error", argvalues=[FileNotFoundError(), subprocess.TimeoutExpired(cmd="ssh", timeout=8)])

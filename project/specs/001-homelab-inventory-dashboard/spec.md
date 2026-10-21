@@ -174,3 +174,13 @@ freshness information for each case.
 - Inventory management is a later feature and will have its own data model, requirements, and acceptance tests.
 - Authentication, access control, and secret storage are supplied by the deployment environment and are not defined by this read-only dashboard
   feature.
+
+## Project 1 As-Built Note (2026-10-21)
+
+This original design is not a complete description of the submitted implementation. The current dashboard uses SSH-based Proxmox and router sources,
+shows DHCP lease and hardware/storage information, and exposes guest start/reboot and activity-log clearing controls. The spec above instead requires
+a read-only Proxmox API-token integration and excludes state-changing controls. The current dashboard displays checks every second, rather than the
+specified 30-second interval. ARM VM filtering, reverse-proxy base-path support, and the listed usability/performance acceptance criteria have not
+been established by the current test results. See
+`project/deliverables/analysis-writeup.md` for the gap analysis and prioritized follow-up. Passing implementation tests do not imply those original
+requirements were met.

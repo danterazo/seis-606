@@ -5,12 +5,20 @@ Updated: 2026-10-21
 ## Operating Decision
 
 - This is a personal homelab dashboard for one operator on the user's own hardware, not a public or multi-user product.
-- Keep it local-only and operator-only. Do not broaden access or implement deferred hardening without an explicit request.
-- Local-only limits intended reach, not all risk; compromised accounts, browsers, proxies, or LAN devices remain in scope.
-- The app defaults to loopback. The README's LAN-access plan conflicts with the user's only-for-my-eyes decision and must be reconciled before
-  implementation.
+- The user clarified on 2026-10-21 that LAN-only access is consistent with the personal-use plan because they live alone; keep the intended deployment
+  off the public internet and do not broaden access without an explicit request.
+- LAN-only is not authentication: any person or device able to reach the LAN endpoint can read the dashboard. Compromised accounts, browsers, proxies,
+  or LAN devices remain in scope.
+- The app defaults to loopback. The README's local reverse-proxy plan is the intended deployment; preserve its LAN-only boundary and do not present it
+  as authentication.
 
 ## Development Workflow
+
+- On 2026-10-21, prepared Project 1 deliverables in `project/deliverables/`: a test log, JUnit XML for 264 passing tests, and a 1-2 page analysis.
+  The first suite run had two stale hostname-format assertions; updated only those expectations, confirmed the focused 30-test file, then reran all
+  264 tests successfully. The local page returned HTTP 200 and showed one of three nodes unavailable. The unauthenticated local status endpoint
+  returned HTTP 200; page-source key-pattern and browser-storage scans found no matches. Human usability testing and the required independent AI
+  review remain unverified. The existing PowerPoint was not edited; the user maintains its working copy outside VS Code/WSL2.
 
 - On 2026-10-21, the floating footer cowsay was replaced with a static ASCII cow beside the randomized three-line poem in the Homelab Haiku panel. The
   original animated Borg bubble remains in hidden footer markup for a possible future Easter egg; refresh time remains in the dashboard header.

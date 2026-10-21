@@ -1,0 +1,623 @@
+<?xml version="1.0" encoding="utf-8"?>
+<testsuites name="pytest tests">
+    <testsuite name="pytest" errors="0" failures="0" skipped="0" tests="264" time="4.012"
+        timestamp="2026-10-21T13:21:33.514972-05:00" hostname="ovedur">
+        <testcase classname="project.tests.integration.test_dashboard_overview"
+            name="test_dashboard_snapshot_includes_label_and_node_counts" time="0.000" />
+        <testcase classname="project.tests.integration.test_dashboard_overview"
+            name="test_dev_version_reports_web_asset_changes_without_server_restart" time="0.516" />
+        <testcase classname="project.tests.integration.test_dashboard_overview"
+            name="test_devices_endpoint_is_independent_of_pve_and_can_force_refresh" time="0.510" />
+        <testcase classname="project.tests.integration.test_dashboard_overview"
+            name="test_activity_log_records_access_without_payload_and_can_be_cleared" time="0.508" />
+        <testcase classname="project.tests.integration.test_dashboard_overview"
+            name="test_activity_log_failures_return_safe_errors_and_recover[read]" time="0.504" />
+        <testcase classname="project.tests.integration.test_dashboard_overview"
+            name="test_activity_log_failures_return_safe_errors_and_recover[clear]" time="0.504" />
+        <testcase classname="project.tests.integration.test_dashboard_overview"
+            name="test_activity_log_failures_return_safe_errors_and_recover[record]" time="0.504" />
+        <testcase classname="project.tests.integration.test_dashboard_overview"
+            name="test_reboot_endpoint_checks_origin_and_validates_commands_before_ssh" time="0.515" />
+        <testcase classname="project.tests.unit.test_activity_log"
+            name="test_retains_newest_complete_records_within_storage_limit" time="0.005" />
+        <testcase classname="project.tests.unit.test_activity_log"
+            name="test_oversized_existing_log_is_bounded_on_read_and_next_write" time="0.002" />
+        <testcase classname="project.tests.unit.test_activity_log"
+            name="test_tail_preserves_record_exactly_on_boundary" time="0.001" />
+        <testcase classname="project.tests.unit.test_activity_log"
+            name="test_compaction_leaves_room_for_subsequent_appends" time="0.004" />
+        <testcase classname="project.tests.unit.test_activity_log"
+            name="test_corrupt_non_object_and_incomplete_records_are_skipped" time="0.001" />
+        <testcase classname="project.tests.unit.test_activity_log" name="test_missing_log_and_clear"
+            time="0.001" />
+        <testcase classname="project.tests.unit.test_activity_log"
+            name="test_next_write_recovers_from_incomplete_trailing_record" time="0.001" />
+        <testcase classname="project.tests.unit.test_activity_log"
+            name="test_concurrent_writes_remain_complete_and_bounded" time="0.044" />
+        <testcase classname="project.tests.unit.test_activity_log"
+            name="test_invalid_storage_limit_is_rejected[0]" time="0.001" />
+        <testcase classname="project.tests.unit.test_activity_log"
+            name="test_invalid_storage_limit_is_rejected[-1]" time="0.001" />
+        <testcase classname="project.tests.unit.test_activity_log"
+            name="test_oversized_entry_preserves_existing_log" time="0.001" />
+        <testcase classname="project.tests.unit.test_activity_log"
+            name="test_failed_compaction_preserves_existing_log" time="0.001" />
+        <testcase classname="project.tests.unit.test_activity_log"
+            name="test_filesystem_errors_are_not_silently_treated_as_empty" time="0.001" />
+        <testcase classname="project.tests.unit.test_cache"
+            name="test_repeated_fetches_within_the_ttl_share_one_query" time="0.000" />
+        <testcase classname="project.tests.unit.test_cache"
+            name="test_a_new_query_is_made_once_the_ttl_has_passed" time="0.000" />
+        <testcase classname="project.tests.unit.test_cache"
+            name="test_fetch_fresh_ignores_the_cache" time="0.000" />
+        <testcase classname="project.tests.unit.test_cache"
+            name="test_failures_are_cached_so_a_down_node_is_not_retried_per_request" time="0.000" />
+        <testcase classname="project.tests.unit.test_cache"
+            name="test_recovery_is_picked_up_after_the_ttl" time="0.000" />
+        <testcase classname="project.tests.unit.test_config"
+            name="test_default_proxmox_ssh_host_uses_cerulean_hostname" time="0.000" />
+        <testcase classname="project.tests.unit.test_config"
+            name="test_default_router_ssh_host_uses_hostname" time="0.000" />
+        <testcase classname="project.tests.unit.test_config"
+            name="test_ui_host_is_independent_from_proxmox_ssh_host" time="0.000" />
+        <testcase classname="project.tests.unit.test_domain"
+            name="test_workload_counts_are_derived_from_returned_workloads" time="0.000" />
+        <testcase classname="project.tests.unit.test_domain"
+            name="test_duplicate_names_are_kept_distinct_by_node" time="0.000" />
+        <testcase classname="project.tests.unit.test_guest_reboot"
+            name="test_reboot_uses_the_current_node_hostname_and_server_derived_kind[container-pct reboot 112]"
+            time="0.001" />
+        <testcase classname="project.tests.unit.test_guest_reboot"
+            name="test_reboot_uses_the_current_node_hostname_and_server_derived_kind[vm-qm reboot 112]"
+            time="0.000" />
+        <testcase classname="project.tests.unit.test_guest_reboot"
+            name="test_invalid_ids_never_run_ssh[True]" time="0.000" />
+        <testcase classname="project.tests.unit.test_guest_reboot"
+            name="test_invalid_ids_never_run_ssh[112]" time="0.000" />
+        <testcase classname="project.tests.unit.test_guest_reboot"
+            name="test_invalid_ids_never_run_ssh[112; reboot]" time="0.000" />
+        <testcase classname="project.tests.unit.test_guest_reboot"
+            name="test_invalid_ids_never_run_ssh[99]" time="0.000" />
+        <testcase classname="project.tests.unit.test_guest_reboot"
+            name="test_invalid_ids_never_run_ssh[1000000000]" time="0.000" />
+        <testcase classname="project.tests.unit.test_guest_reboot"
+            name="test_invalid_ids_never_run_ssh[None]" time="0.000" />
+        <testcase classname="project.tests.unit.test_guest_reboot"
+            name="test_missing_or_moved_guests_never_run_ssh[113-cerulean]" time="0.000" />
+        <testcase classname="project.tests.unit.test_guest_reboot"
+            name="test_missing_or_moved_guests_never_run_ssh[112-kex]" time="0.000" />
+        <testcase classname="project.tests.unit.test_guest_reboot"
+            name="test_missing_or_moved_guests_never_run_ssh[112-cerulean; reboot]" time="0.000" />
+        <testcase classname="project.tests.unit.test_guest_reboot"
+            name="test_missing_or_moved_guests_never_run_ssh[112-]" time="0.000" />
+        <testcase classname="project.tests.unit.test_guest_reboot"
+            name="test_unavailable_guests_never_run_ssh[stopped-online]" time="0.001" />
+        <testcase classname="project.tests.unit.test_guest_reboot"
+            name="test_unavailable_guests_never_run_ssh[running-offline]" time="0.000" />
+        <testcase classname="project.tests.unit.test_guest_reboot"
+            name="test_command_failure_does_not_claim_a_successful_reboot" time="0.000" />
+        <testcase classname="project.tests.unit.test_guest_reboot"
+            name="test_command_timeout_warns_against_blind_retries" time="0.000" />
+        <testcase classname="project.tests.unit.test_guest_reboot"
+            name="test_start_runs_only_for_stopped_guests[container-pct start 112]" time="0.000" />
+        <testcase classname="project.tests.unit.test_guest_reboot"
+            name="test_start_runs_only_for_stopped_guests[vm-qm start 112]" time="0.000" />
+        <testcase classname="project.tests.unit.test_hardware"
+            name="test_tidy_cpu_model_strips_marketing_noise" time="0.000" />
+        <testcase classname="project.tests.unit.test_hardware"
+            name="test_parse_hardware_distinguishes_active_passthrough_and_driverless_gpus"
+            time="0.000" />
+        <testcase classname="project.tests.unit.test_hardware"
+            name="test_parse_hardware_keeps_unknown_readings_as_none" time="0.000" />
+        <testcase classname="project.tests.unit.test_hardware"
+            name="test_parse_hardware_reads_cpu_topology" time="0.000" />
+        <testcase classname="project.tests.unit.test_hardware"
+            name="test_parse_hardware_rejects_non_objects" time="0.000" />
+        <testcase classname="project.tests.unit.test_hardware"
+            name="test_probe_parses_nvidia_csv_by_pci_slot" time="0.000" />
+        <testcase classname="project.tests.unit.test_hardware"
+            name="test_probe_reads_busiest_engine_of_last_complete_sample_from_unclosed_stream"
+            time="0.000" />
+        <testcase classname="project.tests.unit.test_hardware"
+            name="test_probe_counts_physical_cores_and_logical_threads" time="0.000" />
+        <testcase classname="project.tests.unit.test_hardware"
+            name="test_probe_names_gpus_with_vendor_and_marketing_name" time="0.000" />
+        <testcase classname="project.tests.unit.test_hardware"
+            name="test_expected_hardware_matches_the_configured_machines" time="0.000" />
+        <testcase classname="project.tests.unit.test_hardware"
+            name="test_probe_reports_firmware_ecc_without_guessing[\tError Correction Type: Multi-bit ECC-True]"
+            time="0.000" />
+        <testcase classname="project.tests.unit.test_hardware"
+            name="test_probe_reports_firmware_ecc_without_guessing[\tError Correction Type: Single-bit ECC-True]"
+            time="0.000" />
+        <testcase classname="project.tests.unit.test_hardware"
+            name="test_probe_reports_firmware_ecc_without_guessing[\tError Correction Type: None-False]"
+            time="0.000" />
+        <testcase classname="project.tests.unit.test_hardware"
+            name="test_probe_reports_firmware_ecc_without_guessing[\tError Correction Type: Unknown-None]"
+            time="0.000" />
+        <testcase classname="project.tests.unit.test_hardware"
+            name="test_probe_reports_firmware_ecc_without_guessing[\tError Correction Type: Parity-None]"
+            time="0.000" />
+        <testcase classname="project.tests.unit.test_hardware"
+            name="test_probe_reports_firmware_ecc_without_guessing[-None]" time="0.000" />
+        <testcase classname="project.tests.unit.test_hardware"
+            name="test_probe_reports_firmware_ecc_without_guessing[Error Correction Type: None\nError Correction Type: Unknown-None]"
+            time="0.000" />
+        <testcase classname="project.tests.unit.test_hardware"
+            name="test_probe_reports_firmware_ecc_without_guessing[Error Correction Type: None\nError Correction Type: Multi-bit ECC-True]"
+            time="0.000" />
+        <testcase classname="project.tests.unit.test_hardware"
+            name="test_parser_accepts_only_boolean_ecc_readings[True]" time="0.000" />
+        <testcase classname="project.tests.unit.test_hardware"
+            name="test_parser_accepts_only_boolean_ecc_readings[False]" time="0.000" />
+        <testcase classname="project.tests.unit.test_hardware"
+            name="test_parser_accepts_only_boolean_ecc_readings[None]" time="0.000" />
+        <testcase classname="project.tests.unit.test_hardware"
+            name="test_parser_accepts_only_boolean_ecc_readings[yes]" time="0.000" />
+        <testcase classname="project.tests.unit.test_hardware"
+            name="test_parser_accepts_only_boolean_ecc_readings[1]" time="0.000" />
+        <testcase classname="project.tests.unit.test_hardware"
+            name="test_probe_does_not_collect_gpus" time="0.001" />
+        <testcase classname="project.tests.unit.test_hardware"
+            name="test_only_online_nodes_are_probed_and_others_use_expected_hardware" time="0.001" />
+        <testcase classname="project.tests.unit.test_hardware"
+            name="test_failed_probe_falls_back_without_failing_the_snapshot" time="0.001" />
+        <testcase classname="project.tests.unit.test_hardware"
+            name="test_probe_results_are_cached_until_the_ttl_or_a_forced_refresh" time="0.001" />
+        <testcase classname="project.tests.unit.test_hardware"
+            name="test_snapshot_time_advances_with_each_probe_so_the_browser_redraws" time="0.001" />
+        <testcase classname="project.tests.unit.test_hardware"
+            name="test_ssh_probe_sends_the_script_on_stdin_with_strict_host_keys" time="0.000" />
+        <testcase classname="project.tests.unit.test_hardware"
+            name="test_ssh_probe_reports_failures_and_malformed_output" time="0.000" />
+        <testcase classname="project.tests.unit.test_hardware_errors"
+            name="test_clean_node_is_ok_and_distinct_from_unreadable" time="0.000" />
+        <testcase classname="project.tests.unit.test_hardware_errors"
+            name="test_repeated_corrected_ecc_errors_at_one_address_are_one_escalated_incident_with_raw_evidence"
+            time="0.001" />
+        <testcase classname="project.tests.unit.test_hardware_errors"
+            name="test_single_corrected_error_is_a_warning_not_ignored" time="0.000" />
+        <testcase classname="project.tests.unit.test_hardware_errors"
+            name="test_uncorrected_ecc_is_critical_only_on_the_current_boot" time="0.000" />
+        <testcase classname="project.tests.unit.test_hardware_errors"
+            name="test_earlier_boot_incidents_are_marked_historical_and_recurrence_spans_boots"
+            time="0.000" />
+        <testcase classname="project.tests.unit.test_hardware_errors"
+            name="test_cpu_internal_parity_reports_keep_cpu_bank_and_raw_status" time="0.000" />
+        <testcase classname="project.tests.unit.test_hardware_errors"
+            name="test_kernel_mce_lines_cmci_storms_and_soft_offlining_are_separate_categories"
+            time="0.001" />
+        <testcase classname="project.tests.unit.test_hardware_errors"
+            name="test_pcie_and_storage_path_errors_are_tracked_without_double_counting_continuation_lines"
+            time="0.000" />
+        <testcase classname="project.tests.unit.test_hardware_errors"
+            name="test_perf_sample_rate_message_is_not_a_hardware_error" time="0.000" />
+        <testcase classname="project.tests.unit.test_hardware_errors"
+            name="test_edac_counters_and_persisted_rasdaemon_totals" time="0.000" />
+        <testcase classname="project.tests.unit.test_hardware_errors"
+            name="test_boot_and_uptime_are_recorded" time="0.000" />
+        <testcase classname="project.tests.unit.test_hardware_errors"
+            name="test_probe_sends_script_and_parses" time="0.000" />
+        <testcase classname="project.tests.unit.test_hardware_errors"
+            name="test_monitor_keeps_last_known_state_marked_stale_and_flags_counter_resets"
+            time="0.001" />
+        <testcase classname="project.tests.unit.test_hardware_errors"
+            name="test_hardware_errors_survive_a_node_going_offline" time="0.001" />
+        <testcase classname="project.tests.unit.test_health"
+            name="test_classify_health_state_requires_explicit_healthy_values" time="0.000" />
+        <testcase classname="project.tests.unit.test_health"
+            name="test_workload_health_finding_preserves_reported_reason" time="0.000" />
+        <testcase classname="project.tests.unit.test_health"
+            name="test_unfamiliar_states_keep_the_reported_value_in_the_message" time="0.000" />
+        <testcase classname="project.tests.unit.test_node_images"
+            name="test_finds_an_image_named_after_the_node" time="0.001" />
+        <testcase classname="project.tests.unit.test_node_images"
+            name="test_node_name_matching_ignores_case" time="0.001" />
+        <testcase classname="project.tests.unit.test_node_images"
+            name="test_returns_none_when_no_image_exists" time="0.001" />
+        <testcase classname="project.tests.unit.test_node_images"
+            name="test_rejects_names_that_could_escape_the_image_folder[../secret]" time="0.001" />
+        <testcase classname="project.tests.unit.test_node_images"
+            name="test_rejects_names_that_could_escape_the_image_folder[a/b]" time="0.001" />
+        <testcase classname="project.tests.unit.test_node_images"
+            name="test_rejects_names_that_could_escape_the_image_folder[]" time="0.001" />
+        <testcase classname="project.tests.unit.test_node_images"
+            name="test_rejects_names_that_could_escape_the_image_folder[name with space]"
+            time="0.001" />
+        <testcase classname="project.tests.unit.test_node_images"
+            name="test_rejects_names_that_could_escape_the_image_folder[..]" time="0.001" />
+        <testcase classname="project.tests.unit.test_node_images"
+            name="test_rejects_names_that_could_escape_the_image_folder[x\x00y]" time="0.001" />
+        <testcase classname="project.tests.unit.test_node_profiles"
+            name="test_configured_nodes_have_their_assigned_colors" time="0.000" />
+        <testcase classname="project.tests.unit.test_node_profiles"
+            name="test_nodes_are_displayed_with_capital_letters" time="0.000" />
+        <testcase classname="project.tests.unit.test_node_profiles"
+            name="test_badge_initials_are_one_letter_and_unique_among_configured_nodes" time="0.000" />
+        <testcase classname="project.tests.unit.test_node_profiles"
+            name="test_configured_badge_initials" time="0.000" />
+        <testcase classname="project.tests.unit.test_node_profiles"
+            name="test_unknown_nodes_use_their_first_letter_as_the_initial" time="0.000" />
+        <testcase classname="project.tests.unit.test_node_profiles" name="test_lookup_ignores_case"
+            time="0.000" />
+        <testcase classname="project.tests.unit.test_node_profiles"
+            name="test_hostnames_only_apply_transliteration_and_kp125m_separator[ovedur-10G-\xf3ve\xf0ur-10G]"
+            time="0.000" />
+        <testcase classname="project.tests.unit.test_node_profiles"
+            name="test_hostnames_only_apply_transliteration_and_kp125m_separator[\xf3ve\xf0ur-10g-\xf3ve\xf0ur-10g]"
+            time="0.000" />
+        <testcase classname="project.tests.unit.test_node_profiles"
+            name="test_hostnames_only_apply_transliteration_and_kp125m_separator[vardeldur-wifi-var\xf0eldur-wifi]"
+            time="0.000" />
+        <testcase classname="project.tests.unit.test_node_profiles"
+            name="test_hostnames_only_apply_transliteration_and_kp125m_separator[VARDELDUR-ETH-var\xf0eldur-ETH]"
+            time="0.000" />
+        <testcase classname="project.tests.unit.test_node_profiles"
+            name="test_hostnames_only_apply_transliteration_and_kp125m_separator[saeglopur-s\xe6gl\xf3pur]"
+            time="0.000" />
+        <testcase classname="project.tests.unit.test_node_profiles"
+            name="test_hostnames_only_apply_transliteration_and_kp125m_separator[saeglopur-wifi-s\xe6gl\xf3pur-wifi]"
+            time="0.000" />
+        <testcase classname="project.tests.unit.test_node_profiles"
+            name="test_hostnames_only_apply_transliteration_and_kp125m_separator[hoppipolla-hopp\xedpolla]"
+            time="0.000" />
+        <testcase classname="project.tests.unit.test_node_profiles"
+            name="test_hostnames_only_apply_transliteration_and_kp125m_separator[hafid-hafi\xf0]"
+            time="0.000" />
+        <testcase classname="project.tests.unit.test_node_profiles"
+            name="test_hostnames_only_apply_transliteration_and_kp125m_separator[HAFID-hafi\xf0]"
+            time="0.000" />
+        <testcase classname="project.tests.unit.test_node_profiles"
+            name="test_hostnames_only_apply_transliteration_and_kp125m_separator[creality-k1c-wifi-creality-k1c-wifi]"
+            time="0.000" />
+        <testcase classname="project.tests.unit.test_node_profiles"
+            name="test_hostnames_only_apply_transliteration_and_kp125m_separator[ringoM4-wifi-\u308a\u3093\u3054M4-wifi]"
+            time="0.000" />
+        <testcase classname="project.tests.unit.test_node_profiles"
+            name="test_hostnames_only_apply_transliteration_and_kp125m_separator[ringom4-wifi-\u308a\u3093\u3054m4-wifi]"
+            time="0.000" />
+        <testcase classname="project.tests.unit.test_node_profiles"
+            name="test_hostnames_only_apply_transliteration_and_kp125m_separator[ringo-m4-wifi-\u308a\u3093\u3054-m4-wifi]"
+            time="0.000" />
+        <testcase classname="project.tests.unit.test_node_profiles"
+            name="test_hostnames_only_apply_transliteration_and_kp125m_separator[ringo-m4-eth-\u308a\u3093\u3054-m4-eth]"
+            time="0.000" />
+        <testcase classname="project.tests.unit.test_node_profiles"
+            name="test_hostnames_only_apply_transliteration_and_kp125m_separator[kp125m-desktop-lamp-wifi-kp125m_desktop-lamp-wifi]"
+            time="0.000" />
+        <testcase classname="project.tests.unit.test_node_profiles"
+            name="test_hostnames_only_apply_transliteration_and_kp125m_separator[ringoA20-\u308a\u3093\u3054A20]"
+            time="0.000" />
+        <testcase classname="project.tests.unit.test_node_profiles"
+            name="test_hostnames_only_apply_transliteration_and_kp125m_separator[ringoa20-\u308a\u3093\u3054a20]"
+            time="0.000" />
+        <testcase classname="project.tests.unit.test_node_profiles"
+            name="test_hostnames_only_apply_transliteration_and_kp125m_separator[ringo-a20-\u308a\u3093\u3054-a20]"
+            time="0.000" />
+        <testcase classname="project.tests.unit.test_node_profiles"
+            name="test_hostnames_only_apply_transliteration_and_kp125m_separator[suika-\u3059\u3044\u304b]"
+            time="0.000" />
+        <testcase classname="project.tests.unit.test_node_profiles"
+            name="test_hostnames_only_apply_transliteration_and_kp125m_separator[ichigo-\u3044\u3061\u3054]"
+            time="0.000" />
+        <testcase classname="project.tests.unit.test_node_profiles"
+            name="test_hostnames_only_apply_transliteration_and_kp125m_separator[saru-\u3055\u308b]"
+            time="0.000" />
+        <testcase classname="project.tests.unit.test_node_profiles"
+            name="test_hostnames_only_apply_transliteration_and_kp125m_separator[10g-10g]"
+            time="0.000" />
+        <testcase classname="project.tests.unit.test_node_profiles"
+            name="test_hostnames_only_apply_transliteration_and_kp125m_separator[gp-gp]"
+            time="0.000" />
+        <testcase classname="project.tests.unit.test_node_profiles"
+            name="test_hostnames_only_apply_transliteration_and_kp125m_separator[HP-HP]"
+            time="0.000" />
+        <testcase classname="project.tests.unit.test_node_profiles"
+            name="test_hostnames_only_apply_transliteration_and_kp125m_separator[delta3-delta3]"
+            time="0.000" />
+        <testcase classname="project.tests.unit.test_node_profiles"
+            name="test_hostnames_only_apply_transliteration_and_kp125m_separator[delta3-server-rack-delta3-server-rack]"
+            time="0.000" />
+        <testcase classname="project.tests.unit.test_node_profiles"
+            name="test_hostnames_only_apply_transliteration_and_kp125m_separator[delta3-plus-garage-delta3-plus-garage]"
+            time="0.000" />
+        <testcase classname="project.tests.unit.test_node_profiles"
+            name="test_hostnames_only_apply_transliteration_and_kp125m_separator[ECOFLOW-delta3-plus-ECOFLOW-delta3-plus]"
+            time="0.000" />
+        <testcase classname="project.tests.unit.test_node_profiles"
+            name="test_hostnames_only_apply_transliteration_and_kp125m_separator[ecoflow-ecoflow]"
+            time="0.000" />
+        <testcase classname="project.tests.unit.test_node_profiles"
+            name="test_hostnames_only_apply_transliteration_and_kp125m_separator[ecoflow-server-rack-ecoflow-server-rack]"
+            time="0.000" />
+        <testcase classname="project.tests.unit.test_node_profiles"
+            name="test_hostnames_only_apply_transliteration_and_kp125m_separator[ecoflow-bedroom-ecoflow-bedroom]"
+            time="0.000" />
+        <testcase classname="project.tests.unit.test_node_profiles"
+            name="test_hostnames_only_apply_transliteration_and_kp125m_separator[ecoflow-delta3-plus-server-rack-ecoflow-delta3-plus-server-rack]"
+            time="0.000" />
+        <testcase classname="project.tests.unit.test_node_profiles"
+            name="test_hostnames_only_apply_transliteration_and_kp125m_separator[nerd-qaxe-nerd-qaxe]"
+            time="0.000" />
+        <testcase classname="project.tests.unit.test_node_profiles"
+            name="test_hostnames_only_apply_transliteration_and_kp125m_separator[NERD-QAXE-NERD-QAXE]"
+            time="0.000" />
+        <testcase classname="project.tests.unit.test_node_profiles"
+            name="test_hostnames_only_apply_transliteration_and_kp125m_separator[nerdqaxe-nerdqaxe]"
+            time="0.000" />
+        <testcase classname="project.tests.unit.test_node_profiles"
+            name="test_hostnames_only_apply_transliteration_and_kp125m_separator[qaxe-qaxe]"
+            time="0.000" />
+        <testcase classname="project.tests.unit.test_node_profiles"
+            name="test_hostnames_only_apply_transliteration_and_kp125m_separator[kp125m-kp125m]"
+            time="0.000" />
+        <testcase classname="project.tests.unit.test_node_profiles"
+            name="test_hostnames_only_apply_transliteration_and_kp125m_separator[kp125m-ovedur-kp125m_\xf3ve\xf0ur]"
+            time="0.000" />
+        <testcase classname="project.tests.unit.test_node_profiles"
+            name="test_hostnames_only_apply_transliteration_and_kp125m_separator[KP125M-bedroom-lights-kp125m_bedroom-lights]"
+            time="0.000" />
+        <testcase classname="project.tests.unit.test_node_profiles"
+            name="test_hostnames_only_apply_transliteration_and_kp125m_separator[kp125m-ovedur-10g-kp125m_\xf3ve\xf0ur-10g]"
+            time="0.000" />
+        <testcase classname="project.tests.unit.test_node_profiles"
+            name="test_hostnames_only_apply_transliteration_and_kp125m_separator[kp125m-nerd-qaxe-kp125m_nerd-qaxe]"
+            time="0.000" />
+        <testcase classname="project.tests.unit.test_node_profiles"
+            name="test_hostnames_only_apply_transliteration_and_kp125m_separator[kp125m-qaxe-kp125m_qaxe]"
+            time="0.000" />
+        <testcase classname="project.tests.unit.test_node_profiles"
+            name="test_hostnames_only_apply_transliteration_and_kp125m_separator[kp15m-xb10-kp15m-xb10]"
+            time="0.000" />
+        <testcase classname="project.tests.unit.test_node_profiles"
+            name="test_hostnames_only_apply_transliteration_and_kp125m_separator[kp15m-xfinity-xb10-kp15m-xfinity-xb10]"
+            time="0.000" />
+        <testcase classname="project.tests.unit.test_node_profiles"
+            name="test_hostnames_only_apply_transliteration_and_kp125m_separator[XB10-XB10]"
+            time="0.000" />
+        <testcase classname="project.tests.unit.test_node_profiles"
+            name="test_hostnames_only_apply_transliteration_and_kp125m_separator[new-node-new-node]"
+            time="0.000" />
+        <testcase classname="project.tests.unit.test_node_profiles"
+            name="test_hostnames_only_apply_transliteration_and_kp125m_separator[btc-btc]"
+            time="0.001" />
+        <testcase classname="project.tests.unit.test_node_profiles"
+            name="test_hostnames_only_apply_transliteration_and_kp125m_separator[BCH-BCH]"
+            time="0.000" />
+        <testcase classname="project.tests.unit.test_node_profiles"
+            name="test_hostnames_only_apply_transliteration_and_kp125m_separator[xmr-xmr]"
+            time="0.001" />
+        <testcase classname="project.tests.unit.test_node_profiles"
+            name="test_hostnames_only_apply_transliteration_and_kp125m_separator[nvidia-nvidia]"
+            time="0.001" />
+        <testcase classname="project.tests.unit.test_node_profiles"
+            name="test_hostnames_only_apply_transliteration_and_kp125m_separator[NVIDIA-NVIDIA]"
+            time="0.001" />
+        <testcase classname="project.tests.unit.test_node_profiles"
+            name="test_hostnames_only_apply_transliteration_and_kp125m_separator[win11-win11]"
+            time="0.001" />
+        <testcase classname="project.tests.unit.test_node_profiles"
+            name="test_hostnames_only_apply_transliteration_and_kp125m_separator[Win11-Win11]"
+            time="0.001" />
+        <testcase classname="project.tests.unit.test_node_profiles"
+            name="test_hostnames_only_apply_transliteration_and_kp125m_separator[WIN11-backblaze-WIN11-backblaze]"
+            time="0.000" />
+        <testcase classname="project.tests.unit.test_node_profiles"
+            name="test_node_order_uses_ip_addresses_including_new_nodes" time="0.000" />
+        <testcase classname="project.tests.unit.test_node_profiles"
+            name="test_nodes_without_addresses_sort_last_alphabetically" time="0.000" />
+        <testcase classname="project.tests.unit.test_node_profiles"
+            name="test_invalid_addresses_sort_after_valid_addresses" time="0.000" />
+        <testcase classname="project.tests.unit.test_node_profiles"
+            name="test_duplicate_addresses_use_a_stable_name_tiebreaker" time="0.000" />
+        <testcase classname="project.tests.unit.test_node_profiles"
+            name="test_unknown_nodes_keep_the_reported_name_in_their_profile" time="0.000" />
+        <testcase classname="project.tests.unit.test_node_profiles"
+            name="test_every_color_is_a_plain_hex_value" time="0.000" />
+        <testcase classname="project.tests.unit.test_node_profiles"
+            name="test_fallback_colors_never_collide_with_configured_nodes[#d6457f]" time="0.000" />
+        <testcase classname="project.tests.unit.test_node_profiles"
+            name="test_fallback_colors_never_collide_with_configured_nodes[#c9a100]" time="0.000" />
+        <testcase classname="project.tests.unit.test_node_profiles"
+            name="test_fallback_colors_never_collide_with_configured_nodes[#5b6b7a]" time="0.000" />
+        <testcase classname="project.tests.unit.test_node_profiles"
+            name="test_fallback_colors_never_collide_with_configured_nodes[#8a5a2b]" time="0.000" />
+        <testcase classname="project.tests.unit.test_openwrt_source"
+            name="test_dnsmasq_leases_preserve_identity_and_use_shared_names" time="0.000" />
+        <testcase classname="project.tests.unit.test_openwrt_source"
+            name="test_mac_manufacturer_lookup_uses_the_most_specific_registered_prefix"
+            time="0.000" />
+        <testcase classname="project.tests.unit.test_openwrt_source"
+            name="test_mac_manufacturer_skips_locally_administered_addresses" time="0.000" />
+        <testcase classname="project.tests.unit.test_openwrt_source"
+            name="test_mac_manufacturer_registry_failure_is_non_blocking" time="0.000" />
+        <testcase classname="project.tests.unit.test_openwrt_source"
+            name="test_malformed_leases_are_not_presented_as_empty_inventory[bad row]" time="0.000" />
+        <testcase classname="project.tests.unit.test_openwrt_source"
+            name="test_malformed_leases_are_not_presented_as_empty_inventory[x aa:bb:cc:dd:ee:ff 192.168.10.2 suika *]"
+            time="0.000" />
+        <testcase classname="project.tests.unit.test_openwrt_source"
+            name="test_malformed_leases_are_not_presented_as_empty_inventory[0 bad 192.168.10.2 suika *]"
+            time="0.000" />
+        <testcase classname="project.tests.unit.test_openwrt_source"
+            name="test_malformed_leases_are_not_presented_as_empty_inventory[0 aa:bb:cc:dd:ee:ff bad suika *]"
+            time="0.000" />
+        <testcase classname="project.tests.unit.test_openwrt_source"
+            name="test_malformed_leases_are_not_presented_as_empty_inventory[-1 aa:bb:cc:dd:ee:ff 192.168.10.2 suika *]"
+            time="0.000" />
+        <testcase classname="project.tests.unit.test_openwrt_source"
+            name="test_router_source_caches_failures_and_retains_last_good_data" time="0.001" />
+        <testcase classname="project.tests.unit.test_openwrt_source"
+            name="test_router_source_exposes_resolved_address_and_openwrt_version" time="0.001" />
+        <testcase classname="project.tests.unit.test_openwrt_source"
+            name="test_router_source_adds_registered_manufacturer_to_lease_payload" time="0.008" />
+        <testcase classname="project.tests.unit.test_openwrt_source"
+            name="test_first_failure_has_no_fake_leases_or_success_timestamp" time="0.007" />
+        <testcase classname="project.tests.unit.test_openwrt_source"
+            name="test_expired_leases_are_filtered_even_when_the_cache_is_fresh" time="0.007" />
+        <testcase classname="project.tests.unit.test_openwrt_source"
+            name="test_leases_are_grouped_lan_first_and_sorted_by_numeric_ip" time="0.008" />
+        <testcase classname="project.tests.unit.test_openwrt_source"
+            name="test_network_groups_include_all_non_lan_devices_in_the_second_panel[192.168.0.1]"
+            time="0.000" />
+        <testcase classname="project.tests.unit.test_openwrt_source"
+            name="test_network_groups_include_all_non_lan_devices_in_the_second_panel[192.168.255.254]"
+            time="0.001" />
+        <testcase classname="project.tests.unit.test_openwrt_source"
+            name="test_network_groups_include_all_non_lan_devices_in_the_second_panel[172.16.0.1]"
+            time="0.000" />
+        <testcase classname="project.tests.unit.test_openwrt_source"
+            name="test_network_groups_include_all_non_lan_devices_in_the_second_panel[10.0.0.1]"
+            time="0.001" />
+        <testcase classname="project.tests.unit.test_openwrt_source"
+            name="test_network_groups_include_all_non_lan_devices_in_the_second_panel[192.169.0.1]"
+            time="0.000" />
+        <testcase classname="project.tests.unit.test_openwrt_source"
+            name="test_named_devices_precede_ip_only_devices_in_both_panels" time="0.009" />
+        <testcase classname="project.tests.unit.test_openwrt_source"
+            name="test_transport_errors_stay_local_to_the_devices_payload[error0]" time="0.007" />
+        <testcase classname="project.tests.unit.test_openwrt_source"
+            name="test_transport_errors_stay_local_to_the_devices_payload[error1]" time="0.008" />
+        <testcase classname="project.tests.unit.test_openwrt_source"
+            name="test_ipv6_neighbors_and_ethernet_duids_match_ipv4_by_mac_not_hostname"
+            time="0.001" />
+        <testcase classname="project.tests.unit.test_openwrt_source"
+            name="test_enterprise_duid_does_not_get_guessed_as_a_mac_and_remains_ipv6_only"
+            time="0.000" />
+        <testcase classname="project.tests.unit.test_openwrt_source"
+            name="test_exact_neighbor_address_links_an_enterprise_duid_and_deduplicates_addresses"
+            time="0.000" />
+        <testcase classname="project.tests.unit.test_openwrt_source"
+            name="test_ipv6_records_expire_and_failed_or_wan_neighbors_are_not_inventory"
+            time="0.000" />
+        <testcase classname="project.tests.unit.test_openwrt_source"
+            name="test_malformed_ipv6_documents_are_reported" time="0.000" />
+        <testcase classname="project.tests.unit.test_openwrt_source"
+            name="test_active_source_returns_only_ipv4_and_never_queries_ipv6" time="0.007" />
+        <testcase classname="project.tests.unit.test_openwrt_source"
+            name="test_multiple_ipv6_leases_for_the_same_duid_share_one_card" time="0.001" />
+        <testcase classname="project.tests.unit.test_presentation"
+            name="test_new_nodes_sort_by_numeric_ip_not_name_or_profile_order" time="0.001" />
+        <testcase classname="project.tests.unit.test_presentation"
+            name="test_other_payload_fields_are_preserved" time="0.001" />
+        <testcase classname="project.tests.unit.test_presentation"
+            name="test_only_node_names_are_formatted[container-saru]" time="0.001" />
+        <testcase classname="project.tests.unit.test_presentation"
+            name="test_only_node_names_are_formatted[container-btc]" time="0.001" />
+        <testcase classname="project.tests.unit.test_presentation"
+            name="test_only_node_names_are_formatted[container-BCH]" time="0.001" />
+        <testcase classname="project.tests.unit.test_presentation"
+            name="test_only_node_names_are_formatted[container-xmr-miner]" time="0.001" />
+        <testcase classname="project.tests.unit.test_presentation"
+            name="test_only_node_names_are_formatted[container-nvidia-vm]" time="0.001" />
+        <testcase classname="project.tests.unit.test_presentation"
+            name="test_only_node_names_are_formatted[container-Win11-Backblaze]" time="0.001" />
+        <testcase classname="project.tests.unit.test_presentation"
+            name="test_only_node_names_are_formatted[container-win11-backblaze]" time="0.001" />
+        <testcase classname="project.tests.unit.test_presentation"
+            name="test_only_node_names_are_formatted[vm-saru]" time="0.001" />
+        <testcase classname="project.tests.unit.test_presentation"
+            name="test_only_node_names_are_formatted[vm-btc]" time="0.001" />
+        <testcase classname="project.tests.unit.test_presentation"
+            name="test_only_node_names_are_formatted[vm-BCH]" time="0.001" />
+        <testcase classname="project.tests.unit.test_presentation"
+            name="test_only_node_names_are_formatted[vm-xmr-miner]" time="0.001" />
+        <testcase classname="project.tests.unit.test_presentation"
+            name="test_only_node_names_are_formatted[vm-nvidia-vm]" time="0.001" />
+        <testcase classname="project.tests.unit.test_presentation"
+            name="test_only_node_names_are_formatted[vm-Win11-Backblaze]" time="0.001" />
+        <testcase classname="project.tests.unit.test_presentation"
+            name="test_only_node_names_are_formatted[vm-win11-backblaze]" time="0.001" />
+        <testcase classname="project.tests.unit.test_pve_source"
+            name="test_fetch_parses_nodes_guests_and_resolves_local_addresses" time="0.001" />
+        <testcase classname="project.tests.unit.test_pve_source"
+            name="test_cluster_quorum_is_false_when_proxmox_reports_no_quorum" time="0.000" />
+        <testcase classname="project.tests.unit.test_pve_source"
+            name="test_cluster_quorum_is_unknown_when_proxmox_does_not_report_it" time="0.000" />
+        <testcase classname="project.tests.unit.test_pve_source"
+            name="test_fetch_parses_pvecm_vote_and_qdevice_details" time="0.001" />
+        <testcase classname="project.tests.unit.test_pve_source"
+            name="test_only_tracked_guest_tags_are_kept_and_use_pve_colors" time="0.000" />
+        <testcase classname="project.tests.unit.test_pve_source"
+            name="test_vpn_tag_is_tracked_only_for_lxcs" time="0.000" />
+        <testcase classname="project.tests.unit.test_pve_source"
+            name="test_dense_pool_guest_is_prod" time="0.000" />
+        <testcase classname="project.tests.unit.test_pve_source"
+            name="test_guest_outside_prod_pools_is_dev_with_pve_color" time="0.000" />
+        <testcase classname="project.tests.unit.test_pve_source"
+            name="test_offline_node_drops_stale_usage_but_keeps_capacity" time="0.000" />
+        <testcase classname="project.tests.unit.test_pve_source"
+            name="test_missing_readings_stay_unknown_instead_of_zero" time="0.000" />
+        <testcase classname="project.tests.unit.test_pve_source"
+            name="test_unrecognised_status_is_reported_as_unknown" time="0.000" />
+        <testcase classname="project.tests.unit.test_pve_source"
+            name="test_guests_without_names_get_a_short_fallback" time="0.000" />
+        <testcase classname="project.tests.unit.test_pve_source"
+            name="test_ssh_command_never_prompts_or_relaxes_host_checking" time="0.000" />
+        <testcase classname="project.tests.unit.test_pve_source"
+            name="test_reachable_node_stays_online_and_keeps_its_figures_without_quorum"
+            time="0.000" />
+        <testcase classname="project.tests.unit.test_pve_source"
+            name="test_core_counts_are_kept_for_guests_and_for_offline_nodes" time="0.000" />
+        <testcase classname="project.tests.unit.test_pve_source"
+            name="test_connections_use_root_by_default" time="0.000" />
+        <testcase classname="project.tests.unit.test_pve_source"
+            name="test_settings_default_to_root_on_cerulean_hostname" time="0.000" />
+        <testcase classname="project.tests.unit.test_pve_source"
+            name="test_failures_become_safe_messages[Host key verification failed.-known_hosts]"
+            time="0.000" />
+        <testcase classname="project.tests.unit.test_pve_source"
+            name="test_failures_become_safe_messages[root@x: Permission denied (publickey).-authentication]"
+            time="0.000" />
+        <testcase classname="project.tests.unit.test_pve_source"
+            name="test_failures_become_safe_messages[ssh: connect to host x port 22: Connection refused-refused]"
+            time="0.000" />
+        <testcase classname="project.tests.unit.test_pve_source"
+            name="test_malformed_output_is_rejected" time="0.000" />
+        <testcase classname="project.tests.unit.test_pve_source"
+            name="test_target_rejects_option_injection[-oProxyCommand=evil-root]" time="0.000" />
+        <testcase classname="project.tests.unit.test_pve_source"
+            name="test_target_rejects_option_injection[admin@cerulean-root]" time="0.000" />
+        <testcase classname="project.tests.unit.test_pve_source"
+            name="test_target_rejects_option_injection[cerulean--oBad]" time="0.000" />
+        <testcase classname="project.tests.unit.test_pve_source"
+            name="test_target_rejects_option_injection[cerulean-a b]" time="0.000" />
+        <testcase classname="project.tests.unit.test_refresh"
+            name="test_node_identity_is_preserved_when_offline" time="0.000" />
+        <testcase classname="project.tests.unit.test_secret_safety"
+            name="test_secrets_are_not_used_in_validation_results" time="0.000" />
+        <testcase classname="project.tests.unit.test_storage"
+            name="test_healthy_hdd_has_no_findings" time="0.000" />
+        <testcase classname="project.tests.unit.test_storage"
+            name="test_hdd_temperature_thresholds[44-ok]" time="0.001" />
+        <testcase classname="project.tests.unit.test_storage"
+            name="test_hdd_temperature_thresholds[45-warning]" time="0.000" />
+        <testcase classname="project.tests.unit.test_storage"
+            name="test_hdd_temperature_thresholds[50-critical]" time="0.000" />
+        <testcase classname="project.tests.unit.test_storage"
+            name="test_ssd_tolerates_temperatures_that_are_hot_for_an_hdd" time="0.000" />
+        <testcase classname="project.tests.unit.test_storage"
+            name="test_failed_smart_and_bad_attributes_are_reported_worst_first" time="0.000" />
+        <testcase classname="project.tests.unit.test_storage" name="test_nvme_health_log_is_judged"
+            time="0.000" />
+        <testcase classname="project.tests.unit.test_storage"
+            name="test_standby_and_unreadable_disks_are_not_flagged_as_problems_or_hidden"
+            time="0.000" />
+        <testcase classname="project.tests.unit.test_storage" name="test_healthy_pool" time="0.001" />
+        <testcase classname="project.tests.unit.test_storage"
+            name="test_pool_scan_in_progress_is_capitalized[scrub-Scrub Running]" time="0.000" />
+        <testcase classname="project.tests.unit.test_storage"
+            name="test_pool_scan_in_progress_is_capitalized[resilver-Resilver Running]" time="0.000" />
+        <testcase classname="project.tests.unit.test_storage" name="test_pool_problems" time="0.000" />
+        <testcase classname="project.tests.unit.test_storage"
+            name="test_missing_tools_are_distinguished_from_clean_results" time="0.000" />
+        <testcase classname="project.tests.unit.test_storage"
+            name="test_ssh_probe_sends_script_and_parses" time="0.000" />
+        <testcase classname="project.tests.unit.test_storage"
+            name="test_pool_probe_reads_available_from_only_the_root_dataset" time="0.000" />
+        <testcase classname="project.tests.unit.test_storage"
+            name="test_storage_is_probed_in_the_background_cached_and_kept_when_a_probe_fails"
+            time="0.002" />
+    </testsuite>
+</testsuites>
