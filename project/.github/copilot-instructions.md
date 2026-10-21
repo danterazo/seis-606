@@ -1,23 +1,21 @@
+# SEIS 606: Vibe Coding: Copilot Instructions
 Modify `.vscode/settings.json` only when the user explicitly requests it. Python import paths are configured in `pyproject.toml` under
 `[tool.pyright]`; edit that file instead, and ask first if a change seems necessary.
 
 ## Project Memory
-
 - Before working in this project, read `project/.specify/memory/project-memory.md` for durable decisions, verified context, and deferred work.
 - Keep that file current when the user makes or changes a project decision, or when tracked work is started, completed, blocked, or deferred.
 - Treat deferred items as notes, not authorization to implement them. Preserve the user's local-only, single-operator scope unless they explicitly
   change it.
 - Distinguish verified implementation facts from intended deployment plans; do not mark work complete without verification.
 
-## Documentation sync
-
+## Documentation Sync
 - When project code, configuration, endpoints, tests, or directory structure changes, inspect and update affected user-facing documentation, including
   hardcoded file trees, environment and configuration tables, endpoint summaries, and feature lists.
 - Verify documented paths, settings, and endpoints against the current workspace and implementation; add new entries and remove stale ones.
 - In README trees, mark explanatory annotations with `#` and keep annotation text lowercase. Preserve the exact case of real paths and identifiers.
 
 ## Local Preview Servers
-
 - Reuse the existing dashboard tab; do not ask the user to share it again. Use browser tooling to access it.
 - If no dashboard tab exists, open a new one at the already-running server, commonly `http://127.0.0.1:8766`; do not start a server just for a
   preview.
