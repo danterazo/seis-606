@@ -15,6 +15,10 @@ Modify `.vscode/settings.json` only when the user explicitly requests it. Python
 - Verify documented paths, settings, and endpoints against the current workspace and implementation; add new entries and remove stale ones.
 - In README trees, mark explanatory annotations with `#` and keep annotation text lowercase. Preserve the exact case of real paths and identifiers.
 
+## Interface Copy and Localization
+- When changing dashboard interface text, update the English source and all supported locales (`es`, `pt`, `ja`, `is`, and `eo`) in the same change. Cover visible text, browser titles, accessible labels, and static HTML fallbacks where applicable; preserve interpolation placeholders and the project's capitalization and product-name decisions.
+- Verify the changed text in all six locales, including Japanese, using the existing dashboard browser when available.
+
 ## Local Preview Servers
 - Reuse the existing dashboard tab; do not ask the user to share it again. Use browser tooling to access it.
 - If no dashboard tab exists, open a new one at the already-running server, commonly `http://127.0.0.1:8766`; do not start a server just for a
