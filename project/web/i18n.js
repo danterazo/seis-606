@@ -238,7 +238,7 @@ const MESSAGES = {
     Logs: "ログ",
     Nodes: "ノード",
     "LAN DHCP Leases": "LAN DHCP リース",
-    "Guest & IoT DHCP Leases": "ゲスト・IoT DHCP リース",
+    "Guest & IoT DHCP Leases": "ゲストとIoT DHCP リース",
     "Loading router details…": "ルーター情報を読み込み中…",
     "Loading DHCP leases…": "DHCP リースを読み込み中…",
     "System Overview": "システム概要",
