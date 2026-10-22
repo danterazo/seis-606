@@ -74,6 +74,7 @@ make lint
 - [Test log](deliverables/test-log.md) and [automated test results](deliverables/automated-test-results.xml)
 - [Preflight checklist](deliverables/preflight-checklist.md)
 - [Presentation Slides](deliverables/project-1-presentation.pptx)
+- [Writeup](deliverables/project-1-writeup.docx)
 - Current SpecKit artifacts: `project/specs/001-homelab-inventory-dashboard/`
 
 See [app-specs.md](app-specs.md) and `project/specs/` for plans; these describe proposed work, not necessarily implemented features.
