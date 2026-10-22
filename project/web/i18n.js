@@ -17,8 +17,8 @@ const STORAGE_KEY = "homelab-dashboard.locale";
 const MESSAGES = {
   en: {},
   es: {
-    "Dante's Cluster home": "Inicio de Dante's Cluster",
-    "Dante's Minnesota Cluster": "Clúster de Minnesota de Dante",
+    "Dante's Homelab home": "Inicio del Homelab de Dante",
+    "Dante's Homelab": "Homelab de Dante",
     "Checks Every Second": "Actualización cada segundo",
     Refresh: "Actualizar",
     Logs: "Registros",
@@ -136,8 +136,8 @@ const MESSAGES = {
     Normal: "Normal",
   },
   pt: {
-    "Dante's Cluster home": "Início do Cluster de Dante",
-    "Dante's Minnesota Cluster": "Cluster de Minnesota de Dante",
+    "Dante's Homelab home": "Início do Homelab do Dante",
+    "Dante's Homelab": "Homelab do Dante",
     "Checks Every Second": "Atualização a cada segundo",
     Refresh: "Atualizar",
     Logs: "Registros",
@@ -227,8 +227,8 @@ const MESSAGES = {
     Cluster: "Cluster",
   },
   ja: {
-    "Dante's Cluster home": "Dante's Cluster ホーム",
-    "Dante's Minnesota Cluster": "Dante のミネソタクラスター",
+    "Dante's Homelab home": "Dante のホームラボ ホーム",
+    "Dante's Homelab": "Dante のホームラボ",
     "Checks Every Second": "1 秒ごとに更新",
     Refresh: "更新",
     Logs: "ログ",
@@ -317,8 +317,8 @@ const MESSAGES = {
     Normal: "正常",
   },
   is: {
-    "Dante's Cluster home": "Heim Dante's Cluster",
-    "Dante's Minnesota Cluster": "Minnesota-klasi Dante",
+    "Dante's Homelab home": "Heim Dantes Homelab",
+    "Dante's Homelab": "Dantes Homelab",
     "Checks Every Second": "Uppfærist á sekúndu fresti",
     Refresh: "Uppfæra",
     Logs: "Atvikaskrá",
@@ -407,8 +407,8 @@ const MESSAGES = {
     Normal: "Eðlilegt",
   },
   eo: {
-    "Dante's Cluster home": "Hejmo de Dante's Cluster",
-    "Dante's Minnesota Cluster": "Minnesota Areto de Dante",
+    "Dante's Homelab home": "Hejmo de la Homelab de Dante",
+    "Dante's Homelab": "Homelab de Dante",
     "Checks Every Second": "Ĝisdatigo ĉiun sekundon",
     Refresh: "Ĝisdatigi",
     Logs: "Protokoloj",
@@ -502,7 +502,6 @@ const MESSAGES = {
 const ADDITIONAL_MESSAGES = {
   en: {},
   es: {
-    "Dante's Cluster": "Dante's Cluster",
     Language: "Idioma",
     "Config Version": "Versión de configuración",
     Transport: "Transporte",
@@ -723,7 +722,6 @@ const ADDITIONAL_MESSAGES = {
     "ARC": "ARC",
   },
   pt: {
-    "Dante's Cluster": "Dante's Cluster",
     Language: "Idioma",
     "Config Version": "Versão da configuração",
     Transport: "Transporte",
@@ -945,7 +943,6 @@ const ADDITIONAL_MESSAGES = {
     ARC: "ARC",
   },
   ja: {
-    "Dante's Cluster": "Dante's Cluster",
     Language: "言語",
     "Config Version": "設定バージョン",
     Transport: "トランスポート",
@@ -1167,7 +1164,6 @@ const ADDITIONAL_MESSAGES = {
     ARC: "ARC",
   },
   is: {
-    "Dante's Cluster": "Dante's Cluster",
     Language: "Tungumál",
     "Config Version": "Útgáfa stillingar",
     Transport: "Flutningur",
@@ -1389,7 +1385,6 @@ const ADDITIONAL_MESSAGES = {
     ARC: "ARC",
   },
   eo: {
-    "Dante's Cluster": "Dante's Cluster",
     Language: "Lingvo",
     "Config Version": "Agorda versio",
     Transport: "Transporto",

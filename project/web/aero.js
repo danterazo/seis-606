@@ -98,7 +98,7 @@ function el(tag, options = {}, children = []) {
 }
 
 function translateStaticContent() {
-  document.title = t("Dante's Cluster");
+  document.title = t("Dante's Homelab");
   for (const element of document.querySelectorAll("[data-i18n]")) {
     const key = element.getAttribute("data-i18n");
     if (key !== null) element.textContent = t(key);

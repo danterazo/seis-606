@@ -14,6 +14,9 @@ Updated: 2026-10-21
 
 ## Development Workflow
 
+- On 2026-10-21, the dashboard brand is “Dante's Homelab” across the browser
+  title, header, and translated interface. Future interface-copy changes must
+  update and verify all six supported locales together.
 - On 2026-10-21, the user requested MLA Book Title Case for translated interface titles and retention of “Homelab” across locales; Japanese renders it
   as ホームラボ. Cluster Topology uses “Topología del Clúster” in Spanish and “Topologia do Cluster” in Portuguese.
 - On 2026-10-21, localized plural labels preserve initial capitalization from their English noun; scripts without case, such as Japanese, remain unchanged.
