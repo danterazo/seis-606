@@ -82,7 +82,9 @@
           <span class="updated" id="updated" aria-live="polite">Connecting…</span>
           <span class="refresh-cadence" data-i18n="Checks Every Second">Checks Every Second</span>
         </div>
-        <button class="aqua-button" id="refresh-button" type="button"><span class="refresh-icon" aria-hidden="true">↻</span> <span data-i18n="Refresh">Refresh</span></button>
+        <button class="aqua-button" id="refresh-button" type="button">
+          <span class="refresh-icon" aria-hidden="true">↻</span> <span data-i18n="Refresh">Refresh</span>
+        </button>
         <button class="aqua-button log-button" id="logs-button" type="button" data-i18n="Logs">Logs</button>
         <label class="language-control">
           <span class="sr-only" data-i18n="Language">Language</span>
@@ -107,28 +109,43 @@
           <div class="node-list" id="node-list"></div>
         </aside>
         <aside class="panel devices-panel" aria-labelledby="lan-devices-heading">
-          <h2 id="lan-devices-heading"><span class="title-icon icon-monitor" aria-hidden="true"></span><span data-i18n="LAN DHCP Leases">LAN DHCP Leases</span></h2>
-          <p class="devices-router" id="lan-router-label" role="status" aria-live="polite" data-i18n="Loading router details…">Loading router details…</p>
+          <h2 id="lan-devices-heading">
+            <span class="title-icon icon-monitor" aria-hidden="true"></span><span data-i18n="LAN DHCP Leases">LAN DHCP Leases</span>
+          </h2>
+          <p class="devices-router" id="lan-router-label" role="status" aria-live="polite" data-i18n="Loading router details…">
+            Loading router details…
+          </p>
           <p class="devices-status" id="lan-devices-status" role="status" aria-live="polite" data-i18n="Loading DHCP leases…">Loading DHCP leases…</p>
           <ul class="device-list" id="lan-device-list"></ul>
         </aside>
         <aside class="panel devices-panel" aria-labelledby="guest-iot-devices-heading">
-          <h2 id="guest-iot-devices-heading"><span class="title-icon icon-monitor" aria-hidden="true"></span><span data-i18n="Guest &amp; IoT DHCP Leases">Guest &amp; IoT DHCP Leases</span></h2>
-          <p class="devices-router" id="guest-iot-router-label" role="status" aria-live="polite" data-i18n="Loading router details…">Loading router details…</p>
-          <p class="devices-status" id="guest-iot-devices-status" role="status" aria-live="polite" data-i18n="Loading DHCP leases…">Loading DHCP leases…</p>
+          <h2 id="guest-iot-devices-heading">
+            <span class="title-icon icon-monitor" aria-hidden="true"></span
+            ><span data-i18n="Guest &amp; IoT DHCP Leases">Guest &amp; IoT DHCP Leases</span>
+          </h2>
+          <p class="devices-router" id="guest-iot-router-label" role="status" aria-live="polite" data-i18n="Loading router details…">
+            Loading router details…
+          </p>
+          <p class="devices-status" id="guest-iot-devices-status" role="status" aria-live="polite" data-i18n="Loading DHCP leases…">
+            Loading DHCP leases…
+          </p>
           <ul class="device-list" id="guest-iot-device-list"></ul>
         </aside>
       </div>
 
       <section class="center">
         <section class="panel" aria-labelledby="overview-heading">
-          <h2 id="overview-heading"><span class="title-icon icon-monitor" aria-hidden="true"></span><span data-i18n="System Overview">System Overview</span></h2>
+          <h2 id="overview-heading">
+            <span class="title-icon icon-monitor" aria-hidden="true"></span><span data-i18n="System Overview">System Overview</span>
+          </h2>
           <div class="tiles" id="overview"></div>
         </section>
 
         <section class="panel" aria-labelledby="topology-heading">
           <div class="topology-heading-row">
-            <h2 id="topology-heading"><span class="title-icon icon-globe" aria-hidden="true"></span><span data-i18n="Cluster Topology">Cluster Topology</span></h2>
+            <h2 id="topology-heading">
+              <span class="title-icon icon-globe" aria-hidden="true"></span><span data-i18n="Cluster Topology">Cluster Topology</span>
+            </h2>
             <button
               class="topology-quorum quorum-unknown"
               id="topology-quorum"
@@ -141,7 +158,8 @@
             </button>
           </div>
           <div class="legend" aria-hidden="true">
-            <span><i class="dot dot-node"></i><span data-i18n="Node">Node</span></span><span><i class="dot dot-vm"></i>VM</span><span><i class="dot dot-lxc"></i>LXC</span
+            <span><i class="dot dot-node"></i><span data-i18n="Node">Node</span></span
+            ><span><i class="dot dot-vm"></i>VM</span><span><i class="dot dot-lxc"></i>LXC</span
             ><span><i class="dot dot-stripe"></i><span data-i18n="Stripe = PVE Node">Stripe = PVE Node</span></span>
           </div>
           <div class="topology" id="topology"></div>
@@ -174,7 +192,12 @@
     <footer class="footer">
       <span id="source-label">—</span>
       <div class="dns-corner" hidden aria-hidden="true" data-easter-egg="borg-cow">
-        <pre class="dns-cow" role="img" aria-label="A Borg cow says: All's fair in LAN and war" data-i18n-aria="A Borg cow says: All's fair in LAN and war">
+        <pre
+          class="dns-cow"
+          role="img"
+          aria-label="A Borg cow says: All's fair in LAN and war"
+          data-i18n-aria="A Borg cow says: All's fair in LAN and war"
+        >
 &#32;___________________________
 &lt; All's fair in LAN and war &gt;
 &#32;---------------------------
@@ -189,7 +212,17 @@
     <dialog class="logs-dialog storage-dialog" id="storage-dialog" aria-labelledby="storage-heading">
       <div class="logs-header">
         <h2 id="storage-heading" data-i18n="Storage Health">Storage Health</h2>
-        <button class="log-icon-button" id="close-storage-button" type="button" aria-label="Close Storage Health" data-i18n-aria="Close Storage Health" title="Close" data-i18n-title="Close">×</button>
+        <button
+          class="log-icon-button"
+          id="close-storage-button"
+          type="button"
+          aria-label="Close Storage Health"
+          data-i18n-aria="Close Storage Health"
+          title="Close"
+          data-i18n-title="Close"
+        >
+          ×
+        </button>
       </div>
       <div class="storage-body" id="storage-body"></div>
     </dialog>
@@ -197,7 +230,17 @@
     <dialog class="logs-dialog quorum-dialog" id="quorum-dialog" aria-labelledby="quorum-heading">
       <div class="logs-header">
         <h2 id="quorum-heading" data-i18n="Cluster Quorum">Cluster Quorum</h2>
-        <button class="log-icon-button" id="close-quorum-button" type="button" aria-label="Close Cluster Quorum" data-i18n-aria="Close Cluster Quorum" title="Close" data-i18n-title="Close">×</button>
+        <button
+          class="log-icon-button"
+          id="close-quorum-button"
+          type="button"
+          aria-label="Close Cluster Quorum"
+          data-i18n-aria="Close Cluster Quorum"
+          title="Close"
+          data-i18n-title="Close"
+        >
+          ×
+        </button>
       </div>
       <div class="storage-body quorum-body" id="quorum-body"></div>
     </dialog>
@@ -205,7 +248,17 @@
     <dialog class="logs-dialog hwerrors-dialog" id="hwerrors-dialog" aria-labelledby="hwerrors-heading">
       <div class="logs-header">
         <h2 id="hwerrors-heading" data-i18n="Hardware Errors">Hardware Errors</h2>
-        <button class="log-icon-button" id="close-hwerrors-button" type="button" aria-label="Close Hardware Errors" data-i18n-aria="Close Hardware Errors" title="Close" data-i18n-title="Close">×</button>
+        <button
+          class="log-icon-button"
+          id="close-hwerrors-button"
+          type="button"
+          aria-label="Close Hardware Errors"
+          data-i18n-aria="Close Hardware Errors"
+          title="Close"
+          data-i18n-title="Close"
+        >
+          ×
+        </button>
       </div>
       <div class="storage-body" id="hwerrors-body"></div>
     </dialog>
@@ -213,7 +266,17 @@
     <dialog class="logs-dialog" id="logs-dialog" aria-labelledby="logs-heading">
       <div class="logs-header">
         <h2 id="logs-heading" data-i18n="Activity Log">Activity Log</h2>
-        <button class="log-icon-button" id="close-logs-button" type="button" aria-label="Close Activity Log" data-i18n-aria="Close Activity Log" title="Close" data-i18n-title="Close">×</button>
+        <button
+          class="log-icon-button"
+          id="close-logs-button"
+          type="button"
+          aria-label="Close Activity Log"
+          data-i18n-aria="Close Activity Log"
+          title="Close"
+          data-i18n-title="Close"
+        >
+          ×
+        </button>
       </div>
       <div class="logs-toolbar">
         <p id="logs-status" role="status" aria-live="polite" data-i18n="Loading…">Loading…</p>

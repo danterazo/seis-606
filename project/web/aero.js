@@ -513,7 +513,8 @@ function renderBanner() {
   /** @type {{ tone: string, title: string, detail: string }} */
   let content;
   if (error !== null) {
-    const lastGood = snapshot === null ? "" : ` ${t("Showing the last data from {time}.", { time: new Date(snapshot.fetched_at).toLocaleTimeString(localeTag()) })}`;
+    const lastGood =
+      snapshot === null ? "" : ` ${t("Showing the last data from {time}.", { time: new Date(snapshot.fetched_at).toLocaleTimeString(localeTag()) })}`;
     content = { tone: "alert", title: t("Can't Reach Proxmox"), detail: `${error}${lastGood}` };
   } else if (snapshot === null) {
     content = { tone: "pending", title: t("Connecting…"), detail: t("Asking Proxmox for the current status.") };
@@ -778,13 +779,13 @@ function storageBadges(node) {
     const flagged = storage.disks.filter((disk) => disk.level !== "ok");
     const hottest = Math.max(...storage.disks.map((disk) => disk.temperature_celsius ?? -Infinity));
     const severity = level === "unknown" ? "Unreadable" : level === "warning" ? "Warning" : "Critical";
-    const text =
-      flagged.length === 0
-        ? t("SMART OK")
-        : t("SMART: {count} {severity}", { count: formatCount(flagged.length), severity: t(severity) });
+    const text = flagged.length === 0 ? t("SMART OK") : t("SMART: {count} {severity}", { count: formatCount(flagged.length), severity: t(severity) });
     const lines =
       flagged.length === 0
-        ? [t("All {count} disks healthy", { count: formatCount(storage.disks.length) }), ...(Number.isFinite(hottest) ? [t("Hottest {temperature} °C", { temperature: hottest })] : [])]
+        ? [
+            t("All {count} disks healthy", { count: formatCount(storage.disks.length) }),
+            ...(Number.isFinite(hottest) ? [t("Hottest {temperature} °C", { temperature: hottest })] : []),
+          ]
         : flagged.map((disk) => `${disk.device}: ${disk.findings.join("; ")}`);
     // warnings and criticals both go red so a flagged disk stands out
     badges.push(healthBadge(node.name, level === "warning" ? "critical" : level, text, lines.join("\n")));
@@ -865,9 +866,11 @@ const formatTime = (iso) => (iso === null ? "—" : new Date(iso).toLocaleString
 
 /** @param {ErrorIncident["category"]} category */
 const categoryLabel = (category) =>
-  t(({ ecc_memory: "ECC memory", cpu_mce: "CPU machine check", page_offline: "Page soft-offline", pcie: "PCIe", storage_path: "Storage path" })[
-    category
-  ]);
+  t(
+    { ecc_memory: "ECC memory", cpu_mce: "CPU machine check", page_offline: "Page soft-offline", pcie: "PCIe", storage_path: "Storage path" }[
+      category
+    ],
+  );
 
 /** @param {string} text */
 const TITLE_CASE_MINOR_WORDS = new Set([
@@ -1021,7 +1024,9 @@ function renderHardwareErrorsDialog(node) {
     el("tr", { className: entry.historical ? "is-historical" : "" }, [
       el("td", { text: formatTime(entry.time) }),
       el("td", {}, [
-        entry.level === "info" ? el("span", { className: "health-badge health-na", text: t("Info") }) : levelCell(entry.level, stateLabel(entry.level)),
+        entry.level === "info"
+          ? el("span", { className: "health-badge health-na", text: t("Info") })
+          : levelCell(entry.level, stateLabel(entry.level)),
       ]),
       el("td", { text: t(entry.historical ? "Earlier boot" : "Current") }),
       el("td", { text: entry.label }),
@@ -1094,9 +1099,7 @@ function renderStorageDialog(node) {
   const diskAge = (powerOnHours) => {
     if (powerOnHours === null) return "—";
     const days = Math.round(powerOnHours / 24);
-    return days > 365
-      ? t("{years}y {days}d", { years: Math.floor(days / 365), days: days % 365 })
-      : t("{days} d", { days: formatCount(days) });
+    return days > 365 ? t("{years}y {days}d", { years: Math.floor(days / 365), days: days % 365 }) : t("{days} d", { days: formatCount(days) });
   };
   const diskRows = (storage?.disks ?? []).map((disk) =>
     el("tr", {}, [
@@ -1535,7 +1538,12 @@ async function runGuestAction(vmid, nodeName, verb) {
       ? t("Start {name} (ID {id}) on {node}", { name: guestLabel(guest), id: vmid, node: nodeLabel(node) })
       : `${t("Reboot {name} (ID {id}) on {node}", { name: guestLabel(guest), id: vmid, node: nodeLabel(node) })}\n${t("This interrupts services running in this {kind}.", { kind: kindLabel(guest.kind) })}`;
   if (!window.confirm(confirmation)) return;
-  guestActions.set(vmid, { pending: true, message: t("Submitting {verb}…", { verb: t(verb === "start" ? "Start" : "Reboot").toLowerCase() }), error: false, retryAt: 0 });
+  guestActions.set(vmid, {
+    pending: true,
+    message: t("Submitting {verb}…", { verb: t(verb === "start" ? "Start" : "Reboot").toLowerCase() }),
+    error: false,
+    retryAt: 0,
+  });
   renderGuests(state.snapshot?.nodes ?? []);
   try {
     const response = await fetch(verb === "start" ? START_URL : REBOOT_URL, {
@@ -1610,7 +1618,9 @@ function renderDevices() {
     const leases = (devicesSnapshot?.leases ?? []).filter((lease) => lease.network_group === group && typeof lease.address === "string");
     const rows = leases.map((lease) =>
       el("li", { className: "device" }, [
-        el("div", { className: "device-title" }, [el("strong", { text: lease.display_name, attrs: { title: t(lease.hostname ?? "Unnamed device") } })]),
+        el("div", { className: "device-title" }, [
+          el("strong", { text: lease.display_name, attrs: { title: t(lease.hostname ?? "Unnamed device") } }),
+        ]),
         el("dl", { className: "device-fields" }, [
           el("dt", { className: "device-field-label", text: "IPv4" }),
           el("dd", { className: "device-address", text: lease.address ?? t("Not reported") }),

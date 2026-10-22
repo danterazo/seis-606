@@ -1,5 +1,7 @@
 # Project 1 Test Log
+
 ## Results
+
 | ID   | Category                     | What I tested                                                                                                             | How                                                                                                                                                                       | What happened                                                                                                                                                                    | Action                                                                                                                                                                                                              | Severity      |
 | ---- | ---------------------------- | ------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------- |
 | F-01 | Functional                   | Unit and integration behavior across the implemented dashboard                                                            | Ran `poetry run pytest project/tests -q`; saved full report to `automated-test-results.xml`                                                                               | 264 passed, 0 failed, 0 errors, 0 skipped. Coverage includes parsing, snapshots, source/cache behavior, UI/API behavior, guest controls with fake SSH, logs, and error handling. | Fixed two stale hostname-format expectations in the tests to match `node_profiles.display_name_for` and the README; focused file passed 30/30, then the full suite passed. Production formatter was unchanged.      | Low           |
@@ -13,26 +15,31 @@
 | A-01 | AI-assisted review           | Independent security/QA review using a tool different from the one used for most development                              | Not run; the development tool history and a separate review result were not available to verify                                                                           | No AI findings are claimed. The assignment explicitly requires a different tool, tool name, findings, and disposition.                                                           | Deferred: run the prompt below in an independently selected tool, record its name and raw findings, then verify or reject each finding with evidence.                                                               | Required      |
 
 ## AI Review
+
 I initially used `Qwen3.8 27B`, ran locally on an RTX 5090, for independent code review. Most development was done using Copilot's cloud/frontier
 models — although `Qwen3.8 27B` used Copilot as a harness, I considered it independent. In practice, though, the context size was too limited, so I
 ended up using using `Gemma4 26B A4B QAT`.
 
 ### GitHub Copilot Review (gemma-4-26b-a4b-qat)
+
 #### Security Audit
+
 - **Authentication:** Unauthenticated `/api/status` and `/api/devices` endpoints. Security relies on LAN isolation.
 - **SSH:** Uses public-key authentication in `BatchMode`. Security depends on host machine SSH key protection.
 - **Command Injection:** Risk exists if user input is used in shell commands without strict validation.
 - **Secrets:** No hardcoded secrets found in source. Uses environment variables.
 
 #### General Review
+
 - **Architecture:** Well-structured, modular design with clear separation of concerns.
 - **Testing:** Comprehensive test suite with good coverage.
 - **Documentation:** Good "As-Built" documentation and transparency regarding spec deviations.
 
-
 ## Manual Usability Record
+
 N/A, due to personal nature of application.
 
 ## Limitations
+
 The automated suite uses fixtures and fake SSH. It does not validate real Proxmox/router connectivity, browser refresh during an in-flight action,
 rapid clicking by a human, or recovery from a real node outage.

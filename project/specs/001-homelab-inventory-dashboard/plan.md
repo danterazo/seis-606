@@ -44,17 +44,17 @@ findings, ARM VM filtering, and freshness/connection visibility. Inventory manag
 
 _GATE: Must pass before Phase 0 research. Re-check after Phase 1 design._
 
-| Principle                                | Gate                                                                                                                                          | Status    |
-| ---------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- | --------- |
-| I. Safe and Reversible Operations        | Dashboard exposes status reads only; no mutation paths are planned.                                                                           | PASS      |
+| Principle                                | Gate                                                                                                                                          | Status      |
+| ---------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- | ----------- |
+| I. Safe and Reversible Operations        | Dashboard exposes status reads only; no mutation paths are planned.                                                                           | PASS        |
 | II. MCP-First, Evidence-Based Automation | Verify whether a configured Proxmox MCP provides the required read-only status and freshness data before selecting the source implementation. | CONDITIONAL |
-| III. Atomic and Auditable Changes        | No state-changing workflow exists in this MVP, so Discord mutation auditing is not applicable.                                                | PASS      |
-| IV. Dynamic, Testable User Experience    | UI renders adapter results dynamically and tests empty, changing, offline, incomplete, and mobile/reverse-proxy behavior.                     | PASS      |
-| V. Maintainable, Focused Architecture    | Streamlit UI with small Python domain, source, service, and presentation modules.                                                             | PASS      |
+| III. Atomic and Auditable Changes        | No state-changing workflow exists in this MVP, so Discord mutation auditing is not applicable.                                                | PASS        |
+| IV. Dynamic, Testable User Experience    | UI renders adapter results dynamically and tests empty, changing, offline, incomplete, and mobile/reverse-proxy behavior.                     | PASS        |
+| V. Maintainable, Focused Architecture    | Streamlit UI with small Python domain, source, service, and presentation modules.                                                             | PASS        |
 
-The feature requires read-only Proxmox API-token access but does not require a particular client. Resolve the conditional gate before implementation: use
-an available Proxmox MCP if it supplies the required status and freshness data; otherwise use the planned direct REST adapter. In either case, restrict
-the source to status reads and the required read-only token permissions.
+The feature requires read-only Proxmox API-token access but does not require a particular client. Resolve the conditional gate before implementation:
+use an available Proxmox MCP if it supplies the required status and freshness data; otherwise use the planned direct REST adapter. In either case,
+restrict the source to status reads and the required read-only token permissions.
 
 ## Project Structure
 
