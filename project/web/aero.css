@@ -1168,6 +1168,18 @@ button {
 .log-button {
   padding-inline: 15px;
 }
+.language-control select {
+  min-height: 38px;
+  max-width: 132px;
+  padding: 6px 28px 6px 10px;
+  color: #07345a;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  border: 1px solid rgba(7, 71, 119, 0.55);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.92);
+}
 .refresh-icon {
   font-size: 18px;
   line-height: 1;
@@ -2734,6 +2746,14 @@ span.health-badge[role="button"] {
   .topbar {
     padding: 10px 14px;
     flex-wrap: wrap;
+  }
+  .topbar-actions {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 8px;
   }
   .layout {
     grid-template-columns: 1fr;

@@ -1,5 +1,7 @@
 // @ts-check
 
+import { getLocale, LANGUAGES, localeTag, setLocale, t } from "./i18n.js";
+
 /**
  * @typedef {{ cpu_ratio: number | null, cpu_cores: number | null, memory_used_bytes: number | null, memory_total_bytes: number | null }} Resources
  * @typedef {"running" | "stopped" | "paused" | "unknown"} GuestState
@@ -95,6 +97,26 @@ function el(tag, options = {}, children = []) {
   return element;
 }
 
+function translateStaticContent() {
+  document.title = t("Dante's Cluster");
+  for (const element of document.querySelectorAll("[data-i18n]")) {
+    const key = element.getAttribute("data-i18n");
+    if (key !== null) element.textContent = t(key);
+  }
+  for (const element of document.querySelectorAll("[data-i18n-aria]")) {
+    const key = element.getAttribute("data-i18n-aria");
+    if (key !== null) element.setAttribute("aria-label", t(key));
+  }
+  for (const element of document.querySelectorAll("[data-i18n-title]")) {
+    const key = element.getAttribute("data-i18n-title");
+    if (key !== null) element.setAttribute("title", t(key));
+  }
+  for (const element of document.querySelectorAll("[data-i18n-placeholder]")) {
+    const key = element.getAttribute("data-i18n-placeholder");
+    if (key !== null) element.setAttribute("placeholder", t(key));
+  }
+}
+
 /**
  * bolds shell commands inside plain UI copy
  * @param {string} text
@@ -146,13 +168,14 @@ function memoryPercent({ memory_used_bytes: used, memory_total_bytes: total }) {
 }
 
 /** @param {number | null} value */
-const formatPercent = (value) => (value === null ? "—" : `${Math.round(value)}%`);
+const formatPercent = (value) =>
+  value === null ? "—" : new Intl.NumberFormat(localeTag(), { style: "percent", maximumFractionDigits: 0 }).format(value / 100);
 
 /** @param {string} text @param {number} limit */
 const truncate = (text, limit) => (text.length > limit ? `${text.slice(0, limit - 1)}…` : text);
 
 /** @param {number} value @param {number} digits */
-const trimNumber = (value, digits) => value.toFixed(digits).replace(/\.0+$/, "");
+const trimNumber = (value, digits) => new Intl.NumberFormat(localeTag(), { maximumFractionDigits: digits }).format(value);
 
 /** memory under 1 GB reads better in MB */
 /** @param {number} total @returns {{ size: number, label: string, digits: number }} */
@@ -190,13 +213,13 @@ function formatMemoryPair({ used, total }) {
 }
 
 /** @param {Resources} resources */
-const formatCores = ({ cpu_cores: cores }) => (cores === null ? "Cores Unknown" : `${cores} ${cores === 1 ? "Core" : "Cores"}`);
+const formatCores = ({ cpu_cores: cores }) => (cores === null ? t("Cores Unknown") : `${cores} ${t(cores === 1 ? "Core" : "Cores")}`);
 
 /** allotment, usage, then percentage: "3/8 GB (38%)" @param {Resources} resources */
 function formatRam(resources) {
   const { memory_used_bytes: used, memory_total_bytes: total } = resources;
-  if (total === null) return "Unknown";
-  if (used === null) return `${formatBytes(total)} total`;
+  if (total === null) return t("Unknown");
+  if (used === null) return t("{size} total", { size: formatBytes(total) });
   const pair =
     total >= BYTES_PER_GIB
       ? `${used > 0 && used < BYTES_PER_GIB / 10 ? "<0.1" : trimNumber(used / BYTES_PER_GIB, 1)} / ${trimNumber(total / BYTES_PER_GIB, 1)} GB`
@@ -218,7 +241,7 @@ function guestMetrics(guest) {
 
 /** @param {Guest} guest */
 function guestTooltip(guest) {
-  const header = `${guestLabel(guest)} (ID ${guest.vmid}) – ${guest.state}`;
+  const header = `${guestLabel(guest)} (ID ${guest.vmid}) – ${stateLabel(guest.state)}`;
   const metrics = guestMetrics(guest);
   return metrics === null ? header : `${header}\nCPU ${metrics.cpu.text}\nRAM ${metrics.ram.text}`;
 }
@@ -226,8 +249,27 @@ function guestTooltip(guest) {
 /** @param {PveNode} node @param {Guest["kind"]} kind */
 const countKind = (node, kind) => node.guests.filter((guest) => guest.kind === kind).length;
 
+/** @param {number} count */
+const formatCount = (count) => new Intl.NumberFormat(localeTag()).format(count);
+
 /** @param {number} count @param {string} noun */
-const plural = (count, noun) => `${count} ${noun}${count === 1 ? "" : "s"}`;
+const plural = (count, noun) => {
+  /** @type {Readonly<Record<string, [string, string]>>} */
+  const names = {
+    node: ["node", "nodes"],
+    Node: ["node", "nodes"],
+    VM: ["vm", "vms"],
+    LXC: ["lxc", "lxcs"],
+    container: ["container", "containers"],
+    Container: ["container", "containers"],
+    Disk: ["disk", "disks"],
+    Error: ["error", "errors"],
+    "Past Incident": ["past incident", "past incidents"],
+    event: ["event", "events"],
+  };
+  const [singular, pluralForm] = names[noun] ?? [noun.toLowerCase(), `${noun.toLowerCase()}s`];
+  return `${formatCount(count)} ${t(count === 1 ? singular : pluralForm)}`;
+};
 
 /** @param {PveNode} node */
 const guestSummary = (node) => `${plural(countKind(node, "vm"), "VM")} · ${plural(countKind(node, "container"), "LXC")}`;
@@ -369,7 +411,7 @@ const colorOfNode = (nodeName) => safeColor(state.snapshot?.nodes.find((node) =>
 const initialOfNode = (nodeName) => state.snapshot?.nodes.find((node) => node.name === nodeName)?.initial || nodeName.charAt(0).toUpperCase();
 
 /** @param {Guest["kind"]} kind */
-const kindLabel = (kind) => (kind === "vm" ? "VM" : "LXC");
+const kindLabel = (kind) => t(kind === "vm" ? "VM" : "LXC");
 
 /** capitalized name for display; the raw name stays the identifier @param {PveNode} node */
 const nodeLabel = (node) => node.display_name || node.name;
@@ -384,7 +426,7 @@ const displayNodeName = (nodeName) => {
 };
 
 /** @param {string} state */
-const stateLabel = (state) => state.charAt(0).toUpperCase() + state.slice(1);
+const stateLabel = (state) => t(state);
 
 /** @param {string} state @param {string} label */
 function statePill(state, label = stateLabel(state)) {
@@ -468,27 +510,39 @@ function renderBanner() {
   /** @type {{ tone: string, title: string, detail: string }} */
   let content;
   if (error !== null) {
-    const lastGood = snapshot === null ? "" : ` Showing the last data from ${new Date(snapshot.fetched_at).toLocaleTimeString()}.`;
-    content = { tone: "alert", title: "Can't Reach Proxmox", detail: `${error}${lastGood}` };
+    const lastGood = snapshot === null ? "" : ` ${t("Showing the last data from {time}.", { time: new Date(snapshot.fetched_at).toLocaleTimeString(localeTag()) })}`;
+    content = { tone: "alert", title: t("Can't Reach Proxmox"), detail: `${error}${lastGood}` };
   } else if (snapshot === null) {
-    content = { tone: "pending", title: "Connecting…", detail: "Asking Proxmox for the current status." };
+    content = { tone: "pending", title: t("Connecting…"), detail: t("Asking Proxmox for the current status.") };
   } else if (snapshot.nodes.length === 0) {
-    content = { tone: "pending", title: "No Nodes Reported", detail: "Proxmox returned an empty cluster." };
+    content = { tone: "pending", title: t("No Nodes Reported"), detail: t("Proxmox returned an empty cluster.") };
   } else {
     const down = snapshot.nodes.filter((node) => node.state !== "online").length;
     const online = snapshot.nodes.length - down;
     if (snapshot.quorate === false) {
-      content = { tone: "warn", title: "Cluster Quorum Lost", detail: `${plural(online, "node")} online; cluster operations may be limited.` };
+      content = {
+        tone: "warn",
+        title: t("Cluster Quorum Lost"),
+        detail: t("{count} nodes online; cluster operations may be limited.", { count: formatCount(online) }),
+      };
     } else if (down > 0) {
       content = {
         tone: "warn",
-        title: `${down} of ${plural(snapshot.nodes.length, "Node")} Unavailable!`,
-        detail: "Check the node list for details.",
+        title: t("{down} of {total} Nodes Unavailable!", { down, total: snapshot.nodes.length }),
+        detail: t("Check the node list for details."),
       };
     } else if (snapshot.quorate !== true) {
-      content = { tone: "pending", title: "Quorum Unknown", detail: `${plural(online, "node")} online; Proxmox did not report quorum status.` };
+      content = {
+        tone: "pending",
+        title: t("Quorum Unknown"),
+        detail: t("{count} nodes online; Proxmox did not report quorum status.", { count: formatCount(online) }),
+      };
     } else {
-      content = { tone: "ok", title: "All Systems Operational", detail: `${plural(online, "node")} online · Quorum available` };
+      content = {
+        tone: "ok",
+        title: t("All Systems Operational"),
+        detail: t("{count} nodes online · Quorum available", { count: formatCount(online) }),
+      };
     }
   }
   banner.className = `banner banner-${content.tone}`;
@@ -503,8 +557,8 @@ function renderTopologyQuorum() {
   const indicator = required("#topology-quorum");
   const quorate = state.snapshot?.quorate;
   const stale = state.error !== null && state.snapshot !== null;
-  const status = quorate === true ? "Quorate" : quorate === false ? "Not Quorate" : "Unknown";
-  const summaryState = quorate === true ? "Quorate" : quorate === false ? "Not Quorate" : "Quorum State Unavailable";
+  const status = t(quorate === true ? "Quorate" : quorate === false ? "Not Quorate" : "Unknown");
+  const summaryState = t(quorate === true ? "Quorate" : quorate === false ? "Not Quorate" : "Quorum State Unavailable");
   const tone = stale ? "stale" : quorate === true ? "ok" : quorate === false ? "lost" : "unknown";
   const details = state.snapshot?.quorum_details ?? "";
   const detailLines = details.split("\n");
@@ -522,17 +576,17 @@ function renderTopologyQuorum() {
     ?.trim();
   const summary = [
     summaryState,
-    totalVotes && expectedVotes ? `${totalVotes} of ${expectedVotes} expected votes` : null,
-    quorumVotes ? `${quorumVotes} required` : null,
+    totalVotes && expectedVotes ? t("{count} of {total} expected votes", { count: totalVotes, total: expectedVotes }) : null,
+    quorumVotes ? t("{count} required", { count: quorumVotes }) : null,
   ]
     .filter(Boolean)
     .join(" · ");
   indicator.className = `topology-quorum quorum-${tone}`;
   const buttonContents = [el("strong", { className: "quorum-button-state", text: status })];
-  if (stale) buttonContents.push(el("span", { text: "· Last Known" }));
+  if (stale) buttonContents.push(el("span", { text: `· ${t("Last Known")}` }));
   indicator.replaceChildren(...buttonContents);
-  indicator.setAttribute("aria-label", `Cluster Quorum: ${summaryState}. Open Details.`);
-  indicator.title = `${summary || "Quorum State Unavailable"} · Click for Details`;
+  indicator.setAttribute("aria-label", `${t("Cluster Quorum")}: ${summaryState}. ${t("Open Details")}.`);
+  indicator.title = `${summary || t("Quorum State Unavailable")} · ${t("Click for details")}`;
   syncQuorumDialog();
 }
 
@@ -559,23 +613,23 @@ function renderQuorumDialog() {
     if (separator > 0) fields.set(line.slice(0, separator), line.slice(separator + 1).trim());
   }
 
-  const summary = snapshot?.quorate === true ? "Quorate" : snapshot?.quorate === false ? "Not Quorate" : "Quorum State Unavailable";
+  const summary = t(snapshot?.quorate === true ? "Quorate" : snapshot?.quorate === false ? "Not Quorate" : "Quorum State Unavailable");
   const totalVotes = fields.get("Total votes");
   const expectedVotes = fields.get("Expected votes");
   const requiredVotes = fields.get("Quorum");
   const voteSummary =
     totalVotes && expectedVotes
-      ? `${totalVotes} of ${expectedVotes} expected votes${requiredVotes ? ` · ${requiredVotes} required` : ""}`
-      : "Vote totals were not reported.";
+      ? `${t("{count} of {total} expected votes", { count: totalVotes, total: expectedVotes })}${requiredVotes ? ` · ${t("{count} required", { count: requiredVotes })}` : ""}`
+      : t("Vote totals were not reported.");
   const tone = snapshot?.quorate === true ? "ok" : snapshot?.quorate === false ? "lost" : "unknown";
 
   /** @param {string[]} keys */
   const fieldTable = (keys) => {
     const rows = keys
       .filter((key) => fields.has(key))
-      .map((key) => el("tr", {}, [el("th", { text: key, attrs: { scope: "row" } }), el("td", { text: fields.get(key) ?? "" })]));
+      .map((key) => el("tr", {}, [el("th", { text: t(key), attrs: { scope: "row" } }), el("td", { text: fields.get(key) ?? "" })]));
     return rows.length === 0
-      ? el("p", { className: "empty", text: "No details reported." })
+      ? el("p", { className: "empty", text: t("No details reported.") })
       : el("table", { className: "storage-table quorum-table" }, [el("tbody", {}, rows)]);
   };
   const membershipTable = () => {
@@ -614,22 +668,22 @@ function renderQuorumDialog() {
       el("strong", { className: "quorum-state", text: summary }),
       el("span", { text: ` · ${voteSummary}` }),
     ]),
-    el("p", { className: "hw-status" }, withCommands("Read-only cluster status from pvecm status.")),
-    el("h3", { text: "Cluster" }),
+    el("p", { className: "hw-status" }, withCommands(t("Read-only cluster status from pvecm status."))),
+    el("h3", { text: t("Cluster") }),
     fieldTable(["Name", "Config Version", "Transport", "Secure auth", "Nodes"]),
-    el("h3", { text: "Quorum" }),
+    el("h3", { text: t("Quorum") }),
     fieldTable(["Quorum provider", "Node ID", "Ring ID", "Quorate"]),
-    el("h3", { text: "Vote Quorum" }),
+    el("h3", { text: t("Vote Quorum") }),
     fieldTable(["Expected votes", "Highest expected", "Total votes", "Quorum", "Flags"]),
-    el("h3", { text: "QDevice" }),
+    el("h3", { text: t("QDevice") }),
     fields.get("QDevice") === "Not configured"
-      ? el("p", { className: "empty", text: "No QDevice is configured." })
+      ? el("p", { className: "empty", text: t("No QDevice is configured.") })
       : membership.length > 0
         ? membershipTable()
         : el(
             "p",
             { className: "empty" },
-            withCommands(details ? "No QDevice membership details reported." : "pvecm status details are unavailable."),
+            withCommands(t(details ? "No QDevice membership details reported." : "pvecm status details are unavailable.")),
           ),
   );
 }
@@ -671,7 +725,7 @@ function renderNodeList(nodes) {
     );
     return button;
   });
-  required("#node-list").replaceChildren(...(items.length ? items : [el("p", { className: "empty", text: "No nodes to show." })]));
+  required("#node-list").replaceChildren(...(items.length ? items : [el("p", { className: "empty", text: t("No nodes to show.") })]));
 }
 
 /** @param {string} label @param {string} value */
@@ -683,7 +737,7 @@ function cpuModelLine({ cpu_model: model, cpu_cores: cores, cpu_threads: threads
   const expected = source !== "live";
   const displayModel = model?.replace("Ryzen Threadripper PRO", "Threadripper").replace("Ryzen Threadripper", "Threadripper") ?? "CPU";
   const topology = `${cores ?? "?"}c/${threads ?? "?"}t`;
-  const title = `${model ?? "CPU model unknown"} · ${cores ?? "Unknown"} cores / ${threads ?? "Unknown"} threads · ${expected ? "Expected hardware (CPU stats unavailable)" : "Read from the node"}`;
+  const title = `${model ?? t("CPU model unknown")} · ${cores ?? t("Unknown")} ${t("cores")} / ${threads ?? t("Unknown")} ${t("threads")} · ${t(expected ? "Expected hardware (CPU stats unavailable)" : "Read from the node")}`;
   return el("small", { className: `cpu-model${expected ? " is-expected" : ""}`, text: `${displayModel} (${topology})`, attrs: { title } });
 }
 
@@ -699,13 +753,13 @@ function healthBadge(nodeName, level, text, title) {
   return el("span", {
     className: `health-badge health-${level}`,
     text,
-    attrs: { role: "button", tabindex: "0", title: `${title}\nClick for details`, "data-storage-node": nodeName },
+    attrs: { role: "button", tabindex: "0", title: `${title}\n${t("Click for details")}`, "data-storage-node": nodeName },
   });
 }
 
 /** a non-interactive stand-in shown while a probe has not reported yet @param {string} text */
 function pendingBadge(text) {
-  return el("span", { className: "health-badge health-pending", text, attrs: { title: "Gathering data…", "aria-busy": "true" } });
+  return el("span", { className: "health-badge health-pending", text: t(text), attrs: { title: t("Gathering data…"), "aria-busy": "true" } });
 }
 
 /** one SMART badge plus one badge per zpool, each coloured by its worst finding @param {PveNode} node */
@@ -720,13 +774,14 @@ function storageBadges(node) {
     const level = worstLevel(storage.disks.map((disk) => disk.level));
     const flagged = storage.disks.filter((disk) => disk.level !== "ok");
     const hottest = Math.max(...storage.disks.map((disk) => disk.temperature_celsius ?? -Infinity));
+    const severity = level === "unknown" ? "Unreadable" : level === "warning" ? "Warning" : "Critical";
     const text =
       flagged.length === 0
-        ? "SMART OK"
-        : `SMART: ${flagged.length} ${level === "unknown" ? "Unreadable" : level === "warning" ? "Warning" : "Critical"}`;
+        ? t("SMART OK")
+        : t("SMART: {count} {severity}", { count: formatCount(flagged.length), severity: t(severity) });
     const lines =
       flagged.length === 0
-        ? [`All ${plural(storage.disks.length, "Disk")} Healthy${Number.isFinite(hottest) ? `, Hottest ${hottest} °C` : ""}`]
+        ? [t("All {count} disks healthy", { count: formatCount(storage.disks.length) }), ...(Number.isFinite(hottest) ? [t("Hottest {temperature} °C", { temperature: hottest })] : [])]
         : flagged.map((disk) => `${disk.device}: ${disk.findings.join("; ")}`);
     // warnings and criticals both go red so a flagged disk stands out
     badges.push(healthBadge(node.name, level === "warning" ? "critical" : level, text, lines.join("\n")));
@@ -745,17 +800,17 @@ function storageBadges(node) {
       const extras =
         pool.name === "tank"
           ? [
-              pool.fragmentation_percent === null ? null : `${pool.fragmentation_percent}% Frag`,
-              pool.free_bytes === null ? null : `${formatPoolBytes(pool.free_bytes)} Free`,
+              pool.fragmentation_percent === null ? null : t("{percent}% Frag", { percent: pool.fragmentation_percent }),
+              pool.free_bytes === null ? null : t("{size} Free", { size: formatPoolBytes(pool.free_bytes) }),
               pool.scan,
             ].filter(Boolean)
           : [];
       const text = [headline, ...extras].join(" · ");
       const details = [
-        usage === null ? null : `Used: ${usage}`,
-        pool.fragmentation_percent === null ? null : `${pool.fragmentation_percent}% Fragmented`,
+        usage === null ? null : t("Used: {usage}", { usage }),
+        pool.fragmentation_percent === null ? null : t("{percent}% Frag", { percent: pool.fragmentation_percent }),
         pool.layout,
-        pool.scan === null ? null : `Last Scan: ${pool.scan}`,
+        pool.scan === null ? null : t("Last Scan: {scan}", { scan: pool.scan }),
       ].filter(Boolean);
       badges.push(
         healthBadge(
@@ -764,7 +819,7 @@ function storageBadges(node) {
           text,
           [
             pool.findings.length === 0
-              ? `${pool.name} Is Healthy${pool.capacity_percent === null ? "" : `, ${pool.capacity_percent}% Full`}`
+              ? `${pool.name} ${t("is healthy")}${pool.capacity_percent === null ? "" : `, ${t("{percent}% Full", { percent: pool.capacity_percent })}`}`
               : `${pool.name}: ${pool.findings.join("; ")}`,
             ...details,
           ].join("\n"),
@@ -783,18 +838,18 @@ function hardwareErrorBadges(node) {
   const history = errors.incidents.filter((incident) => !incident.current_boot).length;
   const headline =
     errors.level === "unknown"
-      ? "HW: N/A"
+      ? t("HW: N/A")
       : errors.level === "ok"
-        ? "HW: Nominal"
+        ? t("HW: Nominal")
         : current.length > 0
           ? `HW: ${plural(current.length, "Error")}`
           : errors.incidents.length === 0
-            ? "HW Errors: Counters"
-            : `HW Errors: ${plural(history, "Past Incident")}`;
-  const staleness = errors.stale ? ", Stale" : "";
+            ? t("HW Errors: Counters")
+            : `${t("HW Errors")}: ${plural(history, "Past Incident")}`;
+  const staleness = errors.stale ? `, ${t("Stale")}` : "";
   const lines = [
-    errors.findings.length === 0 ? "No hardware errors reported since the last check" : errors.findings.join("\n"),
-    errors.stale ? (errors.error ?? "Data is stale") : null,
+    errors.findings.length === 0 ? t("No hardware errors reported since the last check") : errors.findings.join("\n"),
+    errors.stale ? (errors.error ?? t("Data is stale")) : null,
   ].filter(Boolean);
   const badge = healthBadge(node.name, errors.level, headline + staleness, lines.join("\n"));
   badge.removeAttribute("data-storage-node");
@@ -803,13 +858,13 @@ function hardwareErrorBadges(node) {
 }
 
 /** @param {string | null} iso */
-const formatTime = (iso) => (iso === null ? "—" : new Date(iso).toLocaleString());
+const formatTime = (iso) => (iso === null ? "—" : new Date(iso).toLocaleString(localeTag()));
 
 /** @param {ErrorIncident["category"]} category */
 const categoryLabel = (category) =>
-  ({ ecc_memory: "ECC memory", cpu_mce: "CPU machine check", page_offline: "Page soft-offline", pcie: "PCIe", storage_path: "Storage path" })[
+  t(({ ecc_memory: "ECC memory", cpu_mce: "CPU machine check", page_offline: "Page soft-offline", pcie: "PCIe", storage_path: "Storage path" })[
     category
-  ];
+  ]);
 
 /** @param {string} text */
 const TITLE_CASE_MINOR_WORDS = new Set([
@@ -853,8 +908,8 @@ function timelineEntries(node, errors) {
   for (const boot of errors.boots) {
     entries.push({
       time: boot.first_seen,
-      label: "Boot (Uptime Reset)",
-      detail: boot.current ? "Current boot" : "Earlier boot",
+      label: t("Boot (Uptime Reset)"),
+      detail: t(boot.current ? "Current boot" : "Earlier boot"),
       level: "info",
       historical: !boot.current,
     });
@@ -863,7 +918,7 @@ function timelineEntries(node, errors) {
     entries.push({
       time: incident.first_seen,
       label: `${categoryLabel(incident.category)}: ${incident.title}`,
-      detail: `${plural(incident.count, "event")}, last ${formatTime(incident.last_seen)}`,
+      detail: t("{count} events, last {time}", { count: plural(incident.count, "event"), time: formatTime(incident.last_seen) }),
       level: incident.level,
       historical: !incident.current_boot,
     });
@@ -874,7 +929,7 @@ function timelineEntries(node, errors) {
     const name = "device" in item ? item.device : item.name;
     entries.push({
       time: errors.collected_at,
-      label: `Storage currently flagged: ${name}`,
+      label: t("Storage currently flagged: {name}", { name }),
       detail: item.findings.join("; "),
       level: item.level,
       historical: false,
@@ -886,9 +941,9 @@ function timelineEntries(node, errors) {
 /** @param {PveNode} node */
 function renderHardwareErrorsDialog(node) {
   const errors = node.hardware.hardware_errors;
-  required("#hwerrors-heading").textContent = `Hardware Errors · ${nodeLabel(node)}`;
+  required("#hwerrors-heading").textContent = t("Hardware Errors · {node}", { node: nodeLabel(node) });
   if (!errors) {
-    required("#hwerrors-body").replaceChildren(el("p", { className: "empty", text: "Hardware errors are not monitored for this node." }));
+    required("#hwerrors-body").replaceChildren(el("p", { className: "empty", text: t("Hardware errors are not monitored for this node.") }));
     return;
   }
   /** @param {HealthLevel} level @param {string} text */
@@ -902,27 +957,30 @@ function renderHardwareErrorsDialog(node) {
             el(
               "tr",
               {},
-              headers.map((header) => el("th", { text: header })),
+              headers.map((header) => el("th", { text: t(header) })),
             ),
           ]),
           el("tbody", {}, rows),
         ]);
   const monitoring = [
     errors.stale
-      ? `Stale: ${errors.error ?? "No Recent Reading"}. Last successful check ${formatTime(errors.last_success)}.`
-      : `Checked ${formatTime(errors.collected_at)}.`,
+      ? t("Stale: {error}. Last successful check {time}.", {
+          error: errors.error ?? t("No Recent Reading"),
+          time: formatTime(errors.last_success),
+        })
+      : t("Checked {time}.", { time: formatTime(errors.collected_at) }),
     errors.boot_started === null
       ? null
-      : `Current boot began ${formatTime(errors.boot_started)}; counters since boot restart from zero at each reboot.`,
+      : t("Current boot began {time}; counters since boot restart from zero at each reboot.", { time: formatTime(errors.boot_started) }),
     errors.counters_reset
-      ? "A reboot was observed, so since-boot counters were reset; earlier events come from the journal and rasdaemon history."
+      ? t("A reboot was observed, so since-boot counters were reset; earlier events come from the journal and rasdaemon history.")
       : null,
-    errors.edac_available ? null : "EDAC counters are not available on this node.",
-    errors.journal_available ? null : "The kernel journal could not be read.",
+    errors.edac_available ? null : t("EDAC counters are not available on this node."),
+    errors.journal_available ? null : t("The kernel journal could not be read."),
   ].filter(Boolean);
   const persisted =
     errors.persisted_corrected === null
-      ? "rasdaemon is not installed or has no history"
+      ? t("rasdaemon is not installed or has no history")
       : `${errors.persisted_corrected} corrected / ${errors.persisted_uncorrected ?? 0} uncorrected${errors.persisted_mce === null ? "" : `, ${errors.persisted_mce} MCE records`}`;
   const counterRows = errors.memory_counters.map((counter) =>
     el("tr", {}, [
@@ -933,8 +991,8 @@ function renderHardwareErrorsDialog(node) {
   );
   const incidentRows = errors.incidents.map((incident) =>
     el("tr", { className: incident.current_boot ? "" : "is-historical" }, [
-      el("td", {}, [levelCell(incident.level, incident.current_boot ? "This boot" : "Earlier boot")]),
-      el("td", { text: `${categoryLabel(incident.category)} · ${titleCase(incident.classification)}` }),
+      el("td", {}, [levelCell(incident.level, t(incident.current_boot ? "This boot" : "Earlier boot"))]),
+      el("td", { text: `${categoryLabel(incident.category)} · ${t(titleCase(incident.classification))}` }),
       el("td", {}, [
         el("div", { text: incident.title }),
         el("small", {
@@ -944,14 +1002,14 @@ function renderHardwareErrorsDialog(node) {
           ].join(" · "),
         }),
         el("details", {}, [
-          el("summary", { text: `Raw records (latest ${incident.raw.length} of ${incident.count})` }),
+          el("summary", { text: t("Raw records (latest {latest} of {total})", { latest: incident.raw.length, total: incident.count }) }),
           el("pre", {
             className: "raw-events",
             text: incident.raw.map((raw) => `${raw.timestamp} boot ${raw.boot_id.slice(0, 8)} ${raw.source}: ${raw.message}`).join("\n"),
           }),
         ]),
       ]),
-      el("td", { text: `${incident.count} (${incident.last_hour} in 1 h, ${incident.last_day} in 24 h)` }),
+      el("td", { text: `${formatCount(incident.count)} (${incident.last_hour} ${t("in 1 h")}, ${incident.last_day} ${t("in 24 h")})` }),
       el("td", { text: formatTime(incident.first_seen) }),
       el("td", { text: formatTime(incident.last_seen) }),
     ]),
@@ -960,38 +1018,38 @@ function renderHardwareErrorsDialog(node) {
     el("tr", { className: entry.historical ? "is-historical" : "" }, [
       el("td", { text: formatTime(entry.time) }),
       el("td", {}, [
-        entry.level === "info" ? el("span", { className: "health-badge health-na", text: "Info" }) : levelCell(entry.level, stateLabel(entry.level)),
+        entry.level === "info" ? el("span", { className: "health-badge health-na", text: t("Info") }) : levelCell(entry.level, stateLabel(entry.level)),
       ]),
-      el("td", { text: entry.historical ? "Earlier boot" : "Current" }),
+      el("td", { text: t(entry.historical ? "Earlier boot" : "Current") }),
       el("td", { text: entry.label }),
       el("td", {}, [el("small", { text: entry.detail })]),
     ]),
   );
   required("#hwerrors-body").replaceChildren(
     el("p", { className: "hw-status", text: monitoring.join(" ") }),
-    el("h3", { text: "Findings" }),
+    el("h3", { text: t("Findings") }),
     errors.findings.length === 0
-      ? el("p", { className: "empty", text: "No hardware errors reported." })
+      ? el("p", { className: "empty", text: t("No hardware errors reported.") })
       : el(
           "ul",
           { className: "hw-findings" },
           errors.findings.map((finding) => el("li", { text: finding })),
         ),
-    el("h3", { text: "ECC Counters" }),
-    el("p", { className: "hw-status", text: `Persisted history (survives reboots): ${persisted}` }),
+    el("h3", { text: t("ECC Counters") }),
+    el("p", { className: "hw-status", text: t("Persisted history (survives reboots): {history}", { history: persisted }) }),
     table(["DIMM / Controller (Since Boot)", "Corrected", "Uncorrected"], counterRows, "No EDAC counters on this node."),
-    el("h3", { text: "Incidents" }),
+    el("h3", { text: t("Incidents") }),
     table(
       ["Scope", "Class", "Evidence", "Events", "First seen", "Last seen"],
       incidentRows,
-      errors.journal_available ? "No hardware error events in the last 14 days." : "Event history unavailable.",
+      errors.journal_available ? t("No hardware error events in the last 14 days.") : t("Event history unavailable."),
     ),
-    el("h3", { text: "Timeline" }),
-    el("p", { className: "hw-status", text: "Entries are listed together by time only; being close in time does not mean one caused another." }),
+    el("h3", { text: t("Timeline") }),
+    el("p", { className: "hw-status", text: t("Entries are listed together by time only; being close in time does not mean one caused another.") }),
     table(["Time", "Level", "Scope", "Event", "Detail"], timelineRows, "Nothing to show."),
     el("p", {
       className: "hw-status",
-      text: "This view only reads. Offlining CPUs, rebooting, clearing counters, or running scrubs and stress tests are manual operator actions.",
+      text: t("This view only reads. Offlining CPUs, rebooting, clearing counters, or running scrubs and stress tests are manual operator actions."),
     }),
   );
 }
@@ -1026,62 +1084,64 @@ function syncHardwareErrorsDialog() {
 /** @param {PveNode} node */
 function renderStorageDialog(node) {
   const storage = node.hardware.storage;
-  required("#storage-heading").textContent = `Storage Health · ${nodeLabel(node)}`;
+  required("#storage-heading").textContent = t("Storage Health · {node}", { node: nodeLabel(node) });
   /** @param {HealthLevel} level @param {string} text */
   const levelCell = (level, text) => el("span", { className: `health-badge health-${level}`, text });
   /** @param {number | null} powerOnHours */
   const diskAge = (powerOnHours) => {
     if (powerOnHours === null) return "—";
     const days = Math.round(powerOnHours / 24);
-    return days > 365 ? `${Math.floor(days / 365)}y ${days % 365}d` : `${days} d`;
+    return days > 365
+      ? t("{years}y {days}d", { years: Math.floor(days / 365), days: days % 365 })
+      : t("{days} d", { days: formatCount(days) });
   };
   const diskRows = (storage?.disks ?? []).map((disk) =>
     el("tr", {}, [
-      el("td", {}, [levelCell(disk.level, disk.standby ? "Standby" : stateLabel(disk.level === "ok" ? "OK" : disk.level))]),
+      el("td", {}, [levelCell(disk.level, disk.standby ? t("Standby") : stateLabel(disk.level === "ok" ? "OK" : disk.level))]),
       el("td", {}, [el("code", { text: disk.device })]),
       el("td", {}, [el("small", { text: disk.model ?? "" })]),
       el("td", {}, [el("small", { text: disk.serial ?? "" })]),
       el("td", { text: disk.kind.toUpperCase() }),
       el("td", { text: disk.temperature_celsius === null ? "—" : `${disk.temperature_celsius} °C` }),
       el("td", { text: diskAge(disk.power_on_hours) }),
-      el("td", { text: disk.findings.length === 0 ? "Normal" : disk.findings.join("; ") }),
+      el("td", { text: disk.findings.length === 0 ? t("Normal") : disk.findings.join("; ") }),
     ]),
   );
   const poolRows = (storage?.pools ?? []).map((pool) =>
     el("tr", {}, [
-      el("td", {}, [levelCell(pool.level, pool.state)]),
+      el("td", {}, [levelCell(pool.level, t(pool.state))]),
       el("td", {}, [el("code", { text: pool.name })]),
-      el("td", { text: pool.capacity_percent === null ? "—" : `${pool.capacity_percent}% Full` }),
+      el("td", { text: pool.capacity_percent === null ? "—" : t("{percent}% Full", { percent: pool.capacity_percent }) }),
       el("td", { text: poolUsage(pool) ?? "—" }),
       el("td", { text: formatPoolBytes(pool.free_bytes) }),
       el("td", { text: pool.fragmentation_percent === null ? "—" : `${pool.fragmentation_percent}%` }),
       el("td", {}, [el("small", { text: pool.layout ?? "—" })]),
       el("td", {}, [el("small", { text: pool.scan ?? "—" })]),
-      el("td", { text: pool.findings.length === 0 ? "Normal" : pool.findings.join("; ") }),
+      el("td", { text: pool.findings.length === 0 ? t("Normal") : pool.findings.join("; ") }),
     ]),
   );
   /** @param {string[]} headers @param {HTMLElement[]} rows @param {string} empty */
   const table = (headers, rows, empty) =>
     rows.length === 0
-      ? el("p", { className: "empty" }, withCommands(empty))
+      ? el("p", { className: "empty" }, withCommands(t(empty)))
       : el("table", { className: "storage-table" }, [
           el("thead", {}, [
             el(
               "tr",
               {},
-              headers.map((header) => el("th", { text: header })),
+              headers.map((header) => el("th", { text: t(header) })),
             ),
           ]),
           el("tbody", {}, rows),
         ]);
   required("#storage-body").replaceChildren(
-    el("h3", { text: "Disks (SMART)" }),
+    el("h3", { text: t("Disks (SMART)") }),
     table(
       ["Status", "Device", "Model", "Serial #", "Type", "Temp", "Age", "Findings"],
       diskRows,
       storage?.smart_available ? "No disks reported." : "smartctl is not installed on this node.",
     ),
-    el("h3", { text: "ZFS Pools" }),
+    el("h3", { text: t("ZFS Pools") }),
     table(
       ["Status", "Pool", "Capacity", "Used / Size", "Free", "Frag", "Layout", "Last Scan", "Findings"],
       poolRows,
@@ -1132,11 +1192,16 @@ function renderOverview(nodes) {
     const zfs = zfsTotals(node.hardware.storage?.pools ?? []);
     if (zfs !== null) {
       const value = clamp((zfs.used / zfs.size) * 100);
-      const title = `ZFS: ${formatPercent(value)} used · ${formatPoolBytes(zfs.used)} of ${formatPoolBytes(zfs.size)} across ${zfs.names.join(", ")}`;
+      const title = t("ZFS: {percent} used · {used} of {size} across {pools}", {
+        percent: formatPercent(value),
+        used: formatPoolBytes(zfs.used),
+        size: formatPoolBytes(zfs.size),
+        pools: zfs.names.join(", "),
+      });
       // purple spans all used space; orange overlays the rpool segment at the end
       const rpoolIndex = zfs.names.indexOf("rpool");
       const rpoolPercent = zfs.names.length < 2 || rpoolIndex < 0 ? null : (zfs.usedByPool[rpoolIndex] / zfs.size) * 100;
-      const detail = zfs.names.map((name, index) => `${name}: ${formatPoolBytes(zfs.usedByPool[index])}`).join(" · ");
+      const detail = zfs.names.map((name, index) => t("{name}: {usage}", { name, usage: formatPoolBytes(zfs.usedByPool[index]) })).join(" · ");
       gauges.push(
         gauge({
           label: "ZFS",
@@ -1160,8 +1225,8 @@ function renderOverview(nodes) {
             el("div", { className: "memory-details" }, [
               el("span", {
                 className: `memory-ecc ${node.memory_ecc ? "ecc-memory" : "non-ecc-memory"}`,
-                text: [node.memory_description, node.memory_ecc == null ? null : node.memory_ecc ? "ECC" : "Non-ECC"].filter(Boolean).join(" "),
-                attrs: { title: node.memory_ecc ? "Configured ECC memory; active error correction is not verified" : "Configured memory" },
+                text: [node.memory_description, node.memory_ecc == null ? null : node.memory_ecc ? "ECC" : t("Non-ECC")].filter(Boolean).join(" "),
+                attrs: { title: t(node.memory_ecc ? "Configured ECC memory; active error correction is not verified" : "Configured memory") },
               }),
             ]),
           ];
@@ -1194,7 +1259,7 @@ function renderOverview(nodes) {
               ]),
               footerRows([...hardwareDetails, ...hardwareErrorBadges(node)], storageBadges(node)),
             ]
-          : [el("p", { className: "offline-note", text: "No live readings." }), ...hardwareDetails, footerRows(hardwareErrorBadges(node), [])]),
+          : [el("p", { className: "offline-note", text: t("No live readings.") }), ...hardwareDetails, footerRows(hardwareErrorBadges(node), [])]),
       ],
     );
   });
@@ -1202,7 +1267,7 @@ function renderOverview(nodes) {
   const columnCount = Math.max(1, Math.min(tiles.length, Math.floor((host.clientWidth + 12) / 292)));
   const columns = Array.from({ length: columnCount }, () => el("div", { className: "tile-column" }));
   tiles.forEach((tile, index) => columns[index % columnCount].append(tile));
-  host.replaceChildren(...(tiles.length ? columns : [el("p", { className: "empty", text: "Nothing to show yet." })]));
+  host.replaceChildren(...(tiles.length ? columns : [el("p", { className: "empty", text: t("Nothing to show yet.") })]));
 }
 
 /**
@@ -1216,7 +1281,7 @@ function svgText({ x, y, text, className, anchor = "middle", fill }) {
 function renderTopology(nodes) {
   const host = required("#topology");
   if (nodes.length === 0) {
-    host.replaceChildren(el("p", { className: "empty", text: "No nodes to draw." }));
+    host.replaceChildren(el("p", { className: "empty", text: t("No nodes to draw.") }));
     return;
   }
   const column = 260;
@@ -1234,7 +1299,7 @@ function renderTopology(nodes) {
   ];
   drawing.push(
     svg("circle", { class: "topo-hub", cx: hub.x, cy: hub.y, r: 22 }),
-    svgText({ x: hub.x, y: hub.y - 28, text: "Cluster", className: "topo-label" }),
+    svgText({ x: hub.x, y: hub.y - 28, text: t("Cluster"), className: "topo-label" }),
   );
 
   const guestColumnBottom = guestTop + Math.max(1, tallest) * (pill.height + pill.gap) - pill.gap;
@@ -1323,14 +1388,14 @@ function renderTopology(nodes) {
         svgText({
           x,
           y: guestTop + shown.length * (pill.height + pill.gap) + 10,
-          text: `+${node.guests.length - shown.length} More`,
+          text: t("+{count} More", { count: node.guests.length - shown.length }),
           className: "topo-sub",
         }),
       );
     }
   });
 
-  host.replaceChildren(svg("svg", { viewBox: `0 0 ${width} ${height}`, role: "img", "aria-label": "Cluster topology" }, drawing));
+  host.replaceChildren(svg("svg", { viewBox: `0 0 ${width} ${height}`, role: "img", "aria-label": t("Cluster Topology") }, drawing));
 }
 
 /** @type {Readonly<Record<GuestState, number>>} */
@@ -1361,11 +1426,11 @@ function visibleGuests(nodes) {
 /** @param {PveNode[]} nodes */
 function renderGuests(nodes) {
   required("#guests-title").textContent =
-    state.selectedNode === null ? "VMs & Containers" : `VMs & Containers on ${displayNodeName(state.selectedNode)}`;
+    state.selectedNode === null ? t("VMs & Containers") : t("VMs & Containers on {node}", { node: displayNodeName(state.selectedNode) });
   required("#node-chips").replaceChildren(
     el("button", {
       className: "chip",
-      text: "All Nodes",
+      text: t("All Nodes"),
       attrs: { type: "button", "data-node-filter": "", "aria-pressed": String(state.selectedNode === null) },
     }),
     ...nodes.map((node) =>
@@ -1386,7 +1451,7 @@ function renderGuests(nodes) {
   );
   required("#chips").replaceChildren(
     ...FILTERS.map(({ id, label }) =>
-      el("button", { className: "chip", text: label, attrs: { type: "button", "data-filter": id, "aria-pressed": String(state.filter === id) } }),
+      el("button", { className: "chip", text: t(label), attrs: { type: "button", "data-filter": id, "aria-pressed": String(state.filter === id) } }),
     ),
   );
 
@@ -1395,7 +1460,6 @@ function renderGuests(nodes) {
     const metrics = guestMetrics(guest);
     const action = guestActions.get(guest.vmid);
     const verb = guest.state === "stopped" ? "start" : "reboot";
-    const verbLabel = verb === "start" ? "Start" : "Reboot";
     const actionButton = el(
       "button",
       {
@@ -1405,8 +1469,16 @@ function renderGuests(nodes) {
           "data-guest-action": verb,
           "data-guest-vmid": String(guest.vmid),
           "data-guest-node": guest.node,
-          title: `${verbLabel} ${guestLabel(guest)} (ID ${guest.vmid}) on ${displayNodeName(guest.node)}`,
-          "aria-label": `${verbLabel} ${guestLabel(guest)} (ID ${guest.vmid})`,
+          title: t(`${verb === "start" ? "Start" : "Reboot"} {name} (ID {id}) on {node}`, {
+            name: guestLabel(guest),
+            id: guest.vmid,
+            node: displayNodeName(guest.node),
+          }),
+          "aria-label": t(`${verb === "start" ? "Start" : "Reboot"} {name} (ID {id}) on {node}`, {
+            name: guestLabel(guest),
+            id: guest.vmid,
+            node: displayNodeName(guest.node),
+          }),
         },
       },
       [el("span", { className: "refresh-icon", text: verb === "start" ? "▶" : "↻", attrs: { "aria-hidden": "true" } })],
@@ -1444,7 +1516,7 @@ function renderGuests(nodes) {
       ]),
     ]);
   });
-  const empty = nodes.length === 0 ? "No VMs or containers to show." : "No VMs or containers match this view.";
+  const empty = t(nodes.length === 0 ? "No VMs or containers to show." : "No VMs or containers match this view.");
   required("#guest-list").replaceChildren(...(rows.length ? rows : [el("li", { className: "empty", text: empty })]));
 }
 
@@ -1457,10 +1529,10 @@ async function runGuestAction(vmid, nodeName, verb) {
   if (!guest || node?.state !== "online" || guest.state !== (verb === "start" ? "stopped" : "running")) return;
   const confirmation =
     verb === "start"
-      ? `Start ${guestLabel(guest)} (ID ${vmid}) on ${nodeLabel(node)}?`
-      : `Reboot ${guestLabel(guest)} (ID ${vmid}) on ${nodeLabel(node)}?\nThis interrupts services running in this ${kindLabel(guest.kind)}.`;
+      ? t("Start {name} (ID {id}) on {node}", { name: guestLabel(guest), id: vmid, node: nodeLabel(node) })
+      : `${t("Reboot {name} (ID {id}) on {node}", { name: guestLabel(guest), id: vmid, node: nodeLabel(node) })}\n${t("This interrupts services running in this {kind}.", { kind: kindLabel(guest.kind) })}`;
   if (!window.confirm(confirmation)) return;
-  guestActions.set(vmid, { pending: true, message: `Submitting ${verb}…`, error: false, retryAt: 0 });
+  guestActions.set(vmid, { pending: true, message: t("Submitting {verb}…", { verb: t(verb === "start" ? "Start" : "Reboot").toLowerCase() }), error: false, retryAt: 0 });
   renderGuests(state.snapshot?.nodes ?? []);
   try {
     const response = await fetch(verb === "start" ? START_URL : REBOOT_URL, {
@@ -1473,7 +1545,7 @@ async function runGuestAction(vmid, nodeName, verb) {
     if (!response.ok) throw new Error(errorMessage(payload));
     guestActions.set(vmid, {
       pending: false,
-      message: `${verb === "start" ? "Start" : "Reboot"} command submitted.`,
+      message: t("{verb} command submitted.", { verb: t(verb === "start" ? "Start" : "Reboot").toLowerCase() }),
       error: false,
       retryAt: Date.now() + 30_000,
     });
@@ -1481,7 +1553,7 @@ async function runGuestAction(vmid, nodeName, verb) {
   } catch (error) {
     guestActions.set(vmid, {
       pending: false,
-      message: error instanceof Error ? error.message : `${verb === "start" ? "Start" : "Reboot"} failed.`,
+      message: error instanceof Error ? error.message : t("{verb} failed.", { verb: t(verb === "start" ? "Start" : "Reboot").toLowerCase() }),
       error: true,
       retryAt: Date.now() + 30_000,
     });
@@ -1504,24 +1576,24 @@ function renderDevices() {
     routerLabel.title = error ?? "";
     const statusText = error
       ? devicesSnapshot?.fetched_at
-        ? "Showing last-known leases"
+        ? t("Showing last-known leases")
         : ""
       : devicesSnapshot === null
-        ? "Loading DHCP leases…"
+        ? t("Loading DHCP leases…")
         : "";
     const inlineStatus = Boolean(statusText && error && devicesSnapshot?.fetched_at);
     if (devicesSnapshot === null) {
-      routerLabel.textContent = devicesError ? "Router details unavailable." : "Loading router details…";
+      routerLabel.textContent = devicesError ? t("Router details unavailable.") : t("Loading router details…");
     } else {
       const router = `${devicesSnapshot.router.slice(0, 1).toUpperCase()}${devicesSnapshot.router.slice(1)}`;
       routerLabel.replaceChildren(document.createTextNode(`${router} · `));
       if (devicesSnapshot.router_version) {
-        routerLabel.append(document.createTextNode(`OpenWRT Version ${devicesSnapshot.router_version}`));
+        routerLabel.append(document.createTextNode(`${t("OpenWRT Version")} ${devicesSnapshot.router_version}`));
       } else {
         routerLabel.append(
           el("span", {
             className: "version-unavailable",
-            text: "OpenWRT Version Unavailable",
+            text: t("OpenWRT Version Unavailable"),
           }),
         );
       }
@@ -1535,18 +1607,18 @@ function renderDevices() {
     const leases = (devicesSnapshot?.leases ?? []).filter((lease) => lease.network_group === group && typeof lease.address === "string");
     const rows = leases.map((lease) =>
       el("li", { className: "device" }, [
-        el("div", { className: "device-title" }, [el("strong", { text: lease.display_name, attrs: { title: lease.hostname ?? "Unnamed device" } })]),
+        el("div", { className: "device-title" }, [el("strong", { text: lease.display_name, attrs: { title: t(lease.hostname ?? "Unnamed device") } })]),
         el("dl", { className: "device-fields" }, [
           el("dt", { className: "device-field-label", text: "IPv4" }),
-          el("dd", { className: "device-address", text: lease.address ?? "Not reported" }),
+          el("dd", { className: "device-address", text: lease.address ?? t("Not reported") }),
           el("dt", { className: "device-field-label", text: "MAC" }),
-          el("dd", { className: "device-mac", text: lease.mac?.toUpperCase() ?? "Not reported" }),
+          el("dd", { className: "device-mac", text: lease.mac?.toUpperCase() ?? t("Not reported") }),
           ...(lease.manufacturer
             ? [
                 el("dt", {
                   className: "device-field-label",
-                  text: "Vendor",
-                  attrs: { "aria-label": "Vendor", title: "Vendor" },
+                  text: t("Vendor"),
+                  attrs: { "aria-label": t("Vendor"), title: t("Vendor") },
                 }),
                 el("dd", { text: lease.manufacturer }),
               ]
@@ -1560,7 +1632,7 @@ function renderDevices() {
         : [
             el("li", {
               className: error ? "empty devices-unavailable" : "empty",
-              text: error ? "Devices Unavailable" : devicesSnapshot === null ? "" : "No devices reported.",
+              text: error ? t("Devices Unavailable") : devicesSnapshot === null ? "" : t("No devices reported."),
             }),
           ]),
     );
@@ -1579,7 +1651,7 @@ async function refreshDevices({ force = false } = {}) {
     devicesSnapshot = /** @type {DevicesSnapshot} */ (payload);
     devicesError = null;
   } catch (error) {
-    devicesError = error instanceof Error ? error.message : "DHCP leases are unavailable.";
+    devicesError = error instanceof Error ? error.message : t("DHCP leases are unavailable.");
   } finally {
     devicesRefreshInFlight = false;
     renderDevices();
@@ -1588,7 +1660,7 @@ async function refreshDevices({ force = false } = {}) {
 
 async function loadActivityLog() {
   const status = required("#logs-status");
-  status.textContent = "Loading…";
+  status.textContent = t("Loading…");
   try {
     const response = await fetch(LOGS_URL, { cache: "no-store" });
     /** @type {unknown} */
@@ -1603,20 +1675,20 @@ async function loadActivityLog() {
         el("span", { className: `log-status log-status-${Math.floor(entry.status / 100)}`, text: String(entry.status) }),
         el("div", { className: "log-detail" }, [
           el("code", { className: "log-path", text: `${entry.method} ${entry.path}` }),
-          el("span", { className: "log-meta", text: `${new Date(entry.timestamp).toLocaleString()} · ${entry.client}` }),
+          el("span", { className: "log-meta", text: `${new Date(entry.timestamp).toLocaleString(localeTag())} · ${entry.client}` }),
         ]),
       ]),
     );
     required("#logs-list").replaceChildren(...rows);
-    status.textContent = `${entries.length} ${entries.length === 1 ? "record" : "records"} · newest 500`;
+    status.textContent = t("{count} records · newest 500", { count: new Intl.NumberFormat(localeTag()).format(entries.length) });
   } catch (error) {
     required("#logs-list").replaceChildren();
-    status.textContent = error instanceof Error ? error.message : "Activity log is unavailable.";
+    status.textContent = error instanceof Error ? error.message : t("Activity log is unavailable.");
   }
 }
 
 async function clearActivityLog() {
-  if (!window.confirm("Clear the activity log? This cannot be undone.")) return;
+  if (!window.confirm(t("Clear the activity log? This cannot be undone."))) return;
   const button = required("#clear-logs-button");
   button.setAttribute("disabled", "");
   try {
@@ -1629,7 +1701,7 @@ async function clearActivityLog() {
     if (!response.ok) throw new Error(errorMessage(payload));
     await loadActivityLog();
   } catch (error) {
-    required("#logs-status").textContent = error instanceof Error ? error.message : "Could not clear the activity log.";
+    required("#logs-status").textContent = error instanceof Error ? error.message : t("Could not clear the activity log.");
   } finally {
     button.removeAttribute("disabled");
   }
@@ -1645,23 +1717,23 @@ function render() {
   renderGuests(nodes);
   syncStorageDialog();
   syncHardwareErrorsDialog();
-  required("#source-label").textContent = state.snapshot?.source ?? "No data source connected";
-  const lastUpdate = state.snapshot ? new Date(state.snapshot.fetched_at).toLocaleTimeString() : null;
+  required("#source-label").textContent = state.snapshot?.source ?? t("No data source connected");
+  const lastUpdate = state.snapshot ? new Date(state.snapshot.fetched_at).toLocaleTimeString(localeTag()) : null;
   required("#updated").textContent =
     state.error !== null
       ? lastUpdate === null
-        ? "Update failed"
-        : `Update failed · data from ${lastUpdate}`
+        ? t("Update failed")
+        : t("Update failed · data from {time}", { time: lastUpdate })
       : lastUpdate === null
-        ? "Connecting…"
-        : `Updated ${lastUpdate}`;
+        ? t("Connecting…")
+        : t("Updated {time}", { time: lastUpdate });
 }
 
 /** @param {unknown} payload */
 function errorMessage(payload) {
   return typeof payload === "object" && payload !== null && "error" in payload && typeof payload.error === "string"
     ? payload.error
-    : "Status is unavailable.";
+    : t("Status is unavailable.");
 }
 
 let refreshInFlight = false;
@@ -1768,6 +1840,7 @@ required("#close-quorum-button").addEventListener("click", () => {
   if (dialog instanceof HTMLDialogElement) dialog.close();
 });
 required("#close-storage-button").addEventListener("click", () => {
+  storageDialogNode = null;
   const dialog = required("#storage-dialog");
   if (dialog instanceof HTMLDialogElement) dialog.close();
 });
@@ -1775,6 +1848,7 @@ required("#storage-dialog").addEventListener("close", () => {
   storageDialogNode = null;
 });
 required("#close-hwerrors-button").addEventListener("click", () => {
+  hwErrorsDialogNode = null;
   const dialog = required("#hwerrors-dialog");
   if (dialog instanceof HTMLDialogElement) dialog.close();
 });
@@ -1798,6 +1872,25 @@ document.addEventListener("keydown", (event) => {
 const selectedHaiku = HEADER_HAIKUS[Math.floor(Math.random() * HEADER_HAIKUS.length)];
 required("#haiku").replaceChildren(...selectedHaiku.map((line) => el("span", { text: line })));
 required(".haiku-cow").textContent = BORG_COW.join("\n");
+const languageSelect = required("#language-select");
+const activeLocale = getLocale();
+setLocale(activeLocale);
+if (languageSelect instanceof HTMLSelectElement) {
+  languageSelect.value = activeLocale;
+  languageSelect.addEventListener("change", (event) => {
+    if (!(event.target instanceof HTMLSelectElement)) return;
+    const selected = event.target.value;
+    if (!LANGUAGES.some(([code]) => code === selected)) return;
+    setLocale(/** @type {Parameters<typeof setLocale>[0]} */ (selected));
+    translateStaticContent();
+    hwErrorsRendered = "";
+    render();
+    renderDevices();
+    const logsDialog = required("#logs-dialog");
+    if (logsDialog instanceof HTMLDialogElement && logsDialog.open) void loadActivityLog();
+  });
+}
+translateStaticContent();
 let overviewWidth = 0;
 new ResizeObserver(([entry]) => {
   if (entry.contentRect.width === overviewWidth) return;

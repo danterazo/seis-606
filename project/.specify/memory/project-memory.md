@@ -14,6 +14,11 @@ Updated: 2026-10-21
 
 ## Development Workflow
 
+- On 2026-10-21, completed selectable Spanish, Portuguese, Japanese, Icelandic, and Esperanto dashboard translations. The browser-local preference
+  persists; generated UI, dates, counts, dialogs, and accessible labels use the selected locale, while host-provided diagnostics remain verbatim. The
+  shared browser verified all six choices, live updates within open dialogs, restored its original Japanese preference, and showed no mobile page
+  overflow. Static message-key coverage and `make lint` pass.
+
 - On 2026-10-21, fixed the background dolphin GIF stopping after prolonged page use: its NETSCAPE repeat count was 1000, not infinite. Changed only
   the two repeat-count bytes to zero, preserving all 15 frames and their timing. The asset regression test and focused Ruff checks pass; five browser
   screenshots showed five distinct frames. Both dolphins in the existing tab loaded the repaired asset without a server restart.

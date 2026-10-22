@@ -4,6 +4,9 @@ pairs a randomized three-line poem with a cow illustration. Guest tags appear as
 for NAS-tagged guests. Resource readings come from Proxmox; display profiles, fallback CPU models, and memory descriptions are configured separately.
 SSH uses hostnames resolved by the local system.
 
+The dashboard interface is available in English, Spanish, Portuguese, Japanese, Icelandic, and Esperanto. Choose a language from the selector in the
+header; the preference is saved in that browser's local storage and does not change server-side data or settings.
+
 This app was developed for personal use, and it assumes a trusted LAN environment with no public exposure. As such, it will not properly run if you 
 simply clone this repo to your own machine. That's just the nature of this project.
 
