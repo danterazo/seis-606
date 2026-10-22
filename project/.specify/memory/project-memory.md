@@ -16,6 +16,7 @@ Updated: 2026-10-21
 
 - On 2026-10-21, the user requested MLA Book Title Case for translated interface titles and retention of “Homelab” across locales; Japanese renders it
   as ホームラボ. Cluster Topology uses “Topología del Clúster” in Spanish and “Topologia do Cluster” in Portuguese.
+- On 2026-10-21, localized plural labels preserve initial capitalization from their English noun; scripts without case, such as Japanese, remain unchanged.
 - On 2026-10-21, completed selectable Spanish, Portuguese, Japanese, Icelandic, and Esperanto dashboard translations. The browser-local preference
   persists; generated UI, dates, counts, dialogs, and accessible labels use the selected locale, while host-provided diagnostics remain verbatim. The
   shared browser verified all six choices, live updates within open dialogs, restored its original Japanese preference, and showed no mobile page

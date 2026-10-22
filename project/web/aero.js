@@ -268,7 +268,10 @@ const plural = (count, noun) => {
     event: ["event", "events"],
   };
   const [singular, pluralForm] = names[noun] ?? [noun.toLowerCase(), `${noun.toLowerCase()}s`];
-  return `${formatCount(count)} ${t(count === 1 ? singular : pluralForm)}`;
+  const translated = t(count === 1 ? singular : pluralForm);
+  const label =
+    noun[0] === noun[0].toLocaleUpperCase() ? translated.replace(/^\p{L}/u, (letter) => letter.toLocaleUpperCase(localeTag())) : translated;
+  return `${formatCount(count)} ${label}`;
 };
 
 /** @param {PveNode} node */
