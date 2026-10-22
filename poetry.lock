@@ -2986,15 +2986,15 @@ files = [
 
 [[package]]
 name = "pycparser"
-version = "3.11"
+version = "3.12"
 description = "C parser in Python"
 optional = false
-python-versions = ">=3.10"
+python-versions = ">=3.11"
 groups = ["main"]
 markers = "implementation_name != \"PyPy\""
 files = [
-    {file = "pycparser-3.11-py3-none-any.whl", hash = "sha256:51d5a8ba2be0bbe440b99d2112604c95bbbc3c2748a64260186c541e1729cd80"},
-    {file = "pycparser-3.11.tar.gz", hash = "sha256:d875f09c3507d00e1aba0eecc6dcadc1352f30fff09dc6bff2f1c2935e97c2bc"},
+    {file = "pycparser-3.12-py3-none-any.whl", hash = "sha256:a076f3f489b39b43ed13563a1dafe42447445bec2e294154ec5c57fcdda4c85e"},
+    {file = "pycparser-3.12.tar.gz", hash = "sha256:f03387877eab82ce01bbdfd0ba7252ee55a90b1c708d5129e2ce915475cf1db6"},
 ]
 
 [[package]]
@@ -4087,14 +4087,14 @@ files = [
 
 [[package]]
 name = "specify-cli"
-version = "1.2.2"
+version = "1.2.3"
 description = "Specify CLI, part of GitHub Spec Kit. A tool to bootstrap your projects for Spec-Driven Development (SDD)."
 optional = false
 python-versions = ">=3.11"
 groups = ["main"]
 files = [
-    {file = "specify_cli-1.2.2-py3-none-any.whl", hash = "sha256:7edc5067f63184adb84ed595a20f4cd45a47506027d94707bfc5f4a724d4be12"},
-    {file = "specify_cli-1.2.2.tar.gz", hash = "sha256:c877fb3db08a64b7046127b3e3dd5bfc265aec87d614cf0a6f6ddd21ef3fcf6b"},
+    {file = "specify_cli-1.2.3-py3-none-any.whl", hash = "sha256:945ad1cdfddf3e5cf138259827564af4b41c4ade053e16a4222f1589248d0eaa"},
+    {file = "specify_cli-1.2.3.tar.gz", hash = "sha256:e970ad55f15857c0aef73af7885022cf8129f9d9795363d90837e1e4b8919f60"},
 ]
 
 [package.dependencies]
@@ -4110,7 +4110,7 @@ rich = "*"
 typer = ">=0.24.0"
 
 [package.extras]
-test = ["pytest (>=7.0)", "pytest-cov (>=4.0)"]
+test = ["pytest (>=7.0)", "pytest-cov (>=4.0)", "pytest-xdist (>=3.0)"]
 
 [[package]]
 name = "sse-starlette"
