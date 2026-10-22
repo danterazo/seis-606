@@ -33,9 +33,8 @@ Updated: 2026-10-21
 - On 2026-10-21, fixed the background dolphin GIF stopping after prolonged page use: its NETSCAPE repeat count was 1000, not infinite. Changed only
   the two repeat-count bytes to zero, preserving all 15 frames and their timing. The asset regression test and focused Ruff checks pass; five browser
   screenshots showed five distinct frames. Both dolphins in the existing tab loaded the repaired asset without a server restart.
-- On 2026-10-21, compacted guest RAM metrics to display used and total values in GB when capacity is at least 1 GB, retaining percentages and using
-  `<0.1` for smaller nonzero usage. This prevents RAM values from wrapping in the guest list; the existing dashboard tab showed every metric row at
-  one line tall. Web lint, typecheck, and formatting checks pass.
+- On 2026-10-21, guest RAM usage below 1 GB displays in MB on the left, while larger usage and total capacity remain in GB; percentages are retained.
+  The existing dashboard showed values such as `45 MB / 1 GB` and `943 MB / 8 GB`. Web lint, typecheck, and formatting checks pass.
 - On 2026-10-21, made the commit-choice offer a required finalization gate after validation.
 
 - On 2026-10-21, Tailscale icon remains in Nodes, not Cluster Topology.

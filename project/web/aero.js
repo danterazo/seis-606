@@ -220,10 +220,7 @@ function formatRam(resources) {
   const { memory_used_bytes: used, memory_total_bytes: total } = resources;
   if (total === null) return t("Unknown");
   if (used === null) return t("{size} total", { size: formatBytes(total) });
-  const pair =
-    total >= BYTES_PER_GIB
-      ? `${used > 0 && used < BYTES_PER_GIB / 10 ? "<0.1" : trimNumber(used / BYTES_PER_GIB, 1)} / ${trimNumber(total / BYTES_PER_GIB, 1)} GB`
-      : formatMemoryPair({ used, total });
+  const pair = formatMemoryPair({ used, total });
   return `${pair} (${formatPercent(memoryPercent(resources))})`;
 }
 
